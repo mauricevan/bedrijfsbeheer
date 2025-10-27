@@ -61,6 +61,9 @@ function App() {
   // Authentication State
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   
+  // Mobile Sidebar State
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  
   const [activeModules, setActiveModules] = useState<Record<ModuleKey, boolean>>(initialModulesState);
 
   // Centralized State Management for all modules
@@ -219,6 +222,8 @@ function App() {
         isAdmin={currentUser.isAdmin} 
         setIsAdmin={() => {}} // Not needed anymore since admin is determined by role
         notifications={notifications}
+        isMobileOpen={isMobileSidebarOpen}
+        onMobileClose={() => setIsMobileSidebarOpen(false)}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header 
@@ -227,6 +232,7 @@ function App() {
           setNotifications={setNotifications}
           currentUser={currentUser}
           onLogout={handleLogout}
+          onMobileMenuToggle={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
         />
         <main className="flex-1 overflow-x-hidden overflow-y-auto">
           <Routes>
