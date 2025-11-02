@@ -150,6 +150,31 @@ table {
   .touch-spacing > * + * {
     margin-top: 0.75rem;
   }
+  
+  /* All modals full-screen on mobile */
+  .fixed.inset-0 .bg-white.rounded-lg {
+    border-radius: 0 !important;
+    margin: 0 !important;
+    max-height: 100vh !important;
+    height: 100vh !important;
+  }
+  
+  /* Modal padding reduced on mobile */
+  .fixed.inset-0 > div > div {
+    padding: 1rem !important;
+  }
+  
+  /* Table wrappers should be scrollable */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  
+  /* Grid layouts - respect responsive prefixes */
+  /* Only force single column if no responsive prefix exists */
+  .grid:not(.grid-cols-1):not([class*="md:"]):not([class*="sm:"]):not([class*="lg:"]) {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 /* Landscape mode on phones */

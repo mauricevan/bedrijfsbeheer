@@ -89,8 +89,15 @@ function App() {
 
   // Handle login
   const handleLogin = (employee: Employee) => {
-    // Determine if user is admin (Manager Productie in this case)
-    const isAdmin = employee.role === 'Manager Productie';
+    // Determine if user is admin (Manager Productie OR has full_admin permission OR isAdmin flag)
+    const hasFullAdmin = employee.isAdmin || 
+                        employee.permissions?.includes('full_admin') || 
+                        employee.role === 'Manager Productie';
+    
+    // Get permissions from employee
+    const permissions = hasFullAdmin 
+      ? ['full_admin']
+      : employee.permissions || [];
     
     const user: User = {
       id: `user_${employee.id}`,
@@ -98,7 +105,8 @@ function App() {
       name: employee.name,
       email: employee.email,
       role: employee.role,
-      isAdmin,
+      isAdmin: hasFullAdmin,
+      permissions: permissions.length > 0 ? permissions : undefined,
     };
     
     setCurrentUser(user);
@@ -153,7 +161,9 @@ function App() {
         currentUser={currentUser}
         isAdmin={currentUser.isAdmin}
         quotes={quotes}
+        setQuotes={setQuotes}
         invoices={invoices}
+        setInvoices={setInvoices}
       />
     ),
     [ModuleKey.ACCOUNTING]: (
@@ -187,7 +197,12 @@ function App() {
         currentUser={currentUser}
         isAdmin={currentUser.isAdmin}
         invoices={invoices}
-        quotes={quotes} 
+        setInvoices={setInvoices}
+        quotes={quotes}
+        setQuotes={setQuotes}
+        workOrders={workOrders}
+        setWorkOrders={setWorkOrders}
+        inventory={inventory}
       />
     ),
     [ModuleKey.HRM]: (

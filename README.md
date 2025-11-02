@@ -173,6 +173,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ **Status workflow**: To Do → In Progress → Completed (of To Do → Pending → In Progress → Completed)
 - ✅ **Materialen toewijzen** - benodigde materialen uit voorraad koppelen
 - ✅ **Automatische voorraad update** - bij voltooien werkorder wordt voorraad automatisch bijgewerkt
+- 🆕 **Automatische factuur conversie** - Voltooide werkorders worden automatisch omgezet naar facturen in Boekhouding
 - 🔄 Automatische rapportages
 - ✅ Koppeling met voorraad & klantgegevens
 
@@ -208,7 +209,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ KPI cards (totale inkomsten, uitgaven, netto winst)
 - ✅ Transactie historie met datum
 
-**Offertes Tab:**
+**Offertes Tab:** 🆕 **UITGEBREID MET OVERZICHT MODALS V4.7**
 - ✅ **Offertes maken en beheren** met meerdere items
 - ✅ **Items uit voorraad selecteren** - Dropdown met alle voorraad items inclusief prijzen
 - ✅ **Custom items toevoegen** - Voor items die niet in voorraad staan
@@ -232,14 +233,27 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🆕 **Voltooiing indicator** - Visueel zien wanneer werkorder voltooid is
 - 🆕 **Offerte clonen** - Dupliceer bestaande offerte met automatisch nieuw ID en datum 🔄 **V4.6**
 - 🆕 **Aanpasbaar tijdens clonen** - Wijzig klant, items, prijzen tijdens het clonen 🔄 **V4.6**
+- 🆕 **Offerte statistieken** - Totaal geoffreerd, geaccepteerd, verzonden, verlopen (klikbaar)
+- 🆕 **Overzicht Modals** - Bij klikken op statistiek badges:
+  - Filter op klantnaam, datum, bedrag
+  - Zie alle offertes in gefilterde lijst
+  - ✏️ Bewerken knop bij elke offerte
+  - 📋 Clonen knop bij elke offerte
+  - 📤 Naar Werkorder knop (alleen voor approved/sent zonder werkorder)
 
-**Facturen Tab:** 🆕 **NIEUW TOEGEVOEGD + WERKORDER INTEGRATIE V4.0**
+**Facturen Tab:** 🆕 **NIEUW TOEGEVOEGD + WERKORDER INTEGRATIE V4.0 + OVERZICHT MODAL V4.7**
 - ✅ **Volledig factuurbeheer systeem**
 - ✅ **4 Statistiek Cards:**
-  - Totaal Gefactureerd (€ alle facturen)
-  - Betaald (€ en aantal)
-  - Uitstaand (€ en aantal verzonden/verlopen)
-  - Verlopen (€ en aantal met rode alert)
+  - Totaal Gefactureerd (€ alle facturen) - Klikbaar → Overzicht modal
+  - Betaald (€ en aantal) - Klikbaar → Overzicht modal
+  - Uitstaand (€ en aantal verzonden/verlopen) - Klikbaar → Overzicht modal
+  - Verlopen (€ en aantal met rode alert) - Klikbaar → Overzicht modal
+- 🆕 **Overzicht Modals** - Bij klikken op statistiek cards:
+  - Filter op klantnaam, datum, bedrag
+  - Zie alle facturen in gefilterde lijst
+  - ✏️ Bewerken knop bij elke factuur
+  - 📋 Clonen knop bij elke factuur
+  - 📤 Naar Werkorder knop (alleen voor sent/draft zonder werkorder)
 - ✅ **Automatische factuurnummer generatie** (2025-001, 2025-002, etc.)
 - ✅ **Handmatig facturen aanmaken:**
   - Items uit voorraad selecteren
@@ -277,6 +291,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🆕 **Live synchronisatie** - Wijzigingen in factuur worden doorgevoerd naar werkorder
 - 🆕 **Voltooiing indicator** - Visueel zien wanneer werkorder voltooid is
 - 🆕 **Tussentijdse aanpassing** - Facturen en werkorders blijven gesynchroniseerd
+- 🆕 **Automatische factuur generatie** - Voltooide werkorders worden automatisch omgezet naar facturen
 - 🔄 Digitale goedkeuring door klant
 - 🔄 PDF generatie
 - 🔄 Email verzending
@@ -368,6 +383,13 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ **Notities per klant** - Voeg interne notities toe voor klanthistorie 🆕
 - ✅ **Klanten bewerken** - Wijzig klantgegevens en notities 🆕
 - ✅ Add/Edit/Delete functionaliteit 🆕
+- 🆕 **Facturen in klantoverzicht** - Klik op klant → Financiën → Zie alleen betaalde en openstaande facturen
+- 🆕 **Factuur acties** - Bij elke factuur in klantoverzicht:
+  - ✏️ Bewerken - Open factuur in edit modal
+  - 📋 Clonen - Maak kopie van factuur met nieuw nummer
+  - 📤 Naar Werkorder - Converteer factuur naar werkorder (met user selectie)
+- 🆕 **Clone & Edit modals** - Volledig bewerkbare formulieren met items/labor beheer
+- 🆕 **Werkorder conversie** - Factuur naar werkorder met specifieke user toewijzing
 
 **Interacties Tab:**
 - ✅ **Communicatie geschiedenis** - Alle contactmomenten vastleggen
@@ -390,7 +412,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ Visuele status indicators
 - ✅ Add/Delete/Update functionaliteit
 
-### 7. **HRM (Personeelsbeheer)**
+### 7. **HRM (Personeelsbeheer)** 🆕 **VOLLEDIG UITGEBREID**
 - ✅ Medewerker beheer (CRUD)
 - ✅ Functie/rol overzicht
 - ✅ Contactgegevens
@@ -398,6 +420,21 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ Verlof dagen tracking (totaal/gebruikt)
 - ✅ Beschikbaarheid status (available/unavailable/vacation)
 - ✅ Statistieken (totaal medewerkers, functies, gem. diensttijd)
+- 🆕 **Wachtwoord beheer** - Wachtwoord instellen bij nieuwe medewerker
+- 🆕 **Admin rechten** - Checkbox om admin rechten toe te wijzen bij aanmaken
+- 🆕 **Medewerkers bewerken** - Volledige edit functionaliteit (naam, functie, email, telefoon, wachtwoord, admin rechten)
+- 🆕 **Persoonlijk dossier** - Klik op medewerker om dossier te openen
+- 🆕 **Notities systeem** - Verschillende notitie types:
+  - ⏰ Te laat
+  - ❌ Afwezig
+  - 🎯 Milestone
+  - 📊 Prestatie
+  - ⚠️ Waarschuwing
+  - ⭐ Compliment
+  - ✅ Aanwezigheid
+  - 📝 Algemeen
+- 🆕 **Notities toevoegen/verwijderen** - Admin kan notities toevoegen met datum, titel en beschrijving
+- 🆕 **Admin badge** - Medewerkers met admin rechten krijgen 👑 badge
 - 🔄 Prestatie monitoring
 - 🔄 Planning en roosters
 
@@ -1163,6 +1200,117 @@ Voorraad automatisch afgetrokken: 10 stuks, 6 meter, 2 kg
 - Positief verschil (meer gebruikt): Check of dit gefactureerd moet worden
 - Negatief verschil (minder gebruikt): Materiaal terug in voorraad
 
+### Automatische Factuur Conversie bij Voltooide Werkorders 🆕 **NIEUW IN V4.8**
+
+#### Hoe Het Werkt
+
+Wanneer een werkorder wordt voltooid, wordt **automatisch** een factuur aangemaakt of bijgewerkt in de Boekhouding module. Geen handmatige actie meer nodig!
+
+**Automatische Workflow:**
+```
+1. Medewerker voltooit werkorder
+   ↓
+2. Voorraad wordt automatisch afgetrokken
+   ↓
+3. Factuur wordt automatisch aangemaakt/bijgewerkt
+   ↓
+4. Factuur verschijnt in Boekhouding module (status: Draft)
+   ↓
+5. Admin verzendt factuur naar klant
+```
+
+#### Wat Er Gebeurt Bij Voltooiing
+
+**Scenario 1: Nieuwe Factuur Aanmaken**
+- Werkorder heeft nog geen factuur
+- Systeem maakt automatisch nieuwe factuur aan:
+  - Factuurnummer: Automatisch gegenereerd (bijv. 2025-015)
+  - Items: Alle benodigde materialen uit werkorder
+  - Werkuren: Werkelijke gewerkte uren (`hoursSpent`)
+  - BTW: 21% (of van offerte indien gekoppeld)
+  - Datum: Vandaag
+  - Vervaldatum: +14 dagen
+  - Status: Draft (klaar om te verzenden)
+  - Link: `workOrderId` en `quoteId` (indien aanwezig)
+
+**Scenario 2: Bestaande Factuur Bijwerken**
+- Werkorder heeft al een factuur (bijv. vanuit offerte)
+- Systeem werkt bestaande factuur bij:
+  - Werkuren worden bijgewerkt met werkelijke uren
+  - Totaalbedrag wordt herberekend
+  - History entry wordt toegevoegd
+  - Geen dubbele factuur
+
+**Scenario 3: Offerte Factuur Bijwerken**
+- Werkorder komt van een offerte die al een factuur heeft
+- Systeem werkt die factuur bij met werkelijke gewerkte uren
+- Items blijven hetzelfde (van offerte)
+- Alleen werkuren worden aangepast
+
+#### Wat Je Ziet
+
+**Na Voltooiing Werkorder:**
+- ✅ Melding: "Factuur 2025-015 automatisch aangemaakt voor voltooide werkorder WO123!"
+- ✅ Factuur verschijnt in Boekhouding module
+- ✅ Status: Draft
+- ✅ Werkorder krijgt `invoiceId` koppeling
+- ✅ Factuur krijgt `workOrderId` koppeling
+
+**In Boekhouding Module:**
+- Factuur staat in "Facturen" tab
+- Status: Draft (gele badge)
+- Link naar werkorder zichtbaar
+- Werkelijke uren ingevuld (niet geschat)
+- Alle items en materialen opgenomen
+
+#### Wat Je Moet Doen
+
+**Direct Na Voltooiing:**
+- ✅ Niets! Factuur is al aangemaakt
+- ✅ Ga naar Boekhouding module
+- ✅ Controleer factuur (items, bedragen, klant)
+
+**Voor Verzending:**
+1. Open factuur in Boekhouding module
+2. Controleer bedragen en items
+3. Pas aan indien nodig (admin)
+4. Klik "Verzenden" knop
+5. Status wordt "Verzonden"
+
+**Voor Betaling:**
+1. Wanneer klant betaalt
+2. Klik "✓ Markeer als Betaald"
+3. Betaaldatum wordt automatisch ingevuld
+4. Status wordt "Betaald"
+
+#### Voordelen
+
+✅ **Tijd Besparen** - Geen handmatige factuur aanmaak meer  
+✅ **Minder Fouten** - Automatische berekeningen  
+✅ **Werkelijke Uren** - Facturen bevatten echte gewerkte tijd  
+✅ **Volledige Koppeling** - Alle links behouden  
+✅ **Seamless Workflow** - Van werkorder naar factuur in één stap  
+
+#### Tips & Best Practices
+
+**Voor Admins:**
+- ✅ Controleer automatisch aangemaakte facturen voordat je ze verzendt
+- ✅ Pas indien nodig werkuren of items aan
+- ✅ Gebruik werkelijke uren voor accurate facturatie
+- ✅ Check koppelingen (werkorder/offerte links)
+- ✅ Documenteer eventuele afwijkingen in notities
+
+**Voor Medewerkers:**
+- ✅ Zorg dat je uren correct zijn ingevuld (`hoursSpent`)
+- ✅ Bij voltooiing wordt automatisch factuur aangemaakt
+- ✅ Je hoeft niets te doen, admin verzorgt facturatie
+
+**Let Op:**
+- ⚠️ Factuur krijgt status "Draft" - controleer altijd voordat je verzendt
+- ⚠️ Als factuur al bestaat, wordt deze bijgewerkt (geen nieuwe)
+- ⚠️ Werkelijke uren overschrijven geschatte uren in factuur
+- ⚠️ BTW percentage komt van offerte indien gekoppeld, anders 21%
+
 ### Facturen Beheren (Basis - Bestaand)
 
 #### Offerte Omzetten naar Factuur (Aanbevolen Methode)
@@ -1869,6 +2017,124 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 
 ## 🏆 Changelog
 
+### Versie 4.8.0 🆕 **AUTOMATISCHE FACTUUR CONVERSIE BIJ VOLTOOIDE WERKORDERS**
+
+**Nieuwe Features:**
+
+**1. Automatische Factuur Generatie**
+- 🆕 **Automatische conversie** - Wanneer een werkorder wordt voltooid, wordt automatisch een factuur aangemaakt
+- 🆕 **Slimme logica:**
+  - Als er al een factuur bestaat → wordt bijgewerkt met werkelijke gewerkte uren
+  - Als er een offerte is met factuur → wordt die factuur bijgewerkt met werkelijke uren
+  - Anders → nieuwe factuur aangemaakt met werkorder items en uren
+- 🆕 **Items conversie:**
+  - Benodigde materialen uit werkorder → factuur items
+  - Gewerkte uren (`hoursSpent`) → factuur werkuren
+  - Gebruikt offertedata als basis indien beschikbaar
+- 🆕 **Automatische berekeningen:**
+  - Subtotaal (items + werkuren)
+  - BTW (21% standaard, of van offerte indien gekoppeld)
+  - Totaal bedrag
+- 🆕 **Factuur details:**
+  - Factuurnummer automatisch gegenereerd
+  - Factuurdatum = vandaag
+  - Vervaldatum = +14 dagen
+  - Link naar werkorder en offerte (indien aanwezig)
+  - Status: Draft (klaar om te verzenden)
+- 🆕 **Koppeling bewaren:**
+  - Werkorder krijgt `invoiceId` link naar factuur
+  - Factuur krijgt `workOrderId` link naar werkorder
+  - Bidirectionele relatie voor tracking
+
+**2. Smart Update Logic**
+- 🆕 **Bestaande facturen bijwerken** - Voorkomt dubbele facturen
+- 🆕 **Werkelijke uren gebruiken** - Facturen bevatten daadwerkelijk gewerkte uren, niet geschat
+- 🆕 **Offerte integratie** - Gebruikt items en prijzen uit offerte indien beschikbaar
+- 🆕 **Voorraad items** - Converteert benodigde materialen naar factuur items met prijzen
+
+**3. UX Verbeteringen**
+- 🆕 **Bevestigingsmelding** - Duidelijke melding wanneer factuur is aangemaakt
+- 🆕 **Direct zichtbaar** - Factuur verschijnt direct in Boekhouding module
+- 🆕 **Volledig traceerbaar** - Alle links en geschiedenis behouden
+- 🆕 **Geen handmatige actie nodig** - Volledig automatisch proces
+
+**Technische Updates:**
+- 🆕 `setInvoices` prop toegevoegd aan WorkOrders component
+- 🆕 `convertCompletedWorkOrderToInvoice()` functie geïmplementeerd
+- 🆕 Helper functies voor factuurnummer generatie
+- 🆕 Factuur history tracking
+- 🆕 Automatische trigger in `updateStatus()` bij status 'Completed'
+
+**Workflow:**
+```
+Werkorder Voltooid
+  ↓
+Voorraad Afgetrokken
+  ↓
+Automatisch Factuur Aangemaakt/Bijgewerkt
+  ↓
+Factuur Klaar in Boekhouding Module
+  ↓
+Verzenden en Betaling Registreren
+```
+
+**Voordelen:**
+- ✅ **Tijd besparen** - Geen handmatige factuur aanmaak meer nodig
+- ✅ **Minder fouten** - Automatische berekeningen en koppelingen
+- ✅ **Volledige traceerbaarheid** - Alle links behouden
+- ✅ **Werkelijke uren** - Facturen bevatten echte gewerkte tijd
+- ✅ **Seamless workflow** - Van werkorder naar factuur in één stap
+
+### Versie 4.7.0 🆕 **CRM FACTUREN & HRM PERSOONLIJK DOSSIER**
+
+**Nieuwe Features:**
+
+**1. CRM - Facturen in Klantoverzicht**
+- 🆕 **Financiën modal** - Klik op klant → Financiën → Zie alle facturen en offertes
+- 🆕 **Filter op betaalde en openstaande facturen** - Alleen relevante facturen getoond
+- 🆕 **Factuur acties in tabel:**
+  - ✏️ Bewerken - Open factuur in edit modal met volledige items/labor beheer
+  - 📋 Clonen - Maak kopie met nieuw nummer en datum
+  - 📤 Naar Werkorder - Converteer naar werkorder met user selectie
+- 🆕 **Clone modal** - Volledig bewerkbare formulieren (klant, items, labor, datums)
+- 🆕 **Edit modal** - Bewerk bestaande facturen met items/labor wijzigingen
+- 🆕 **User selectie modal** - Kies medewerker voor werkorder toewijzing
+
+**2. HRM - Gebruikersbeheer Uitbreidingen**
+- 🆕 **Wachtwoord veld** - Stel wachtwoord in bij nieuwe medewerker
+- 🆕 **Admin checkbox** - Vink aan voor admin rechten bij nieuwe medewerker
+- 🆕 **Bewerk functionaliteit** - Volledig medewerker bewerken (naam, functie, email, telefoon, wachtwoord, admin)
+- 🆕 **Persoonlijk dossier** - Klik "📋 Dossier" knop om dossier te openen
+- 🆕 **Notities systeem** met 8 types:
+  - ⏰ Te laat (geel)
+  - ❌ Afwezig (rood)
+  - 🎯 Milestone (blauw)
+  - 📊 Prestatie (paars)
+  - ⚠️ Waarschuwing (oranje)
+  - ⭐ Compliment (groen)
+  - ✅ Aanwezigheid (teal)
+  - 📝 Algemeen (grijs)
+- 🆕 **Notities toevoegen** - Admin kan notities toevoegen met type, datum, titel en beschrijving
+- 🆕 **Notities verwijderen** - Admin kan notities verwijderen
+- 🆕 **Timeline weergave** - Notities gesorteerd op datum (nieuwste eerst)
+- 🆕 **Admin badge** - 👑 badge bij medewerkers met admin rechten
+
+**Technische Updates:**
+- 🆕 `EmployeeNote` en `EmployeeNoteType` types toegevoegd
+- 🆕 `Employee.notes` array voor persoonlijk dossier
+- 🆕 `Employee.isAdmin` veld toegevoegd
+- 🆕 Props uitgebreid in CRM voor werkorders, inventory, setInvoices
+- 🆕 Helper functies voor factuur beheer in CRM
+- 🆕 Clone/edit modals met volledige items/labor beheer
+
+**UX Verbeteringen:**
+- ✅ Direct toegang tot facturen vanuit klantoverzicht
+- ✅ Filter op relevante facturen (betaald/openstaand)
+- ✅ Snelle acties (bewerken, clonen, werkorder) bij elke factuur
+- ✅ Volledig dossier systeem voor HR tracking
+- ✅ Visuele badges voor admin rechten
+- ✅ Kleurgecodeerde notities voor snelle herkenning
+
 ### Versie 4.6.0 🆕 **CLONE FUNCTIONALITEIT VOOR OFFERTES & FACTUREN**
 
 **Nieuwe Features:**
@@ -2415,15 +2681,19 @@ Dit project is ontwikkeld voor intern gebruik. Alle rechten voorbehouden.
 
 ---
 
-**Laatste update**: Oktober 2025  
-**Versie**: 4.5.0 (Volledige Mobile Optimalisatie)
-**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering en **volledig responsive mobile-first design**
+**Laatste update**: December 2024  
+**Versie**: 4.8.0 (Automatische Factuur Conversie)
+**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering, **volledig responsive mobile-first design**, **factuurbeheer vanuit CRM**, **persoonlijk dossier systeem**, en **automatische factuur generatie bij voltooide werkorders**
 
 ---
 
 **Veel succes met het Bedrijfsbeheer Dashboard! 🚀**
 
-**✨ Nieuw in V4.5: Volledig responsive design - werk overal, altijd, op elk apparaat! 📱 ✨**
+**✨ Nieuw in V4.8: Voltooide werkorders worden automatisch omgezet naar facturen - geen handmatige actie meer nodig! ✨**
+**✨ Nieuw in V4.7: Facturen vanuit klantoverzicht beheren - bewerk, clone en stuur naar werkorder! ✨**
+**✨ Persoonlijk dossier per medewerker - track te laat komen, milestones en meer! ✨**
+**✨ V4.6: Clone functionaliteit - dupliceer offertes en facturen met één klik! ✨**
+**✨ V4.5: Volledig responsive design - werk overal, altijd, op elk apparaat! 📱 ✨**
 **✨ Hamburger menu, touch-optimized, perfect voor monteurs in het veld! ✨**
 **✨ V4.4: Automatische swap/reorder - wijzig indexnummers zonder conflicten! ✨**
 **✨ V4.3: Werkorder indexering - prioriteer en sorteer taken met nummers! ✨**

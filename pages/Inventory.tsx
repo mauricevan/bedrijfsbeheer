@@ -46,11 +46,11 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, setInventory, i
   };
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-neutral">Voorraadbeheer</h1>
-          <p className="text-gray-600 mt-1">Beheer grondstoffen, halffabricaten en eindproducten</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-neutral">Voorraadbeheer</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">Beheer grondstoffen, halffabricaten en eindproducten</p>
         </div>
         {isAdmin && (
           <button

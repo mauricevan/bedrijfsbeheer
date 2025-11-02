@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Customer, Sale, Task, Lead, Interaction, Employee, User, LeadStatus, InteractionType, Invoice, Quote } from '../types';
+import { Customer, Sale, Task, Lead, Interaction, Employee, User, LeadStatus, InteractionType, Invoice, Quote, WorkOrder, QuoteItem, QuoteLabor, InvoiceHistoryEntry } from '../types';
 import { LEAD_SOURCES, INTERACTION_TYPES } from '../data/mockData';
 
 interface CRMProps {
@@ -16,7 +16,12 @@ interface CRMProps {
   currentUser: User;
   isAdmin: boolean;
   invoices: Invoice[];
+  setInvoices: React.Dispatch<React.SetStateAction<Invoice[]>>;
   quotes: Quote[];
+  setQuotes: React.Dispatch<React.SetStateAction<Quote[]>>;
+  workOrders: any[];
+  setWorkOrders: React.Dispatch<React.SetStateAction<any[]>>;
+  inventory: any[];
 }
 
 type TabType = 'dashboard' | 'leads' | 'customers' | 'interactions' | 'tasks';
@@ -35,9 +40,17 @@ export const CRM: React.FC<CRMProps> = ({
   currentUser,
   isAdmin,
   invoices,
-  quotes 
+  setInvoices,
+  quotes,
+  setQuotes,
+  workOrders,
+  setWorkOrders,
+  inventory
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+  
+  // Search state
+  const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   
   // Forms state
   const [showAddCustomerForm, setShowAddCustomerForm] = useState(false);
@@ -48,6 +61,43 @@ export const CRM: React.FC<CRMProps> = ({
   const [showAddTaskForm, setShowAddTaskForm] = useState(false);
   const [showFinancesModal, setShowFinancesModal] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  
+  // Invoice clone/edit states
+  const [showCloneInvoiceModal, setShowCloneInvoiceModal] = useState(false);
+  const [showEditInvoiceModal, setShowEditInvoiceModal] = useState(false);
+  const [showUserSelectionModal, setShowUserSelectionModal] = useState(false);
+  const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null);
+  const [selectedInvoiceForWorkOrder, setSelectedInvoiceForWorkOrder] = useState<string | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [newInvoice, setNewInvoice] = useState({
+    customerId: '',
+    items: [] as QuoteItem[],
+    labor: [] as QuoteLabor[],
+    vatRate: 21,
+    notes: '',
+    paymentTerms: '14 dagen',
+    issueDate: '',
+    dueDate: '',
+  });
+  
+  // Detail modal states voor factuur/offerte
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [detailType, setDetailType] = useState<'quote' | 'invoice' | null>(null);
+  const [detailItem, setDetailItem] = useState<Quote | Invoice | null>(null);
+  
+  // Quote clone/edit states
+  const [showCloneQuoteModal, setShowCloneQuoteModal] = useState(false);
+  const [showEditQuoteModal, setShowEditQuoteModal] = useState(false);
+  const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
+  const [selectedQuoteForWorkOrder, setSelectedQuoteForWorkOrder] = useState<string | null>(null);
+  const [newQuote, setNewQuote] = useState({
+    customerId: '',
+    items: [] as QuoteItem[],
+    labor: [] as QuoteLabor[],
+    vatRate: 21,
+    notes: '',
+    validUntil: '',
+  });
   
   // New forms data
   const [newCustomer, setNewCustomer] = useState({
@@ -414,6 +464,11 @@ export const CRM: React.FC<CRMProps> = ({
     const customerInvoices = invoices.filter(inv => inv.customerId === customerId);
     const customerQuotes = quotes.filter(q => q.customerId === customerId);
 
+    // Filter: alleen betaalde en openstaande facturen
+    const paidAndOutstandingInvoices = customerInvoices.filter(inv => 
+      inv.status === 'paid' || ['sent', 'draft', 'overdue'].includes(inv.status)
+    );
+
     const totalInvoiced = customerInvoices.reduce((sum, inv) => sum + inv.total, 0);
     const paidInvoices = customerInvoices.filter(inv => inv.status === 'paid');
     const totalPaid = paidInvoices.reduce((sum, inv) => sum + inv.total, 0);
@@ -424,7 +479,7 @@ export const CRM: React.FC<CRMProps> = ({
     const totalQuotes = customerQuotes.reduce((sum, q) => sum + q.total, 0);
 
     return {
-      invoices: customerInvoices,
+      invoices: paidAndOutstandingInvoices, // Alleen betaalde en openstaande
       quotes: customerQuotes,
       totalInvoiced,
       totalPaid,
@@ -435,6 +490,466 @@ export const CRM: React.FC<CRMProps> = ({
       outstandingInvoices,
       overdueInvoices
     };
+  };
+  
+  // Helper functions voor facturen
+  const generateInvoiceNumber = () => {
+    const year = new Date().getFullYear();
+    const existingNumbers = invoices
+      .filter((inv) => inv.invoiceNumber.startsWith(`${year}-`))
+      .map((inv) => parseInt(inv.invoiceNumber.split("-")[1]))
+      .filter((num) => !isNaN(num));
+
+    const nextNumber =
+      existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
+    return `${year}-${String(nextNumber).padStart(3, "0")}`;
+  };
+  
+  const calculateInvoiceTotals = () => {
+    const itemsSubtotal = newInvoice.items.reduce(
+      (sum, item) => sum + item.total,
+      0
+    );
+    const laborSubtotal = newInvoice.labor.reduce(
+      (sum, labor) => sum + labor.total,
+      0
+    );
+    const subtotal = itemsSubtotal + laborSubtotal;
+    const vatAmount = subtotal * (newInvoice.vatRate / 100);
+    const total = subtotal + vatAmount;
+
+    return { subtotal, vatAmount, total };
+  };
+  
+  const createHistoryEntry = (
+    type: "quote" | "invoice",
+    action: string,
+    details: string,
+    extra?: any
+  ): InvoiceHistoryEntry => {
+    return {
+      timestamp: new Date().toISOString(),
+      action: action as any,
+      performedBy: currentUser.employeeId,
+      details,
+      ...extra,
+    };
+  };
+  
+  // Invoice item/labor handlers
+  const handleInvoiceItemChange = (index: number, field: keyof QuoteItem, value: any) => {
+    const updatedItems = [...newInvoice.items];
+    updatedItems[index] = { ...updatedItems[index], [field]: value };
+    
+    if (field === 'quantity' || field === 'pricePerUnit') {
+      updatedItems[index].total = updatedItems[index].quantity * updatedItems[index].pricePerUnit;
+    }
+    
+    setNewInvoice({ ...newInvoice, items: updatedItems });
+  };
+
+  const handleInvoiceLaborChange = (index: number, field: keyof QuoteLabor, value: any) => {
+    const updatedLabor = [...newInvoice.labor];
+    updatedLabor[index] = { ...updatedLabor[index], [field]: value };
+    
+    if (field === 'hours' || field === 'hourlyRate') {
+      updatedLabor[index].total = updatedLabor[index].hours * updatedLabor[index].hourlyRate;
+    }
+    
+    setNewInvoice({ ...newInvoice, labor: updatedLabor });
+  };
+
+  const handleRemoveInvoiceItem = (index: number) => {
+    setNewInvoice({
+      ...newInvoice,
+      items: newInvoice.items.filter((_, i) => i !== index),
+    });
+  };
+
+  const handleRemoveInvoiceLabor = (index: number) => {
+    setNewInvoice({
+      ...newInvoice,
+      labor: newInvoice.labor.filter((_, i) => i !== index),
+    });
+  };
+
+  const handleAddInvoiceCustomItem = () => {
+    const newItem: QuoteItem = {
+      description: "",
+      quantity: 1,
+      pricePerUnit: 0,
+      total: 0,
+    };
+    setNewInvoice({
+      ...newInvoice,
+      items: [...newInvoice.items, newItem],
+    });
+  };
+
+  const handleAddInvoiceLabor = () => {
+    const newLabor: QuoteLabor = {
+      description: "",
+      hours: 1,
+      hourlyRate: 50,
+      total: 50,
+    };
+    setNewInvoice({
+      ...newInvoice,
+      labor: [...newInvoice.labor, newLabor],
+    });
+  };
+
+  const handleInvoiceInventoryItemChange = (index: number, inventoryItemId: string) => {
+    const inventoryItem = inventory.find((i) => i.id === inventoryItemId);
+    if (inventoryItem) {
+      const updatedItems = [...newInvoice.items];
+      updatedItems[index] = {
+        ...updatedItems[index],
+        inventoryItemId: inventoryItemId,
+        description: inventoryItem.name,
+        pricePerUnit: inventoryItem.price || 0,
+        total: updatedItems[index].quantity * (inventoryItem.price || 0),
+      };
+      setNewInvoice({ ...newInvoice, items: updatedItems });
+    }
+  };
+  
+  // Clone invoice function
+  const handleCloneInvoice = (invoiceId: string) => {
+    const invoice = invoices.find((inv) => inv.id === invoiceId);
+    if (!invoice) return;
+
+    const today = new Date().toISOString().split("T")[0];
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 14);
+
+    setNewInvoice({
+      customerId: invoice.customerId,
+      items: invoice.items,
+      labor: invoice.labor || [],
+      vatRate: invoice.vatRate,
+      notes: invoice.notes || "",
+      paymentTerms: invoice.paymentTerms,
+      issueDate: today,
+      dueDate: dueDate.toISOString().split("T")[0],
+    });
+    setShowCloneInvoiceModal(true);
+  };
+  
+  // Edit invoice function
+  const handleEditInvoice = (invoiceId: string) => {
+    const invoice = invoices.find((inv) => inv.id === invoiceId);
+    if (!invoice) return;
+
+    setNewInvoice({
+      customerId: invoice.customerId,
+      items: invoice.items,
+      labor: invoice.labor || [],
+      vatRate: invoice.vatRate,
+      notes: invoice.notes || "",
+      paymentTerms: invoice.paymentTerms,
+      issueDate: invoice.issueDate,
+      dueDate: invoice.dueDate,
+    });
+    setEditingInvoiceId(invoiceId);
+    setShowEditInvoiceModal(true);
+  };
+  
+  // Save cloned invoice
+  const handleSaveClonedInvoice = (sendToWorkOrder: boolean = false) => {
+    if (
+      !newInvoice.customerId ||
+      newInvoice.items.length === 0 ||
+      !newInvoice.issueDate ||
+      !newInvoice.dueDate
+    ) {
+      alert("Vul alle verplichte velden in!");
+      return;
+    }
+
+    const { subtotal, vatAmount, total } = calculateInvoiceTotals();
+    const now = new Date().toISOString();
+    const customerName = getCustomerName(newInvoice.customerId);
+
+    const invoice: Invoice = {
+      id: `inv${Date.now()}`,
+      invoiceNumber: generateInvoiceNumber(),
+      customerId: newInvoice.customerId,
+      items: newInvoice.items,
+      labor: newInvoice.labor.length > 0 ? newInvoice.labor : undefined,
+      subtotal: subtotal,
+      vatRate: newInvoice.vatRate,
+      vatAmount: vatAmount,
+      total: total,
+      status: "draft",
+      issueDate: newInvoice.issueDate,
+      dueDate: newInvoice.dueDate,
+      notes: newInvoice.notes,
+      paymentTerms: newInvoice.paymentTerms,
+      createdBy: currentUser.employeeId,
+      timestamps: {
+        created: now,
+      },
+      history: [
+        createHistoryEntry(
+          "invoice",
+          "created",
+          `Factuur gecloneerd door ${getEmployeeName(
+            currentUser.employeeId
+          )} voor klant ${customerName}`
+        ),
+      ],
+    };
+
+    setInvoices([...invoices, invoice]);
+    setNewInvoice({
+      customerId: "",
+      items: [],
+      labor: [],
+      vatRate: 21,
+      notes: "",
+      paymentTerms: "14 dagen",
+      issueDate: "",
+      dueDate: "",
+    });
+    setShowCloneInvoiceModal(false);
+
+    if (sendToWorkOrder) {
+      const totalHours =
+        invoice.labor?.reduce((sum, labor) => sum + labor.hours, 0) || 0;
+
+      setSelectedInvoiceForWorkOrder(invoice.id);
+      setSelectedUserId("");
+      setShowUserSelectionModal(true);
+    } else {
+      alert(`✅ Factuur ${invoice.invoiceNumber} succesvol gecloneerd!`);
+    }
+  };
+  
+  // Save edited invoice
+  const handleSaveEditedInvoice = () => {
+    if (!editingInvoiceId) return;
+    if (
+      !newInvoice.customerId ||
+      newInvoice.items.length === 0 ||
+      !newInvoice.issueDate ||
+      !newInvoice.dueDate
+    ) {
+      alert("Vul alle verplichte velden in!");
+      return;
+    }
+
+    const { subtotal, vatAmount, total } = calculateInvoiceTotals();
+    const existingInvoice = invoices.find((inv) => inv.id === editingInvoiceId);
+    if (!existingInvoice) return;
+
+    const updatedInvoice: Invoice = {
+      ...existingInvoice,
+      customerId: newInvoice.customerId,
+      items: newInvoice.items,
+      labor: newInvoice.labor.length > 0 ? newInvoice.labor : undefined,
+      subtotal: subtotal,
+      vatRate: newInvoice.vatRate,
+      vatAmount: vatAmount,
+      total: total,
+      issueDate: newInvoice.issueDate,
+      dueDate: newInvoice.dueDate,
+      notes: newInvoice.notes,
+      paymentTerms: newInvoice.paymentTerms,
+      history: [
+        ...(existingInvoice.history || []),
+        createHistoryEntry(
+          "invoice",
+          "updated",
+          `Factuur bijgewerkt door ${getEmployeeName(currentUser.employeeId)}`
+        ),
+      ],
+    };
+
+    setInvoices(invoices.map((inv) => (inv.id === editingInvoiceId ? updatedInvoice : inv)));
+    setEditingInvoiceId(null);
+    setShowEditInvoiceModal(false);
+    setNewInvoice({
+      customerId: "",
+      items: [],
+      labor: [],
+      vatRate: 21,
+      notes: "",
+      paymentTerms: "14 dagen",
+      issueDate: "",
+      dueDate: "",
+    });
+    alert(`✅ Factuur ${updatedInvoice.invoiceNumber} succesvol bijgewerkt!`);
+  };
+  
+  // Convert invoice to work order
+  const convertInvoiceToWorkOrder = (invoiceId: string) => {
+    const invoice = invoices.find((inv) => inv.id === invoiceId);
+    if (!invoice) return;
+
+    if (invoice.status !== "sent" && invoice.status !== "draft") {
+      alert("Alleen verzonden of concept facturen kunnen worden omgezet naar werkorders!");
+      return;
+    }
+
+    if (invoice.workOrderId) {
+      alert("Deze factuur heeft al een gekoppelde werkorder!");
+      return;
+    }
+
+    setSelectedInvoiceForWorkOrder(invoiceId);
+    setSelectedUserId("");
+    setShowUserSelectionModal(true);
+  };
+  
+  // Complete work order conversion
+  const completeWorkOrderConversion = () => {
+    if (!selectedInvoiceForWorkOrder || !selectedUserId) {
+      alert("Selecteer een medewerker!");
+      return;
+    }
+
+    const invoice = invoices.find((inv) => inv.id === selectedInvoiceForWorkOrder);
+    if (!invoice) return;
+
+    const now = new Date().toISOString();
+    const workOrderId = `wo${Date.now()}`;
+    const customerName = getCustomerName(invoice.customerId);
+    const totalHours = invoice.labor?.reduce((sum, labor) => sum + labor.hours, 0) || 0;
+
+    const workOrder: WorkOrder = {
+      id: workOrderId,
+      title: `${customerName} - Factuur ${invoice.invoiceNumber}`,
+      description: invoice.notes || `Werkorder aangemaakt vanuit factuur ${invoice.invoiceNumber}`,
+      status: "To Do",
+      assignedTo: selectedUserId,
+      assignedBy: currentUser.employeeId,
+      convertedBy: currentUser.employeeId,
+      requiredInventory: invoice.items
+        .filter((item) => item.inventoryItemId)
+        .map((item) => ({
+          itemId: item.inventoryItemId!,
+          quantity: item.quantity,
+        })),
+      createdDate: new Date().toISOString().split("T")[0],
+      customerId: invoice.customerId,
+      location: invoice.location,
+      scheduledDate: invoice.scheduledDate,
+      invoiceId: invoice.id,
+      estimatedHours: totalHours,
+      estimatedCost: invoice.total,
+      notes: `Geschatte uren: ${totalHours}u\nGeschatte kosten: €${invoice.total.toFixed(2)}`,
+      timestamps: {
+        created: now,
+        converted: now,
+        assigned: now,
+      },
+      history: [
+        {
+          timestamp: now,
+          action: "created",
+          performedBy: currentUser.employeeId,
+          details: `Werkorder aangemaakt door ${getEmployeeName(currentUser.employeeId)}`,
+        },
+        {
+          timestamp: now,
+          action: "converted",
+          performedBy: currentUser.employeeId,
+          details: `Geconverteerd van factuur ${invoice.invoiceNumber} door ${getEmployeeName(currentUser.employeeId)}`,
+        },
+        {
+          timestamp: now,
+          action: "assigned",
+          performedBy: currentUser.employeeId,
+          details: `Toegewezen aan ${getEmployeeName(selectedUserId)} door ${getEmployeeName(currentUser.employeeId)}`,
+          toAssignee: selectedUserId,
+        },
+      ],
+    };
+
+    setWorkOrders([...workOrders, workOrder]);
+    
+    setInvoices(invoices.map((inv) =>
+      inv.id === selectedInvoiceForWorkOrder
+        ? {
+            ...inv,
+            workOrderId: workOrder.id,
+            timestamps: {
+              ...inv.timestamps,
+              convertedToWorkOrder: now,
+            },
+            history: [
+              ...(inv.history || []),
+              createHistoryEntry(
+                "invoice",
+                "converted_to_workorder",
+                `Geconverteerd naar werkorder ${workOrder.id} door ${getEmployeeName(currentUser.employeeId)}`
+              ),
+            ],
+          }
+        : inv
+    ));
+
+    setShowUserSelectionModal(false);
+    setSelectedInvoiceForWorkOrder(null);
+    setSelectedUserId("");
+    alert(`✅ Werkorder ${workOrder.id} succesvol aangemaakt en toegewezen aan ${getEmployeeName(selectedUserId)}!`);
+  };
+
+  // Open detail modal voor factuur/offerte
+  const openDetailModal = (type: 'invoice' | 'quote', id: string) => {
+    if (type === 'invoice') {
+      const invoice = invoices.find(inv => inv.id === id);
+      if (invoice) {
+        setDetailType('invoice');
+        setDetailItem(invoice);
+        setShowDetailModal(true);
+      }
+    } else {
+      const quote = quotes.find(q => q.id === id);
+      if (quote) {
+        setDetailType('quote');
+        setDetailItem(quote);
+        setShowDetailModal(true);
+      }
+    }
+  };
+  
+  // Quote handlers
+  const handleEditQuote = (quoteId: string) => {
+    const quote = quotes.find((q) => q.id === quoteId);
+    if (!quote) return;
+
+    setNewQuote({
+      customerId: quote.customerId,
+      items: quote.items,
+      labor: quote.labor || [],
+      vatRate: quote.vatRate,
+      notes: quote.notes || "",
+      validUntil: quote.validUntil,
+    });
+    setEditingQuoteId(quoteId);
+    setShowEditQuoteModal(true);
+  };
+  
+  const handleCloneQuote = (quoteId: string) => {
+    const quote = quotes.find((q) => q.id === quoteId);
+    if (!quote) return;
+
+    setNewQuote({
+      customerId: quote.customerId,
+      items: quote.items,
+      labor: quote.labor || [],
+      vatRate: quote.vatRate,
+      notes: quote.notes || "",
+      validUntil: "", // User should set new date
+    });
+    setShowCloneQuoteModal(true);
+  };
+  
+  const convertQuoteToWorkOrder = (quoteId: string) => {
+    setSelectedQuoteForWorkOrder(quoteId);
+    setShowUserSelectionModal(true);
   };
 
   const getInvoiceStatusColor = (status: string) => {
@@ -460,11 +975,11 @@ export const CRM: React.FC<CRMProps> = ({
   };
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-neutral">CRM - Klantrelatiebeheer</h1>
-          <p className="text-gray-600 mt-1">Beheer leads, klanten, interacties en sales pipeline</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-neutral">CRM - Klantrelatiebeheer</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">Beheer leads, klanten, interacties en sales pipeline</p>
         </div>
       </div>
 
@@ -915,14 +1430,62 @@ export const CRM: React.FC<CRMProps> = ({
 {/* Customers Tab */}
       {activeTab === 'customers' && (
         <>
-          <div className="flex justify-end mb-6">
-            {isAdmin && (
-              <button
-                onClick={() => setShowAddCustomerForm(!showAddCustomerForm)}
-                className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors"
-              >
-                + Nieuwe Klant
-              </button>
+          {/* Search Bar */}
+          <div className="mb-6">
+            <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+              <div className="flex-1">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="🔍 Zoek op klantnaam of bedrijfsnaam..."
+                    value={customerSearchTerm}
+                    onChange={(e) => setCustomerSearchTerm(e.target.value)}
+                    className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-base"
+                  />
+                  <svg
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  {customerSearchTerm && (
+                    <button
+                      onClick={() => setCustomerSearchTerm('')}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      title="Wis zoekterm"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+              {isAdmin && (
+                <button
+                  onClick={() => setShowAddCustomerForm(!showAddCustomerForm)}
+                  className="px-4 sm:px-6 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors whitespace-nowrap"
+                >
+                  + Nieuwe Klant
+                </button>
+              )}
+            </div>
+            {customerSearchTerm && (
+              <p className="mt-2 text-sm text-gray-600">
+                {(() => {
+                  const filtered = customers.filter(customer => {
+                    const searchLower = customerSearchTerm.toLowerCase();
+                    return (
+                      customer.name.toLowerCase().includes(searchLower) ||
+                      (customer.company && customer.company.toLowerCase().includes(searchLower)) ||
+                      (customer.email && customer.email.toLowerCase().includes(searchLower))
+                    );
+                  });
+                  return `${filtered.length} klant${filtered.length !== 1 ? 'en' : ''} gevonden`;
+                })()}
+              </p>
             )}
           </div>
 
@@ -1096,7 +1659,17 @@ export const CRM: React.FC<CRMProps> = ({
 
           {/* Customers Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {customers.map(customer => {
+            {customers
+              .filter(customer => {
+                if (!customerSearchTerm) return true;
+                const searchLower = customerSearchTerm.toLowerCase();
+                return (
+                  customer.name.toLowerCase().includes(searchLower) ||
+                  (customer.company && customer.company.toLowerCase().includes(searchLower)) ||
+                  (customer.email && customer.email.toLowerCase().includes(searchLower))
+                );
+              })
+              .map(customer => {
               const customerSales = getCustomerSales(customer.id);
               const totalSpent = getCustomerTotal(customer.id);
               const customerInteractions = interactions.filter(i => i.customerId === customer.id);
@@ -1209,9 +1782,29 @@ export const CRM: React.FC<CRMProps> = ({
             })}
           </div>
 
-          {customers.length === 0 && (
+          {customers.filter(customer => {
+            if (!customerSearchTerm) return true;
+            const searchLower = customerSearchTerm.toLowerCase();
+            return (
+              customer.name.toLowerCase().includes(searchLower) ||
+              (customer.company && customer.company.toLowerCase().includes(searchLower)) ||
+              (customer.email && customer.email.toLowerCase().includes(searchLower))
+            );
+          }).length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500">Geen klanten gevonden</p>
+              <p className="text-gray-500">
+                {customerSearchTerm 
+                  ? `Geen klanten gevonden voor "${customerSearchTerm}"`
+                  : 'Geen klanten gevonden'}
+              </p>
+              {customerSearchTerm && (
+                <button
+                  onClick={() => setCustomerSearchTerm('')}
+                  className="mt-2 text-sm text-primary hover:underline"
+                >
+                  Wis zoekfilter
+                </button>
+              )}
             </div>
           )}
         </>
@@ -1391,9 +1984,9 @@ export const CRM: React.FC<CRMProps> = ({
 
         return (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-none sm:rounded-lg shadow-xl w-full sm:max-w-5xl sm:w-full h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto">
               {/* Header */}
-              <div className="sticky top-0 bg-white border-b p-6 z-10">
+              <div className="sticky top-0 bg-white border-b p-4 sm:p-6 z-10">
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-2xl font-bold text-neutral">
@@ -1416,7 +2009,7 @@ export const CRM: React.FC<CRMProps> = ({
               </div>
 
               {/* Totals */}
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
                     <div className="text-sm text-blue-700 font-medium mb-1">💵 Gefactureerd</div>
@@ -1455,11 +2048,17 @@ export const CRM: React.FC<CRMProps> = ({
                             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Datum</th>
                             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
                             <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Bedrag</th>
+                            <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Acties</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                           {finances.invoices.map(invoice => (
-                            <tr key={invoice.id} className="hover:bg-gray-50">
+                            <tr 
+                              key={invoice.id} 
+                              className="hover:bg-gray-50 cursor-pointer"
+                              onDoubleClick={() => openDetailModal('invoice', invoice.id)}
+                              title="Dubbelklik om details te zien"
+                            >
                               <td className="px-4 py-3 text-sm font-medium text-gray-900">{invoice.invoiceNumber}</td>
                               <td className="px-4 py-3 text-sm text-gray-600">{invoice.issueDate}</td>
                               <td className="px-4 py-3">
@@ -1472,6 +2071,33 @@ export const CRM: React.FC<CRMProps> = ({
                                 </span>
                               </td>
                               <td className="px-4 py-3 text-sm text-right font-bold text-gray-900">€{invoice.total.toFixed(2)}</td>
+                              <td className="px-4 py-3">
+                                <div className="flex gap-2 justify-center">
+                                  <button
+                                    onClick={() => handleEditInvoice(invoice.id)}
+                                    className="px-3 py-1 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors"
+                                    title="Bewerken"
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    onClick={() => handleCloneInvoice(invoice.id)}
+                                    className="px-3 py-1 bg-green-500 text-white text-xs rounded-lg hover:bg-green-600 transition-colors"
+                                    title="Clonen"
+                                  >
+                                    📋
+                                  </button>
+                                  {(invoice.status === 'sent' || invoice.status === 'draft') && !invoice.workOrderId && (
+                                    <button
+                                      onClick={() => convertInvoiceToWorkOrder(invoice.id)}
+                                      className="px-3 py-1 bg-orange-500 text-white text-xs rounded-lg hover:bg-orange-600 transition-colors"
+                                      title="Naar Werkorder"
+                                    >
+                                      📤
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -1497,11 +2123,17 @@ export const CRM: React.FC<CRMProps> = ({
                             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Aangemaakt</th>
                             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
                             <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Bedrag</th>
+                            <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Acties</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                           {finances.quotes.map(quote => (
-                            <tr key={quote.id} className="hover:bg-gray-50">
+                            <tr 
+                              key={quote.id} 
+                              className="hover:bg-gray-50 cursor-pointer"
+                              onDoubleClick={() => openDetailModal('quote', quote.id)}
+                              title="Dubbelklik om details te zien"
+                            >
                               <td className="px-4 py-3 text-sm font-medium text-gray-900">{quote.id}</td>
                               <td className="px-4 py-3 text-sm text-gray-600">{quote.createdDate}</td>
                               <td className="px-4 py-3">
@@ -1514,6 +2146,42 @@ export const CRM: React.FC<CRMProps> = ({
                                 </span>
                               </td>
                               <td className="px-4 py-3 text-sm text-right font-bold text-gray-900">€{quote.total.toFixed(2)}</td>
+                              <td className="px-4 py-3">
+                                <div className="flex gap-2 justify-center">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEditQuote(quote.id);
+                                    }}
+                                    className="px-3 py-1 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors"
+                                    title="Bewerken"
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleCloneQuote(quote.id);
+                                    }}
+                                    className="px-3 py-1 bg-green-500 text-white text-xs rounded-lg hover:bg-green-600 transition-colors"
+                                    title="Clonen"
+                                  >
+                                    📋
+                                  </button>
+                                  {(quote.status === 'approved' || quote.status === 'sent') && !quote.workOrderId && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        convertQuoteToWorkOrder(quote.id);
+                                      }}
+                                      className="px-3 py-1 bg-orange-500 text-white text-xs rounded-lg hover:bg-orange-600 transition-colors"
+                                      title="Naar Werkorder"
+                                    >
+                                      📤
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -1528,6 +2196,793 @@ export const CRM: React.FC<CRMProps> = ({
           </div>
         );
       })()}
+
+      {/* Detail Modal voor Factuur/Offerte */}
+      {showDetailModal && detailItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-none sm:rounded-lg shadow-xl w-full sm:max-w-4xl sm:w-full h-full sm:h-auto sm:my-8 sm:max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between z-10">
+              <h2 className="text-2xl font-bold text-neutral">
+                {detailType === 'quote' ? '📋 Offerte Details' : '🧾 Factuur Details'}
+              </h2>
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="p-6">
+              {detailType === 'quote' ? (
+                <>
+                  {(() => {
+                    const quote = detailItem as Quote;
+                    const customerName = getCustomerName(quote.customerId) || 'Onbekend';
+                    const itemsSubtotal = quote.items.reduce((sum, item) => sum + item.total, 0);
+                    const laborSubtotal = quote.labor?.reduce((sum, l) => sum + l.total, 0) || 0;
+                    const subtotal = itemsSubtotal + laborSubtotal;
+                    const vatAmount = subtotal * (quote.vatRate / 100);
+                    const total = subtotal + vatAmount;
+
+                    return (
+                      <>
+                        <div className="mb-4 grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-sm font-semibold text-gray-600">Offerte ID:</label>
+                            <p className="text-neutral font-bold">{quote.id}</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold text-gray-600">Klant:</label>
+                            <p className="text-neutral">{customerName}</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold text-gray-600">Status:</label>
+                            <p className="text-neutral">
+                              <span className={`px-2 py-1 rounded text-sm font-semibold ${getQuoteStatusColor(quote.status)}`}>
+                                {quote.status === 'approved' && 'Geaccepteerd'}
+                                {quote.status === 'sent' && 'Verzonden'}
+                                {quote.status === 'rejected' && 'Afgewezen'}
+                                {quote.status === 'draft' && 'Concept'}
+                                {quote.status === 'expired' && 'Verlopen'}
+                              </span>
+                            </p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold text-gray-600">Geldig tot:</label>
+                            <p className="text-neutral">{quote.validUntil}</p>
+                          </div>
+                        </div>
+
+                        <div className="mb-4">
+                          <h3 className="font-semibold text-neutral mb-2">Items:</h3>
+                          <div className="space-y-2">
+                            {quote.items.map((item, idx) => (
+                              <div key={idx} className="flex justify-between p-2 bg-gray-50 rounded">
+                                <span>{item.description} × {item.quantity}</span>
+                                <span className="font-semibold">€{item.total.toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {quote.labor && quote.labor.length > 0 && (
+                          <div className="mb-4">
+                            <h3 className="font-semibold text-neutral mb-2">Werkuren:</h3>
+                            <div className="space-y-2">
+                              {quote.labor.map((labor, idx) => (
+                                <div key={idx} className="flex justify-between p-2 bg-green-50 rounded">
+                                  <span>{labor.description} ({labor.hours}u × €{labor.hourlyRate}/u)</span>
+                                  <span className="font-semibold">€{labor.total.toFixed(2)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+                          <div className="flex justify-between mb-1">
+                            <span>Subtotaal:</span>
+                            <span>€{subtotal.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between mb-1">
+                            <span>BTW ({quote.vatRate}%):</span>
+                            <span>€{vatAmount.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
+                            <span>Totaal:</span>
+                            <span>€{total.toFixed(2)}</span>
+                          </div>
+                        </div>
+
+                        {quote.notes && (
+                          <div className="mb-4">
+                            <label className="text-sm font-semibold text-gray-600">Notities:</label>
+                            <p className="text-neutral mt-1">{quote.notes}</p>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </>
+              ) : (
+                <>
+                  {(() => {
+                    const invoice = detailItem as Invoice;
+                    const customerName = getCustomerName(invoice.customerId) || 'Onbekend';
+                    const itemsSubtotal = invoice.items.reduce((sum, item) => sum + item.total, 0);
+                    const laborSubtotal = invoice.labor?.reduce((sum, l) => sum + l.total, 0) || 0;
+                    const subtotal = itemsSubtotal + laborSubtotal;
+                    const vatAmount = subtotal * (invoice.vatRate / 100);
+                    const total = subtotal + vatAmount;
+
+                    return (
+                      <>
+                        <div className="mb-4 grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-sm font-semibold text-gray-600">Factuurnummer:</label>
+                            <p className="text-neutral font-bold">{invoice.invoiceNumber}</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold text-gray-600">Klant:</label>
+                            <p className="text-neutral">{customerName}</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold text-gray-600">Status:</label>
+                            <p className="text-neutral">
+                              <span className={`px-2 py-1 rounded text-sm font-semibold ${getInvoiceStatusColor(invoice.status)}`}>
+                                {invoice.status === 'paid' && 'Betaald'}
+                                {invoice.status === 'sent' && 'Verzonden'}
+                                {invoice.status === 'overdue' && 'Verlopen'}
+                                {invoice.status === 'draft' && 'Concept'}
+                                {invoice.status === 'cancelled' && 'Geannuleerd'}
+                              </span>
+                            </p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold text-gray-600">Factuurdatum:</label>
+                            <p className="text-neutral">{invoice.issueDate}</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold text-gray-600">Vervaldatum:</label>
+                            <p className="text-neutral">{invoice.dueDate}</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold text-gray-600">Betalingsvoorwaarden:</label>
+                            <p className="text-neutral">{invoice.paymentTerms || '14 dagen'}</p>
+                          </div>
+                        </div>
+
+                        <div className="mb-4">
+                          <h3 className="font-semibold text-neutral mb-2">Items:</h3>
+                          <div className="space-y-2">
+                            {invoice.items.map((item, idx) => (
+                              <div key={idx} className="flex justify-between p-2 bg-gray-50 rounded">
+                                <span>{item.description} × {item.quantity}</span>
+                                <span className="font-semibold">€{item.total.toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {invoice.labor && invoice.labor.length > 0 && (
+                          <div className="mb-4">
+                            <h3 className="font-semibold text-neutral mb-2">Werkuren:</h3>
+                            <div className="space-y-2">
+                              {invoice.labor.map((labor, idx) => (
+                                <div key={idx} className="flex justify-between p-2 bg-green-50 rounded">
+                                  <span>{labor.description} ({labor.hours}u × €{labor.hourlyRate}/u)</span>
+                                  <span className="font-semibold">€{labor.total.toFixed(2)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+                          <div className="flex justify-between mb-1">
+                            <span>Subtotaal:</span>
+                            <span>€{subtotal.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between mb-1">
+                            <span>BTW ({invoice.vatRate}%):</span>
+                            <span>€{vatAmount.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
+                            <span>Totaal:</span>
+                            <span>€{total.toFixed(2)}</span>
+                          </div>
+                        </div>
+
+                        {invoice.notes && (
+                          <div className="mb-4">
+                            <label className="text-sm font-semibold text-gray-600">Notities:</label>
+                            <p className="text-neutral mt-1">{invoice.notes}</p>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </>
+              )}
+
+              <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    if (detailType === 'invoice') {
+                      handleEditInvoice((detailItem as Invoice).id);
+                      setShowDetailModal(false);
+                    } else {
+                      handleEditQuote((detailItem as Quote).id);
+                      setShowDetailModal(false);
+                    }
+                  }}
+                  className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold"
+                >
+                  ✏️ Bewerken
+                </button>
+                <button
+                  onClick={() => {
+                    if (detailType === 'invoice') {
+                      handleCloneInvoice((detailItem as Invoice).id);
+                      setShowDetailModal(false);
+                    } else {
+                      handleCloneQuote((detailItem as Quote).id);
+                      setShowDetailModal(false);
+                    }
+                  }}
+                  className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold"
+                >
+                  📋 Clonen
+                </button>
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-semibold"
+                >
+                  Sluiten
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clone Invoice Modal */}
+      {showCloneInvoiceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-none sm:rounded-lg shadow-xl w-full sm:max-w-4xl sm:w-full h-full sm:h-auto p-4 sm:p-6 sm:my-8 overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-semibold text-neutral">📋 Factuur Clonen</h2>
+              <button
+                onClick={() => setShowCloneInvoiceModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-blue-800">
+                💡 <strong>Tip:</strong> De nieuwe factuur krijgt automatisch een nieuw factuurnummer en de datum wordt op vandaag gezet.
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Klant *</label>
+                <select
+                  value={newInvoice.customerId}
+                  onChange={(e) => setNewInvoice({ ...newInvoice, customerId: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">Selecteer klant</option>
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Factuurdatum *</label>
+                  <input
+                    type="date"
+                    value={newInvoice.issueDate}
+                    onChange={(e) => setNewInvoice({ ...newInvoice, issueDate: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Vervaldatum *</label>
+                  <input
+                    type="date"
+                    value={newInvoice.dueDate}
+                    onChange={(e) => setNewInvoice({ ...newInvoice, dueDate: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">BTW Tarief (%)</label>
+                  <input
+                    type="number"
+                    value={newInvoice.vatRate}
+                    onChange={(e) => setNewInvoice({ ...newInvoice, vatRate: Number(e.target.value) })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Betalingstermijn</label>
+                  <input
+                    type="text"
+                    value={newInvoice.paymentTerms}
+                    onChange={(e) => setNewInvoice({ ...newInvoice, paymentTerms: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="14 dagen"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Notities</label>
+                <textarea
+                  value={newInvoice.notes}
+                  onChange={(e) => setNewInvoice({ ...newInvoice, notes: e.target.value })}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Extra opmerkingen..."
+                />
+              </div>
+
+              {/* Items Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-neutral">Items</h3>
+                  <button
+                    onClick={handleAddInvoiceCustomItem}
+                    className="px-4 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600"
+                  >
+                    + Item Toevoegen
+                  </button>
+                </div>
+                
+                {newInvoice.items.map((item, index) => (
+                  <div key={index} className="grid grid-cols-12 gap-2 items-center p-3 bg-gray-50 rounded-lg">
+                    <input
+                      type="text"
+                      placeholder="Beschrijving"
+                      value={item.description}
+                      onChange={(e) => handleInvoiceItemChange(index, 'description', e.target.value)}
+                      className="col-span-5 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Aantal"
+                      value={item.quantity}
+                      onChange={(e) => handleInvoiceItemChange(index, 'quantity', parseInt(e.target.value) || 0)}
+                      className="col-span-2 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      min="1"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Prijs/stuk"
+                      value={item.pricePerUnit}
+                      onChange={(e) => handleInvoiceItemChange(index, 'pricePerUnit', parseFloat(e.target.value) || 0)}
+                      className="col-span-2 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      step="0.01"
+                    />
+                    <div className="col-span-2 text-right font-medium text-gray-700">
+                      €{item.total.toFixed(2)}
+                    </div>
+                    <button
+                      onClick={() => handleRemoveInvoiceItem(index)}
+                      className="col-span-1 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Labor Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-neutral">Werkuren (optioneel)</h3>
+                  <button
+                    onClick={handleAddInvoiceLabor}
+                    className="px-4 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600"
+                  >
+                    + Werkuren Toevoegen
+                  </button>
+                </div>
+                
+                {newInvoice.labor.map((labor, index) => (
+                  <div key={index} className="grid grid-cols-12 gap-2 items-center p-3 bg-green-50 rounded-lg">
+                    <input
+                      type="text"
+                      placeholder="Beschrijving werkzaamheden"
+                      value={labor.description}
+                      onChange={(e) => handleInvoiceLaborChange(index, 'description', e.target.value)}
+                      className="col-span-5 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Uren"
+                      value={labor.hours}
+                      onChange={(e) => handleInvoiceLaborChange(index, 'hours', parseFloat(e.target.value) || 0)}
+                      className="col-span-2 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      step="0.5"
+                      min="0"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Uurtarief"
+                      value={labor.hourlyRate}
+                      onChange={(e) => handleInvoiceLaborChange(index, 'hourlyRate', parseFloat(e.target.value) || 0)}
+                      className="col-span-2 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      step="0.01"
+                    />
+                    <div className="col-span-2 text-right font-medium text-gray-700">
+                      €{labor.total.toFixed(2)}
+                    </div>
+                    <button
+                      onClick={() => handleRemoveInvoiceLabor(index)}
+                      className="col-span-1 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {newInvoice.items.length > 0 && (
+                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Subtotaal:</span>
+                    <span className="font-semibold">€{calculateInvoiceTotals().subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">BTW ({newInvoice.vatRate}%):</span>
+                    <span className="font-semibold">€{calculateInvoiceTotals().vatAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-lg font-bold border-t pt-2">
+                    <span>Totaal:</span>
+                    <span className="text-primary">€{calculateInvoiceTotals().total.toFixed(2)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-3 mt-6">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleSaveClonedInvoice(false)}
+                  className="flex-1 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold"
+                >
+                  ✓ Gecloneerde Factuur Opslaan
+                </button>
+                <button
+                  onClick={() => setShowCloneInvoiceModal(false)}
+                  className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                >
+                  Annuleren
+                </button>
+              </div>
+              <button
+                onClick={() => handleSaveClonedInvoice(true)}
+                className="w-full px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-semibold flex items-center justify-center gap-2"
+              >
+                📤 Opslaan en naar Werkorder Sturen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Invoice Modal */}
+      {showEditInvoiceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-none sm:rounded-lg shadow-xl w-full sm:max-w-4xl sm:w-full h-full sm:h-auto p-4 sm:p-6 sm:my-8 overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-semibold text-neutral">✏️ Factuur Bewerken</h2>
+              <button
+                onClick={() => {
+                  setShowEditInvoiceModal(false);
+                  setEditingInvoiceId(null);
+                }}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Klant *</label>
+                <select
+                  value={newInvoice.customerId}
+                  onChange={(e) => setNewInvoice({ ...newInvoice, customerId: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">Selecteer klant</option>
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Factuurdatum *</label>
+                  <input
+                    type="date"
+                    value={newInvoice.issueDate}
+                    onChange={(e) => setNewInvoice({ ...newInvoice, issueDate: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Vervaldatum *</label>
+                  <input
+                    type="date"
+                    value={newInvoice.dueDate}
+                    onChange={(e) => setNewInvoice({ ...newInvoice, dueDate: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">BTW Tarief (%)</label>
+                  <input
+                    type="number"
+                    value={newInvoice.vatRate}
+                    onChange={(e) => setNewInvoice({ ...newInvoice, vatRate: Number(e.target.value) })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Betalingstermijn</label>
+                  <input
+                    type="text"
+                    value={newInvoice.paymentTerms}
+                    onChange={(e) => setNewInvoice({ ...newInvoice, paymentTerms: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="14 dagen"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Notities</label>
+                <textarea
+                  value={newInvoice.notes}
+                  onChange={(e) => setNewInvoice({ ...newInvoice, notes: e.target.value })}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Extra opmerkingen..."
+                />
+              </div>
+
+              {/* Items Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-neutral">Items</h3>
+                  <button
+                    onClick={handleAddInvoiceCustomItem}
+                    className="px-4 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600"
+                  >
+                    + Item Toevoegen
+                  </button>
+                </div>
+                
+                {newInvoice.items.map((item, index) => (
+                  <div key={index} className="grid grid-cols-12 gap-2 items-center p-3 bg-gray-50 rounded-lg">
+                    <input
+                      type="text"
+                      placeholder="Beschrijving"
+                      value={item.description}
+                      onChange={(e) => handleInvoiceItemChange(index, 'description', e.target.value)}
+                      className="col-span-5 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Aantal"
+                      value={item.quantity}
+                      onChange={(e) => handleInvoiceItemChange(index, 'quantity', parseInt(e.target.value) || 0)}
+                      className="col-span-2 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      min="1"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Prijs/stuk"
+                      value={item.pricePerUnit}
+                      onChange={(e) => handleInvoiceItemChange(index, 'pricePerUnit', parseFloat(e.target.value) || 0)}
+                      className="col-span-2 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      step="0.01"
+                    />
+                    <div className="col-span-2 text-right font-medium text-gray-700">
+                      €{item.total.toFixed(2)}
+                    </div>
+                    <button
+                      onClick={() => handleRemoveInvoiceItem(index)}
+                      className="col-span-1 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Labor Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-neutral">Werkuren (optioneel)</h3>
+                  <button
+                    onClick={handleAddInvoiceLabor}
+                    className="px-4 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600"
+                  >
+                    + Werkuren Toevoegen
+                  </button>
+                </div>
+                
+                {newInvoice.labor.map((labor, index) => (
+                  <div key={index} className="grid grid-cols-12 gap-2 items-center p-3 bg-green-50 rounded-lg">
+                    <input
+                      type="text"
+                      placeholder="Beschrijving werkzaamheden"
+                      value={labor.description}
+                      onChange={(e) => handleInvoiceLaborChange(index, 'description', e.target.value)}
+                      className="col-span-5 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Uren"
+                      value={labor.hours}
+                      onChange={(e) => handleInvoiceLaborChange(index, 'hours', parseFloat(e.target.value) || 0)}
+                      className="col-span-2 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      step="0.5"
+                      min="0"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Uurtarief"
+                      value={labor.hourlyRate}
+                      onChange={(e) => handleInvoiceLaborChange(index, 'hourlyRate', parseFloat(e.target.value) || 0)}
+                      className="col-span-2 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      step="0.01"
+                    />
+                    <div className="col-span-2 text-right font-medium text-gray-700">
+                      €{labor.total.toFixed(2)}
+                    </div>
+                    <button
+                      onClick={() => handleRemoveInvoiceLabor(index)}
+                      className="col-span-1 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {newInvoice.items.length > 0 && (
+                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Subtotaal:</span>
+                    <span className="font-semibold">€{calculateInvoiceTotals().subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">BTW ({newInvoice.vatRate}%):</span>
+                    <span className="font-semibold">€{calculateInvoiceTotals().vatAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-lg font-bold border-t pt-2">
+                    <span>Totaal:</span>
+                    <span className="text-primary">€{calculateInvoiceTotals().total.toFixed(2)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleSaveEditedInvoice}
+                className="flex-1 px-6 py-3 bg-primary text-white rounded-lg hover:bg-secondary transition-colors font-semibold"
+              >
+                ✓ Factuur Bijwerken
+              </button>
+              <button
+                onClick={() => {
+                  setShowEditInvoiceModal(false);
+                  setEditingInvoiceId(null);
+                }}
+                className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+              >
+                Annuleren
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Selection Modal */}
+      {showUserSelectionModal && selectedInvoiceForWorkOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
+            <h2 className="text-2xl font-semibold text-neutral mb-4">👤 Medewerker Toewijzen</h2>
+            
+            <div className="mb-6">
+              <p className="text-gray-700 mb-4">
+                Je gaat een werkorder aanmaken van deze factuur. Aan welke medewerker wil je deze werkorder toewijzen?
+              </p>
+              
+              {(() => {
+                const invoice = invoices.find((inv) => inv.id === selectedInvoiceForWorkOrder);
+                if (!invoice) return null;
+                const customerName = getCustomerName(invoice.customerId);
+                const totalHours = invoice.labor?.reduce((sum, labor) => sum + labor.hours, 0) || 0;
+                
+                return (
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-sm font-semibold text-blue-800">Werkorder Details</span>
+                    </div>
+                    <div className="text-sm text-gray-700 space-y-1">
+                      <p><strong>Klant:</strong> {customerName}</p>
+                      <p><strong>Factuur:</strong> {invoice.invoiceNumber}</p>
+                      <p><strong>Geschatte uren:</strong> {totalHours}u</p>
+                      <p><strong>Waarde:</strong> €{invoice.total.toFixed(2)}</p>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <label className="block text-sm font-medium text-gray-700 mb-2">Selecteer Medewerker *</label>
+              <select
+                value={selectedUserId}
+                onChange={(e) => setSelectedUserId(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">-- Kies een medewerker --</option>
+                {employees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.name} - {emp.role}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={completeWorkOrderConversion}
+                disabled={!selectedUserId}
+                className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-colors ${
+                  selectedUserId
+                    ? "bg-primary text-white hover:bg-secondary"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
+              >
+                ✓ Werkorder Aanmaken
+              </button>
+              <button
+                onClick={() => {
+                  setShowUserSelectionModal(false);
+                  setSelectedInvoiceForWorkOrder(null);
+                  setSelectedUserId("");
+                }}
+                className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+              >
+                Annuleren
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tasks Tab */}
       {activeTab === 'tasks' && (

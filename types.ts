@@ -162,6 +162,32 @@ export interface Interaction {
     followUpDate?: string;
 }
 
+export type EmployeeNoteType = 'attendance' | 'milestone' | 'performance' | 'warning' | 'compliment' | 'general' | 'late' | 'absence';
+
+export interface EmployeeNote {
+    id: string;
+    type: EmployeeNoteType;
+    title: string;
+    description: string;
+    date: string;
+    createdBy?: string; // Employee ID van degene die de note heeft aangemaakt
+    createdAt: string;
+}
+
+// Permission types voor granulaire rechten
+export type Permission =
+  | 'full_admin'                    // Alle admin rechten
+  | 'manage_modules'                // Modules in- en uitschakelen (Admin Instellingen)
+  | 'manage_inventory'             // Voorraadbeheer CRUD
+  | 'manage_crm'                    // CRM (klanten, leads, taken) CRUD
+  | 'manage_accounting'             // Facturen en offertes beheren
+  | 'manage_workorders'             // Werkorders beheren en toewijzen
+  | 'manage_employees'              // Medewerkers beheren (HRM)
+  | 'view_all_workorders'           // Alle werkorders zien (niet alleen eigen)
+  | 'view_reports'                  // Volledige rapportages en analyses
+  | 'manage_planning'               // Planning en agenda beheren
+  | 'manage_pos';                   // Kassasysteem beheren
+
 export interface Employee {
     id: string;
     name: string;
@@ -173,6 +199,9 @@ export interface Employee {
     usedVacationDays?: number;
     availability?: 'available' | 'unavailable' | 'vacation';
     password?: string; // Simple password field
+    isAdmin?: boolean; // Volledige admin rechten (legacy, wordt gebruikt als full_admin permission)
+    permissions?: Permission[]; // Granulaire rechten
+    notes?: EmployeeNote[]; // Persoonlijk dossier
 }
 
 export type QuoteStatus = 'draft' | 'sent' | 'approved' | 'rejected' | 'expired';
@@ -322,5 +351,6 @@ export interface User {
     name: string;
     email: string;
     role: string;
-    isAdmin: boolean;
+    isAdmin: boolean; // Legacy: true als full_admin permission of isAdmin flag
+    permissions?: Permission[]; // Granulaire rechten
 }
