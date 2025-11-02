@@ -501,13 +501,13 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
   const viewingEmployee = employees.find(e => e.id === viewingUserId);
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-neutral">
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral truncate">
             {isAdmin && viewingUserId === 'all' ? 'Alle Werkorders' : `Workboard - ${viewingEmployee?.name || currentUser.name}`}
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-sm sm:text-base text-gray-600 mt-1">
             {isAdmin && viewingUserId === 'all' 
               ? 'Volledig overzicht van alle werkorders' 
               : 'Jouw toegewezen taken en werkzaamheden'}
@@ -516,7 +516,7 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
         {isAdmin && (
           <button
             onClick={() => setShowAddForm(!showAddForm)}
-            className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors"
+            className="w-full sm:w-auto px-6 py-2 sm:py-2.5 bg-primary text-white text-sm sm:text-base rounded-lg hover:bg-secondary transition-colors whitespace-nowrap flex-shrink-0"
           >
             + Nieuwe Werkorder
           </button>
@@ -525,15 +525,16 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
 
       {/* User Selector */}
       <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-gray-700">
+        {/* Dropdown Section - Full width on mobile */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
+            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
               {isAdmin ? 'Bekijk werkorders van:' : 'Bekijk ook:'}
             </label>
             <select
               value={viewingUserId}
               onChange={(e) => setViewingUserId(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
             >
               <option value={currentUser.employeeId}>Mijn werkorders</option>
               {isAdmin && <option value="all">Alle medewerkers</option>}
@@ -548,28 +549,52 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
             </select>
           </div>
           
-          {/* Quick Stats */}
-          <div className="flex items-center gap-6">
+          {/* Quick Stats - Hide on small mobile, grid on tablet+ */}
+          <div className="hidden md:flex items-center gap-4 lg:gap-6">
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-600">{stats.todo}</p>
+              <p className="text-xl lg:text-2xl font-bold text-gray-600">{stats.todo}</p>
               <p className="text-xs text-gray-600">To Do</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+              <p className="text-xl lg:text-2xl font-bold text-yellow-600">{stats.pending}</p>
               <p className="text-xs text-gray-600">In Wacht</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">{stats.inProgress}</p>
+              <p className="text-xl lg:text-2xl font-bold text-blue-600">{stats.inProgress}</p>
               <p className="text-xs text-gray-600">Bezig</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
+              <p className="text-xl lg:text-2xl font-bold text-green-600">{stats.completed}</p>
               <p className="text-xs text-gray-600">Afgerond</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-primary">{stats.totalHours}u</p>
+              <p className="text-xl lg:text-2xl font-bold text-primary">{stats.totalHours}u</p>
               <p className="text-xs text-gray-600">Totaal uren</p>
             </div>
+          </div>
+        </div>
+
+        {/* Mobile Stats - Show only on small screens */}
+        <div className="grid grid-cols-3 gap-2 mt-4 md:hidden">
+          <div className="bg-gray-50 rounded-lg p-3 text-center">
+            <p className="text-lg font-bold text-gray-600">{stats.todo}</p>
+            <p className="text-xs text-gray-600">To Do</p>
+          </div>
+          <div className="bg-yellow-50 rounded-lg p-3 text-center">
+            <p className="text-lg font-bold text-yellow-600">{stats.pending}</p>
+            <p className="text-xs text-gray-600">Wacht</p>
+          </div>
+          <div className="bg-blue-50 rounded-lg p-3 text-center">
+            <p className="text-lg font-bold text-blue-600">{stats.inProgress}</p>
+            <p className="text-xs text-gray-600">Bezig</p>
+          </div>
+          <div className="bg-green-50 rounded-lg p-3 text-center">
+            <p className="text-lg font-bold text-green-600">{stats.completed}</p>
+            <p className="text-xs text-gray-600">Klaar</p>
+          </div>
+          <div className="bg-primary bg-opacity-10 rounded-lg p-3 text-center col-span-2">
+            <p className="text-lg font-bold text-primary">{stats.totalHours}u</p>
+            <p className="text-xs text-gray-600">Totaal uren</p>
           </div>
         </div>
       </div>
@@ -1282,11 +1307,11 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
         </div>
       ) : (
         // Normal single-user view
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {/* To Do Column */}
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-neutral flex items-center gap-2">
+        <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h3 className="font-semibold text-neutral flex items-center gap-2 text-sm sm:text-base">
               <span className="w-3 h-3 bg-gray-500 rounded-full"></span>
               To Do
             </h3>
@@ -1315,15 +1340,15 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
                 />
               ))}
             {filteredWorkOrders.filter(wo => wo.status === 'To Do').length === 0 && (
-              <p className="text-sm text-gray-500 text-center py-8">Geen taken om te starten</p>
+              <p className="text-xs sm:text-sm text-gray-500 text-center py-6 sm:py-8">Geen taken om te starten</p>
             )}
           </div>
         </div>
 
         {/* Pending Column */}
-        <div className="bg-yellow-50 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-neutral flex items-center gap-2">
+        <div className="bg-yellow-50 rounded-lg p-3 sm:p-4">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h3 className="font-semibold text-neutral flex items-center gap-2 text-sm sm:text-base">
               <span className="w-3 h-3 bg-yellow-500 rounded-full"></span>
               In Wacht
             </h3>
@@ -1352,15 +1377,15 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
                 />
               ))}
             {filteredWorkOrders.filter(wo => wo.status === 'Pending').length === 0 && (
-              <p className="text-sm text-gray-500 text-center py-8">Geen taken in wacht</p>
+              <p className="text-xs sm:text-sm text-gray-500 text-center py-6 sm:py-8">Geen taken in wacht</p>
             )}
           </div>
         </div>
 
         {/* In Progress Column */}
-        <div className="bg-blue-50 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-neutral flex items-center gap-2">
+        <div className="bg-blue-50 rounded-lg p-3 sm:p-4">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h3 className="font-semibold text-neutral flex items-center gap-2 text-sm sm:text-base">
               <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
               In Uitvoering
             </h3>
@@ -1389,15 +1414,15 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
                 />
               ))}
             {filteredWorkOrders.filter(wo => wo.status === 'In Progress').length === 0 && (
-              <p className="text-sm text-gray-500 text-center py-8">Geen actieve taken</p>
+              <p className="text-xs sm:text-sm text-gray-500 text-center py-6 sm:py-8">Geen actieve taken</p>
             )}
           </div>
         </div>
 
         {/* Completed Column */}
-        <div className="bg-green-50 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-neutral flex items-center gap-2">
+        <div className="bg-green-50 rounded-lg p-3 sm:p-4">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h3 className="font-semibold text-neutral flex items-center gap-2 text-sm sm:text-base">
               <span className="w-3 h-3 bg-green-500 rounded-full"></span>
               Afgerond
             </h3>
@@ -1426,7 +1451,7 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
                 />
               ))}
             {filteredWorkOrders.filter(wo => wo.status === 'Completed').length === 0 && (
-              <p className="text-sm text-gray-500 text-center py-8">Geen afgeronde taken</p>
+              <p className="text-xs sm:text-sm text-gray-500 text-center py-6 sm:py-8">Geen afgeronde taken</p>
             )}
           </div>
         </div>
@@ -1652,7 +1677,7 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-gray-300 hover:shadow-lg transition-shadow">
+    <div className="bg-white rounded-lg shadow-md p-3 sm:p-4 border-l-4 border-gray-300 hover:shadow-lg transition-shadow">
       {/* Index Badge */}
       {order.sortIndex !== undefined && (
         <div className="mb-2">
@@ -1661,8 +1686,8 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
           </span>
         </div>
       )}
-      <div className="flex items-start justify-between mb-3">
-        <h4 className="font-semibold text-neutral flex-1">{order.title}</h4>
+      <div className="flex items-start justify-between mb-3 gap-2">
+        <h4 className="font-semibold text-neutral flex-1 text-sm sm:text-base break-words">{order.title}</h4>
         <div className="flex items-center gap-1">
           {isAdmin && (
             <button
@@ -1905,13 +1930,13 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
             <>
               <button
                 onClick={() => onUpdateStatus(order.id, 'In Progress')}
-                className="w-full px-3 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                className="w-full px-3 py-2.5 bg-blue-500 text-white text-sm sm:text-base rounded-lg hover:bg-blue-600 active:bg-blue-700 transition-colors font-medium"
               >
                 ▶ Start Werkorder
               </button>
               <button
                 onClick={() => onUpdateStatus(order.id, 'Pending')}
-                className="w-full px-3 py-2 bg-yellow-500 text-white text-sm rounded hover:bg-yellow-600 transition-colors"
+                className="w-full px-3 py-2.5 bg-yellow-500 text-white text-sm sm:text-base rounded-lg hover:bg-yellow-600 active:bg-yellow-700 transition-colors font-medium"
               >
                 ⏸ In Wacht Zetten
               </button>
@@ -1920,7 +1945,7 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
           {order.status === 'Pending' && (
             <button
               onClick={() => onUpdateStatus(order.id, 'In Progress')}
-              className="w-full px-3 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+              className="w-full px-3 py-2.5 bg-blue-500 text-white text-sm sm:text-base rounded-lg hover:bg-blue-600 active:bg-blue-700 transition-colors font-medium"
             >
               ▶ Start Werkorder
             </button>
@@ -1928,13 +1953,13 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
           {order.status === 'In Progress' && (
             <button
               onClick={() => onUpdateStatus(order.id, 'Completed')}
-              className="w-full px-3 py-2 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition-colors"
+              className="w-full px-3 py-2.5 bg-green-500 text-white text-sm sm:text-base rounded-lg hover:bg-green-600 active:bg-green-700 transition-colors font-medium"
             >
               ✓ Voltooi
             </button>
           )}
           {order.status === 'Completed' && (
-            <span className="block text-center px-3 py-2 bg-green-100 text-green-800 text-sm rounded font-semibold">
+            <span className="block text-center px-3 py-2.5 bg-green-100 text-green-800 text-sm sm:text-base rounded-lg font-semibold">
               ✓ Afgerond
             </span>
           )}

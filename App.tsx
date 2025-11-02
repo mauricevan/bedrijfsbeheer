@@ -185,7 +185,9 @@ function App() {
         setInteractions={setInteractions}
         employees={employees}
         currentUser={currentUser}
-        isAdmin={currentUser.isAdmin} 
+        isAdmin={currentUser.isAdmin}
+        invoices={invoices}
+        quotes={quotes} 
       />
     ),
     [ModuleKey.HRM]: (

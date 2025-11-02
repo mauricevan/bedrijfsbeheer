@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Customer, Sale, Task, Lead, Interaction, Employee, User, LeadStatus, InteractionType } from '../types';
+import { Customer, Sale, Task, Lead, Interaction, Employee, User, LeadStatus, InteractionType, Invoice, Quote } from '../types';
 import { LEAD_SOURCES, INTERACTION_TYPES } from '../data/mockData';
 
 interface CRMProps {
@@ -15,6 +15,8 @@ interface CRMProps {
   employees: Employee[];
   currentUser: User;
   isAdmin: boolean;
+  invoices: Invoice[];
+  quotes: Quote[];
 }
 
 type TabType = 'dashboard' | 'leads' | 'customers' | 'interactions' | 'tasks';
@@ -31,15 +33,21 @@ export const CRM: React.FC<CRMProps> = ({
   setInteractions,
   employees,
   currentUser,
-  isAdmin 
+  isAdmin,
+  invoices,
+  quotes 
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   
   // Forms state
   const [showAddCustomerForm, setShowAddCustomerForm] = useState(false);
+  const [showEditCustomerForm, setShowEditCustomerForm] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [showAddLeadForm, setShowAddLeadForm] = useState(false);
   const [showAddInteractionForm, setShowAddInteractionForm] = useState(false);
   const [showAddTaskForm, setShowAddTaskForm] = useState(false);
+  const [showFinancesModal, setShowFinancesModal] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   
   // New forms data
   const [newCustomer, setNewCustomer] = useState({
@@ -50,6 +58,18 @@ export const CRM: React.FC<CRMProps> = ({
     address: '',
     source: 'website',
     company: '',
+    notes: '',
+  });
+
+  const [editCustomer, setEditCustomer] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    type: 'business' as 'business' | 'private',
+    address: '',
+    source: 'website',
+    company: '',
+    notes: '',
   });
 
   const [newLead, setNewLead] = useState({
@@ -143,8 +163,39 @@ export const CRM: React.FC<CRMProps> = ({
     };
 
     setCustomers([...customers, customer]);
-    setNewCustomer({ name: '', email: '', phone: '', type: 'business', address: '', source: 'website', company: '' });
+    setNewCustomer({ name: '', email: '', phone: '', type: 'business', address: '', source: 'website', company: '', notes: '' });
     setShowAddCustomerForm(false);
+  };
+
+  const handleEditCustomer = () => {
+    if (!editCustomer.name || !editCustomer.email || !editingCustomer) {
+      alert('Vul naam en email in!');
+      return;
+    }
+
+    setCustomers(customers.map(c => 
+      c.id === editingCustomer.id 
+        ? { ...c, ...editCustomer }
+        : c
+    ));
+    setEditCustomer({ name: '', email: '', phone: '', type: 'business', address: '', source: 'website', company: '', notes: '' });
+    setEditingCustomer(null);
+    setShowEditCustomerForm(false);
+  };
+
+  const startEditCustomer = (customer: Customer) => {
+    setEditingCustomer(customer);
+    setEditCustomer({
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      type: customer.type || 'business',
+      address: customer.address || '',
+      source: customer.source || 'website',
+      company: customer.company || '',
+      notes: customer.notes || '',
+    });
+    setShowEditCustomerForm(true);
   };
 
   const handleAddLead = () => {
@@ -349,6 +400,61 @@ export const CRM: React.FC<CRMProps> = ({
       case 'done': return 'bg-green-100 text-green-800';
       case 'in_progress': return 'bg-blue-100 text-blue-800';
       case 'todo': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Financiële functies
+  const openFinances = (customerId: string) => {
+    setSelectedCustomerId(customerId);
+    setShowFinancesModal(true);
+  };
+
+  const getCustomerFinances = (customerId: string) => {
+    const customerInvoices = invoices.filter(inv => inv.customerId === customerId);
+    const customerQuotes = quotes.filter(q => q.customerId === customerId);
+
+    const totalInvoiced = customerInvoices.reduce((sum, inv) => sum + inv.total, 0);
+    const paidInvoices = customerInvoices.filter(inv => inv.status === 'paid');
+    const totalPaid = paidInvoices.reduce((sum, inv) => sum + inv.total, 0);
+    const outstandingInvoices = customerInvoices.filter(inv => ['sent', 'draft'].includes(inv.status));
+    const totalOutstanding = outstandingInvoices.reduce((sum, inv) => sum + inv.total, 0);
+    const overdueInvoices = customerInvoices.filter(inv => inv.status === 'overdue');
+    const totalOverdue = overdueInvoices.reduce((sum, inv) => sum + inv.total, 0);
+    const totalQuotes = customerQuotes.reduce((sum, q) => sum + q.total, 0);
+
+    return {
+      invoices: customerInvoices,
+      quotes: customerQuotes,
+      totalInvoiced,
+      totalPaid,
+      totalOutstanding,
+      totalOverdue,
+      totalQuotes,
+      paidInvoices,
+      outstandingInvoices,
+      overdueInvoices
+    };
+  };
+
+  const getInvoiceStatusColor = (status: string) => {
+    switch (status) {
+      case 'paid': return 'bg-green-100 text-green-800';
+      case 'sent': return 'bg-blue-100 text-blue-800';
+      case 'overdue': return 'bg-red-100 text-red-800';
+      case 'cancelled': return 'bg-gray-100 text-gray-800';
+      case 'draft': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getQuoteStatusColor = (status: string) => {
+    switch (status) {
+      case 'approved': return 'bg-green-100 text-green-800';
+      case 'sent': return 'bg-blue-100 text-blue-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      case 'expired': return 'bg-gray-100 text-gray-800';
+      case 'draft': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -877,6 +983,13 @@ export const CRM: React.FC<CRMProps> = ({
                   onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
                   className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary col-span-2"
                 />
+                <textarea
+                  placeholder="Notities (intern)"
+                  value={newCustomer.notes}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, notes: e.target.value })}
+                  rows={3}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary col-span-2"
+                />
               </div>
               <div className="flex gap-3 mt-4">
                 <button
@@ -887,6 +1000,92 @@ export const CRM: React.FC<CRMProps> = ({
                 </button>
                 <button
                   onClick={() => setShowAddCustomerForm(false)}
+                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  Annuleren
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Edit Customer Form */}
+          {showEditCustomerForm && editingCustomer && isAdmin && (
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <h2 className="text-xl font-semibold text-neutral mb-4">Klant Bewerken</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  placeholder="Naam *"
+                  value={editCustomer.name}
+                  onChange={(e) => setEditCustomer({ ...editCustomer, name: e.target.value })}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <input
+                  type="email"
+                  placeholder="Email *"
+                  value={editCustomer.email}
+                  onChange={(e) => setEditCustomer({ ...editCustomer, email: e.target.value })}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <input
+                  type="tel"
+                  placeholder="Telefoon"
+                  value={editCustomer.phone}
+                  onChange={(e) => setEditCustomer({ ...editCustomer, phone: e.target.value })}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <select
+                  value={editCustomer.type}
+                  onChange={(e) => setEditCustomer({ ...editCustomer, type: e.target.value as any })}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="business">Zakelijk</option>
+                  <option value="private">Particulier</option>
+                </select>
+                <input
+                  type="text"
+                  placeholder="Bedrijf"
+                  value={editCustomer.company}
+                  onChange={(e) => setEditCustomer({ ...editCustomer, company: e.target.value })}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <select
+                  value={editCustomer.source}
+                  onChange={(e) => setEditCustomer({ ...editCustomer, source: e.target.value })}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  {LEAD_SOURCES.map(source => (
+                    <option key={source} value={source}>{source}</option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  placeholder="Adres"
+                  value={editCustomer.address}
+                  onChange={(e) => setEditCustomer({ ...editCustomer, address: e.target.value })}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary col-span-2"
+                />
+                <textarea
+                  placeholder="Notities (intern)"
+                  value={editCustomer.notes}
+                  onChange={(e) => setEditCustomer({ ...editCustomer, notes: e.target.value })}
+                  rows={3}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary col-span-2"
+                />
+              </div>
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={handleEditCustomer}
+                  className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors"
+                >
+                  Opslaan
+                </button>
+                <button
+                  onClick={() => {
+                    setShowEditCustomerForm(false);
+                    setEditingCustomer(null);
+                    setEditCustomer({ name: '', email: '', phone: '', type: 'business', address: '', source: 'website', company: '', notes: '' });
+                  }}
                   className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
                 >
                   Annuleren
@@ -971,14 +1170,40 @@ export const CRM: React.FC<CRMProps> = ({
                     </div>
                   </div>
 
-                  {isAdmin && (
-                    <button
-                      onClick={() => deleteCustomer(customer.id)}
-                      className="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
-                    >
-                      Verwijder Klant
-                    </button>
+                  {customer.notes && (
+                    <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <div className="text-xs font-semibold text-yellow-800 mb-1 flex items-center gap-1">
+                        <span>📝</span>
+                        <span>Notities:</span>
+                      </div>
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{customer.notes}</p>
+                    </div>
                   )}
+
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => openFinances(customer.id)}
+                      className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-semibold"
+                    >
+                      💰 Financiën
+                    </button>
+                    {isAdmin && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => startEditCustomer(customer)}
+                          className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                        >
+                          ✏️ Bewerken
+                        </button>
+                        <button
+                          onClick={() => deleteCustomer(customer.id)}
+                          className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
+                        >
+                          🗑️ Verwijderen
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -1158,6 +1383,151 @@ export const CRM: React.FC<CRMProps> = ({
           </div>
         </>
       )}
+
+      {/* Finances Modal */}
+      {showFinancesModal && selectedCustomerId && (() => {
+        const customer = customers.find(c => c.id === selectedCustomerId);
+        const finances = getCustomerFinances(selectedCustomerId);
+
+        return (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Header */}
+              <div className="sticky top-0 bg-white border-b p-6 z-10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-neutral">
+                      💰 Financiën - {customer?.name}
+                    </h2>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Overzicht van alle facturen en offertes
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowFinancesModal(false);
+                      setSelectedCustomerId(null);
+                    }}
+                    className="text-gray-500 hover:text-gray-700 text-3xl leading-none"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+
+              {/* Totals */}
+              <div className="p-6">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                    <div className="text-sm text-blue-700 font-medium mb-1">💵 Gefactureerd</div>
+                    <div className="text-2xl font-bold text-blue-900">€{finances.totalInvoiced.toFixed(2)}</div>
+                  </div>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                    <div className="text-sm text-green-700 font-medium mb-1">✓ Betaald</div>
+                    <div className="text-2xl font-bold text-green-900">€{finances.totalPaid.toFixed(2)}</div>
+                  </div>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+                    <div className="text-sm text-yellow-700 font-medium mb-1">⏳ Openstaand</div>
+                    <div className="text-2xl font-bold text-yellow-900">€{finances.totalOutstanding.toFixed(2)}</div>
+                  </div>
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                    <div className="text-sm text-red-700 font-medium mb-1">⚠️ Verlopen</div>
+                    <div className="text-2xl font-bold text-red-900">€{finances.totalOverdue.toFixed(2)}</div>
+                  </div>
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
+                    <div className="text-sm text-purple-700 font-medium mb-1">📋 Offertes</div>
+                    <div className="text-2xl font-bold text-purple-900">€{finances.totalQuotes.toFixed(2)}</div>
+                  </div>
+                </div>
+
+                {/* Invoices Table */}
+                <div className="mb-8">
+                  <h3 className="text-xl font-semibold text-neutral mb-4 flex items-center gap-2">
+                    <span>🪧</span>
+                    Facturen ({finances.invoices.length})
+                  </h3>
+                  {finances.invoices.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Factuurnr</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Datum</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
+                            <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Bedrag</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {finances.invoices.map(invoice => (
+                            <tr key={invoice.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 text-sm font-medium text-gray-900">{invoice.invoiceNumber}</td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{invoice.issueDate}</td>
+                              <td className="px-4 py-3">
+                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getInvoiceStatusColor(invoice.status)}`}>
+                                  {invoice.status === 'paid' && 'Betaald'}
+                                  {invoice.status === 'sent' && 'Verzonden'}
+                                  {invoice.status === 'overdue' && 'Verlopen'}
+                                  {invoice.status === 'draft' && 'Concept'}
+                                  {invoice.status === 'cancelled' && 'Geannuleerd'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-right font-bold text-gray-900">€{invoice.total.toFixed(2)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-center py-8">Geen facturen gevonden</p>
+                  )}
+                </div>
+
+                {/* Quotes Table */}
+                <div>
+                  <h3 className="text-xl font-semibold text-neutral mb-4 flex items-center gap-2">
+                    <span>📋</span>
+                    Offertes ({finances.quotes.length})
+                  </h3>
+                  {finances.quotes.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Offerte ID</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Aangemaakt</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
+                            <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Bedrag</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {finances.quotes.map(quote => (
+                            <tr key={quote.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 text-sm font-medium text-gray-900">{quote.id}</td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{quote.createdDate}</td>
+                              <td className="px-4 py-3">
+                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getQuoteStatusColor(quote.status)}`}>
+                                  {quote.status === 'approved' && 'Geaccepteerd'}
+                                  {quote.status === 'sent' && 'Verzonden'}
+                                  {quote.status === 'rejected' && 'Afgewezen'}
+                                  {quote.status === 'draft' && 'Concept'}
+                                  {quote.status === 'expired' && 'Verlopen'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-right font-bold text-gray-900">€{quote.total.toFixed(2)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-center py-8">Geen offertes gevonden</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Tasks Tab */}
       {activeTab === 'tasks' && (

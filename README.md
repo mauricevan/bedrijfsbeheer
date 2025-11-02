@@ -200,7 +200,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ **Communicatie** - duidelijke historie voor team en klanten
 - ✅ **Compliance** - audit trail voor kwaliteitsborging
 
-### 5. **Boekhouding, Offertes & Facturen** 🆕 **VOLLEDIG UITGEBREID + WERKORDER INTEGRATIE V4.0**
+### 5. **Boekhouding, Offertes & Facturen** 🆕 **VOLLEDIG UITGEBREID + WERKORDER INTEGRATIE V4.0 + CLONE FUNCTIE V4.6**
 
 **Transacties Tab:**
 - ✅ Overzicht transacties (inkomsten/uitgaven)
@@ -230,6 +230,8 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🆕 **Werkorder status tracking** - Zie de status van gekoppelde werkorder in offerte
 - 🆕 **Live synchronisatie** - Wijzigingen in offerte worden doorgevoerd naar werkorder
 - 🆕 **Voltooiing indicator** - Visueel zien wanneer werkorder voltooid is
+- 🆕 **Offerte clonen** - Dupliceer bestaande offerte met automatisch nieuw ID en datum 🔄 **V4.6**
+- 🆕 **Aanpasbaar tijdens clonen** - Wijzig klant, items, prijzen tijdens het clonen 🔄 **V4.6**
 
 **Facturen Tab:** 🆕 **NIEUW TOEGEVOEGD + WERKORDER INTEGRATIE V4.0**
 - ✅ **Volledig factuurbeheer systeem**
@@ -363,7 +365,9 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ Totaal besteed bedrag
 - ✅ Aantal orders per klant
 - ✅ Visuele klant cards met avatar
-- ✅ Add/Delete functionaliteit
+- ✅ **Notities per klant** - Voeg interne notities toe voor klanthistorie 🆕
+- ✅ **Klanten bewerken** - Wijzig klantgegevens en notities 🆕
+- ✅ Add/Edit/Delete functionaliteit 🆕
 
 **Interacties Tab:**
 - ✅ **Communicatie geschiedenis** - Alle contactmomenten vastleggen
@@ -925,6 +929,37 @@ De volgende functionaliteiten zijn **niet** opgenomen of worden voorlopig uitges
 ---
 
 ## 📝 Gebruikershandleiding
+
+### Nieuwe Klant Aanmaken 👥 ✅ **BESCHIKBAAR**
+
+**Uitgebreide handleiding beschikbaar!**
+
+Voor complete stap-voor-stap instructies over het aanmaken van nieuwe klanten in de CRM module, zie:
+📄 **[NIEUWE_KLANT_HANDLEIDING.md](./NIEUWE_KLANT_HANDLEIDING.md)**
+
+**Quick Start:**
+1. Login als **Admin** (sophie@bedrijf.nl / 1234)
+2. Ga naar **CRM** module → Tab **"👥 Klanten"**
+3. Klik **"+ Nieuwe Klant"** (rechtsboven)
+4. Vul **verplichte velden** in (Naam + Email)
+5. Vul **optionele velden** in (Telefoon, Type, Bedrijf, Bron, Adres)
+6. Klik **"Toevoegen"**
+7. **Klant is direct beschikbaar** in alle modules!
+
+**Features:**
+- ✅ Verplichte velden: Naam + Email
+- ✅ Klant types: Zakelijk en Particulier
+- ✅ Herkomst tracking
+- ✅ Automatische ID en datum toekenning
+- ✅ Statistieken per klant (Omzet, Orders, Contact)
+- ✅ Direct beschikbaar in POS, Werkorders, Offertes, Facturen
+
+**Let op:**
+- ❌ Geen edit functionaliteit (verwijderen en opnieuw aanmaken)
+- ⚠️ Verwijderen is permanent
+- 🔄 Edit functie komt in toekomstige versie
+
+---
 
 ### Werkorder Integratie Gebruiken 🆕 **NIEUW IN V4.0**
 
@@ -1833,6 +1868,64 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 ---
 
 ## 🏆 Changelog
+
+### Versie 4.6.0 🆕 **CLONE FUNCTIONALITEIT VOOR OFFERTES & FACTUREN**
+
+**Nieuwe Features:**
+
+**1. Offerte Clonen**
+- 🆕 **"Clonen" knop** bij elke offerte
+- 🆕 **Automatisch nieuw ID** - Krijgt uniek Q-nummer (Q1234 wordt Q5678)
+- 🆕 **Automatische datum** - Aanmaakdatum wordt op vandaag gezet
+- 🆕 **Aanpasbaar tijdens clonen:**
+  - Wijzig klant
+  - Pas items aan (toevoegen/verwijderen)
+  - Wijzig hoeveelheden en prijzen
+  - Update notities
+  - Wijzig geldigheidsdatum
+- 🆕 **Status reset** - Geclonede offerte krijgt status "draft"
+- 🆕 **Geen werkorder koppeling** - Werkorder link wordt niet meegekopieerd
+
+**2. Factuur Clonen**
+- 🆕 **"Clonen" knop** bij elke factuur
+- 🆕 **Automatisch nieuw factuurnummer** - Krijgt volgend beschikbaar nummer (2025-001, 2025-002, etc.)
+- 🆕 **Datum aanpassing** - Factuurdatum wordt vandaag, vervaldatum +14 dagen
+- 🆕 **Aanpasbaar tijdens clonen:**
+  - Wijzig klant
+  - Pas items aan (toevoegen/verwijderen)
+  - Wijzig hoeveelheden en prijzen
+  - Update betalingsvoorwaarden
+  - Wijzig datums
+  - Update notities
+- 🆕 **Status reset** - Geclonede factuur krijgt status "draft"
+- 🆕 **Geen koppelingen** - Offerte en werkorder links worden niet meegekopieerd
+- 🆕 **Betalingsdatum wissen** - Geclonede factuur heeft geen betaaldatum
+
+**UI Implementatie:**
+- 🆕 **Clone knop in card** - Groene 📋 knop bij elke offerte/factuur
+- 🆕 **Clone formulier** - Identiek aan aanmaak formulier maar vooraf ingevuld
+- 🆕 **Visuele feedback** - Succesbericht na clonen met nieuw nummer
+- 🆕 **Scroll naar nieuw item** - Automatisch scrollen naar geclonede offerte/factuur
+
+**Gebruik Cases:**
+- ✅ **Terugkerende klanten** - Clone vorige offerte voor nieuwe opdracht
+- ✅ **Standaard offertes** - Maak template offerte en clone voor elke klant
+- ✅ **Factuur correcties** - Clone en pas aan in plaats van origineel wijzigen
+- ✅ **Seizoenswerk** - Clone offerte van vorig jaar en update prijzen
+- ✅ **Snelle duplicatie** - Bespaar tijd bij vergelijkbare opdrachten
+
+**Backend Wijzigingen:**
+- 🆕 `cloneQuote()` functie in AccountingNew.tsx
+- 🆕 `cloneInvoice()` functie in AccountingNew.tsx
+- 🆕 Automatische ID generatie logica
+- 🆕 Datum reset functionaliteit
+- 🆕 Link stripping (werkorder/offerte koppelingen)
+
+**UX Verbeteringen:**
+- 🆕 **Eenvoudige workflow** - Één klik op Clone, bewerk indien nodig, opslaan
+- 🆕 **Geen fouten** - Automatische validatie zoals bij nieuwe offerte/factuur
+- 🆕 **Volledig aanpasbaar** - Alle velden zijn bewerkbaar
+- 🆕 **Consistente nummering** - Volgt bestaande nummer schema's
 
 ### Versie 4.5.0 (Huidige Versie) 📱 **VOLLEDIGE MOBILE OPTIMALISATIE**
 

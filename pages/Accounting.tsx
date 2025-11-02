@@ -35,6 +35,21 @@ export const Accounting: React.FC<AccountingProps> = ({
   const [showQuoteForm, setShowQuoteForm] = useState(false);
   const [showInvoiceForm, setShowInvoiceForm] = useState(false);
   
+  // 🆕 Clone states
+  const [showCloneQuoteModal, setShowCloneQuoteModal] = useState(false);
+  const [showCloneInvoiceModal, setShowCloneInvoiceModal] = useState(false);
+  
+  // 🆕 Overview Modal States
+  const [showOverviewModal, setShowOverviewModal] = useState(false);
+  const [overviewType, setOverviewType] = useState<'all' | 'paid' | 'outstanding' | 'overdue'>('all');
+  const [overviewFilter, setOverviewFilter] = useState({
+    customerName: '',
+    dateFrom: '',
+    dateTo: '',
+    minAmount: '',
+    maxAmount: '',
+  });
+  
   // NEW: User selection modal state
   const [showUserSelectionModal, setShowUserSelectionModal] = useState(false);
   const [conversionData, setConversionData] = useState<{
@@ -549,6 +564,70 @@ export const Accounting: React.FC<AccountingProps> = ({
     }
   };
 
+  // 🆕 Overview Functions
+  const openOverviewModal = (type: 'all' | 'paid' | 'outstanding' | 'overdue') => {
+    setOverviewType(type);
+    setShowOverviewModal(true);
+  };
+
+  const resetFilters = () => {
+    setOverviewFilter({
+      customerName: '',
+      dateFrom: '',
+      dateTo: '',
+      minAmount: '',
+      maxAmount: '',
+    });
+  };
+
+  const getFilteredInvoices = () => {
+    let filtered = invoices;
+
+    // Filter by type
+    switch (overviewType) {
+      case 'paid':
+        filtered = filtered.filter(inv => inv.status === 'paid');
+        break;
+      case 'outstanding':
+        filtered = filtered.filter(inv => ['sent', 'overdue'].includes(inv.status));
+        break;
+      case 'overdue':
+        filtered = filtered.filter(inv => inv.status === 'overdue');
+        break;
+      // 'all' doesn't filter
+    }
+
+    // Filter by customer name
+    if (overviewFilter.customerName) {
+      filtered = filtered.filter(inv => {
+        const customerName = getCustomerName(inv.customerId).toLowerCase();
+        return customerName.includes(overviewFilter.customerName.toLowerCase());
+      });
+    }
+
+    // Filter by date range
+    if (overviewFilter.dateFrom) {
+      filtered = filtered.filter(inv => inv.issueDate >= overviewFilter.dateFrom);
+    }
+    if (overviewFilter.dateTo) {
+      filtered = filtered.filter(inv => inv.issueDate <= overviewFilter.dateTo);
+    }
+
+    // Filter by amount range
+    if (overviewFilter.minAmount) {
+      filtered = filtered.filter(inv => inv.total >= parseFloat(overviewFilter.minAmount));
+    }
+    if (overviewFilter.maxAmount) {
+      filtered = filtered.filter(inv => inv.total <= parseFloat(overviewFilter.maxAmount));
+    }
+
+    return filtered;
+  };
+
+  const getFilteredTotal = () => {
+    return getFilteredInvoices().reduce((sum, inv) => sum + inv.total, 0);
+  };
+
   // Complete conversion with selected user
   const completeConversion = () => {
     if (!selectedUserId) {
@@ -1013,10 +1092,376 @@ export const Accounting: React.FC<AccountingProps> = ({
     }
   };
 
+  // 🆕 CLONE QUOTE FUNCTION
+  const handleCloneQuote = (quoteId: string) => {
+    const quote = quotes.find(q => q.id === quoteId);
+    if (!quote) return;
+
+    // Prepare clone data with new ID and reset fields
+    setNewQuote({
+      customerId: quote.customerId,
+      items: quote.items,
+      labor: quote.labor || [],
+      vatRate: quote.vatRate,
+      notes: quote.notes || '',
+      validUntil: '', // User should set new date
+    });
+    setShowCloneQuoteModal(true);
+  };
+
+  const handleSaveClonedQuote = () => {
+    if (!newQuote.customerId || newQuote.items.length === 0 || !newQuote.validUntil) {
+      alert('Vul alle verplichte velden in (klant, minimaal 1 item, en geldig tot datum)!');
+      return;
+    }
+
+    const { subtotal, vatAmount, total } = calculateQuoteTotals();
+    const now = new Date().toISOString();
+    const customerName = getCustomerName(newQuote.customerId);
+
+    const quote: Quote = {
+      id: `Q${Date.now()}`,
+      customerId: newQuote.customerId,
+      items: newQuote.items,
+      labor: newQuote.labor.length > 0 ? newQuote.labor : undefined,
+      subtotal: subtotal,
+      vatRate: newQuote.vatRate,
+      vatAmount: vatAmount,
+      total: total,
+      status: 'draft',
+      createdDate: new Date().toISOString().split('T')[0],
+      validUntil: newQuote.validUntil,
+      notes: newQuote.notes,
+      createdBy: currentUser.employeeId,
+      timestamps: {
+        created: now
+      },
+      history: [
+        createHistoryEntry(
+          'quote',
+          'created',
+          `Offerte gecloneerd door ${getEmployeeName(currentUser.employeeId)} voor klant ${customerName}`
+        ) as QuoteHistoryEntry
+      ]
+    };
+
+    setQuotes([...quotes, quote]);
+    setNewQuote({
+      customerId: '',
+      items: [],
+      labor: [],
+      vatRate: 21,
+      notes: '',
+      validUntil: '',
+    });
+    setShowCloneQuoteModal(false);
+    alert(`✅ Offerte ${quote.id} succesvol gecloneerd!`);
+
+    // Scroll to the new quote
+    setTimeout(() => {
+      const element = document.getElementById(quote.id);
+      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  };
+
+  // 🆕 CLONE INVOICE FUNCTION
+  const handleCloneInvoice = (invoiceId: string) => {
+    const invoice = invoices.find(inv => inv.id === invoiceId);
+    if (!invoice) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 14); // +14 days
+
+    // Prepare clone data with new invoice number and reset fields
+    setNewInvoice({
+      customerId: invoice.customerId,
+      items: invoice.items,
+      labor: invoice.labor || [],
+      vatRate: invoice.vatRate,
+      notes: invoice.notes || '',
+      paymentTerms: invoice.paymentTerms,
+      issueDate: today,
+      dueDate: dueDate.toISOString().split('T')[0],
+    });
+    setShowCloneInvoiceModal(true);
+  };
+
+  const handleSaveClonedInvoice = () => {
+    if (!newInvoice.customerId || newInvoice.items.length === 0 || !newInvoice.issueDate || !newInvoice.dueDate) {
+      alert('Vul alle verplichte velden in!');
+      return;
+    }
+
+    const { subtotal, vatAmount, total } = calculateInvoiceTotals();
+    const now = new Date().toISOString();
+    const customerName = getCustomerName(newInvoice.customerId);
+
+    const invoice: Invoice = {
+      id: `inv${Date.now()}`,
+      invoiceNumber: generateInvoiceNumber(),
+      customerId: newInvoice.customerId,
+      items: newInvoice.items,
+      labor: newInvoice.labor.length > 0 ? newInvoice.labor : undefined,
+      subtotal: subtotal,
+      vatRate: newInvoice.vatRate,
+      vatAmount: vatAmount,
+      total: total,
+      status: 'draft',
+      issueDate: newInvoice.issueDate,
+      dueDate: newInvoice.dueDate,
+      notes: newInvoice.notes,
+      paymentTerms: newInvoice.paymentTerms,
+      createdBy: currentUser.employeeId,
+      timestamps: {
+        created: now
+      },
+      history: [
+        createHistoryEntry(
+          'invoice',
+          'created',
+          `Factuur gecloneerd door ${getEmployeeName(currentUser.employeeId)} voor klant ${customerName}`
+        ) as InvoiceHistoryEntry
+      ]
+    };
+
+    setInvoices([...invoices, invoice]);
+    setNewInvoice({
+      customerId: '',
+      items: [],
+      labor: [],
+      vatRate: 21,
+      notes: '',
+      paymentTerms: '14 dagen',
+      issueDate: '',
+      dueDate: '',
+    });
+    setShowCloneInvoiceModal(false);
+    alert(`✅ Factuur ${invoice.invoiceNumber} succesvol gecloneerd!`);
+
+    // Scroll to the new invoice
+    setTimeout(() => {
+      const element = document.getElementById(invoice.id);
+      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  };
+
   return (
     <div className="p-8">
       <h1 className="text-3xl font-bold text-neutral mb-2">Boekhouding, Offertes & Facturen</h1>
       <p className="text-gray-600 mb-8">Genereer offertes, facturen en beheer financiële gegevens</p>
+
+      {/* 🆕 Overview Modal with Filters */}
+      {showOverviewModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-2xl max-w-6xl w-full my-8">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-3xl font-bold text-neutral flex items-center gap-3">
+                  {overviewType === 'all' && '📊 Totaal Gefactureerd'}
+                  {overviewType === 'paid' && '✅ Betaalde Facturen'}
+                  {overviewType === 'outstanding' && '⏳ Uitstaande Facturen'}
+                  {overviewType === 'overdue' && '⚠️ Verlopen Facturen'}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowOverviewModal(false);
+                    resetFilters();
+                  }}
+                  className="text-gray-500 hover:text-gray-700 text-3xl font-bold"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Filters */}
+              <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  🔍 Filters
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Klantnaam
+                    </label>
+                    <input
+                      type="text"
+                      value={overviewFilter.customerName}
+                      onChange={(e) => setOverviewFilter({ ...overviewFilter, customerName: e.target.value })}
+                      placeholder="Zoek op klantnaam..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Datum vanaf
+                    </label>
+                    <input
+                      type="date"
+                      value={overviewFilter.dateFrom}
+                      onChange={(e) => setOverviewFilter({ ...overviewFilter, dateFrom: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Datum tot
+                    </label>
+                    <input
+                      type="date"
+                      value={overviewFilter.dateTo}
+                      onChange={(e) => setOverviewFilter({ ...overviewFilter, dateTo: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Min. Bedrag (€)
+                    </label>
+                    <input
+                      type="number"
+                      value={overviewFilter.minAmount}
+                      onChange={(e) => setOverviewFilter({ ...overviewFilter, minAmount: e.target.value })}
+                      placeholder="0.00"
+                      step="0.01"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Max. Bedrag (€)
+                    </label>
+                    <input
+                      type="number"
+                      value={overviewFilter.maxAmount}
+                      onChange={(e) => setOverviewFilter({ ...overviewFilter, maxAmount: e.target.value })}
+                      placeholder="0.00"
+                      step="0.01"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+
+                  <div className="flex items-end">
+                    <button
+                      onClick={resetFilters}
+                      className="w-full px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                    >
+                      🔄 Reset Filters
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Totaal */}
+              <div className="bg-blue-50 border-2 border-blue-300 p-4 rounded-lg mb-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-semibold text-gray-700">Totaal Gefilterd:</span>
+                  <span className="text-3xl font-bold text-blue-600">€{getFilteredTotal().toFixed(2)}</span>
+                </div>
+                <div className="text-sm text-gray-600 mt-1">
+                  {getFilteredInvoices().length} facturen gevonden
+                </div>
+              </div>
+            </div>
+
+            {/* Invoices List */}
+            <div className="p-6 max-h-96 overflow-y-auto">
+              {getFilteredInvoices().length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 text-lg">🔍 Geen facturen gevonden met deze filters</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {getFilteredInvoices().map(invoice => {
+                    const workOrder = getWorkOrderStatus(invoice.workOrderId);
+                    const badge = getWorkOrderBadge(workOrder);
+                    
+                    return (
+                      <div
+                        key={invoice.id}
+                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">🧾</span>
+                            <div>
+                              <p className="font-semibold text-lg text-gray-800">
+                                {invoice.invoiceNumber}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                {getCustomerName(invoice.customerId)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-primary">
+                              €{invoice.total.toFixed(2)}
+                            </p>
+                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getInvoiceStatusColor(invoice.status)}`}>
+                              {invoice.status}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-gray-600 mt-3">
+                          <div>
+                            <span className="font-semibold">Factuurdatum:</span>
+                            <p>{invoice.issueDate}</p>
+                          </div>
+                          <div>
+                            <span className="font-semibold">Vervaldatum:</span>
+                            <p>{invoice.dueDate}</p>
+                          </div>
+                          <div>
+                            <span className="font-semibold">Betalingstermijn:</span>
+                            <p>{invoice.paymentTerms}</p>
+                          </div>
+                          {invoice.paidDate && (
+                            <div>
+                              <span className="font-semibold">Betaald op:</span>
+                              <p>{invoice.paidDate}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {badge && (
+                          <div className="mt-3">
+                            <span className={`inline-block px-3 py-1 rounded-lg text-xs font-semibold border-2 ${badge.color}`}>
+                              {badge.icon} {badge.text}
+                            </span>
+                          </div>
+                        )}
+
+                        {invoice.notes && (
+                          <div className="mt-3 p-2 bg-gray-50 rounded text-sm text-gray-700">
+                            <strong>Notities:</strong> {invoice.notes}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={() => {
+                  setShowOverviewModal(false);
+                  resetFilters();
+                }}
+                className="w-full px-6 py-3 bg-primary text-white rounded-lg hover:bg-secondary transition-colors font-semibold"
+              >
+                ✓ Sluiten
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* User Selection Modal */}
       {showUserSelectionModal && conversionData && (
@@ -1081,6 +1526,258 @@ export const Accounting: React.FC<AccountingProps> = ({
                   setConversionData(null);
                   setSelectedUserId('');
                 }}
+                className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+              >
+                Annuleren
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🆕 CLONE QUOTE MODAL */}
+      {showCloneQuoteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full p-6 my-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-semibold text-neutral">
+                📋 Offerte Clonen
+              </h2>
+              <button
+                onClick={() => setShowCloneQuoteModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-blue-800">
+                💡 <strong>Tip:</strong> Alle velden zijn aanpasbaar. Het nieuwe offerte krijgt automatisch een uniek Q-nummer en de datum wordt op vandaag gezet.
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Klant *
+                </label>
+                <select
+                  value={newQuote.customerId}
+                  onChange={(e) => setNewQuote({ ...newQuote, customerId: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">Selecteer klant</option>
+                  {customers.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    BTW Tarief (%)
+                  </label>
+                  <input
+                    type="number"
+                    value={newQuote.vatRate}
+                    onChange={(e) => setNewQuote({ ...newQuote, vatRate: Number(e.target.value) })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Geldig Tot *
+                  </label>
+                  <input
+                    type="date"
+                    value={newQuote.validUntil}
+                    onChange={(e) => setNewQuote({ ...newQuote, validUntil: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Notities
+                </label>
+                <textarea
+                  value={newQuote.notes}
+                  onChange={(e) => setNewQuote({ ...newQuote, notes: e.target.value })}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Extra opmerkingen..."
+                />
+              </div>
+
+              {newQuote.items.length > 0 && (
+                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Subtotaal:</span>
+                    <span className="font-semibold">€{calculateQuoteTotals().subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">BTW ({newQuote.vatRate}%):</span>
+                    <span className="font-semibold">€{calculateQuoteTotals().vatAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-lg font-bold border-t pt-2">
+                    <span>Totaal:</span>
+                    <span className="text-primary">€{calculateQuoteTotals().total.toFixed(2)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleSaveClonedQuote}
+                className="flex-1 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold"
+              >
+                ✓ Gecloneerde Offerte Opslaan
+              </button>
+              <button
+                onClick={() => setShowCloneQuoteModal(false)}
+                className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+              >
+                Annuleren
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🆕 CLONE INVOICE MODAL */}
+      {showCloneInvoiceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full p-6 my-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-semibold text-neutral">
+                📋 Factuur Clonen
+              </h2>
+              <button
+                onClick={() => setShowCloneInvoiceModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-blue-800">
+                💡 <strong>Tip:</strong> De nieuwe factuur krijgt automatisch een nieuw factuurnummer en de datum wordt op vandaag gezet.
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Klant *
+                </label>
+                <select
+                  value={newInvoice.customerId}
+                  onChange={(e) => setNewInvoice({ ...newInvoice, customerId: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">Selecteer klant</option>
+                  {customers.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Factuurdatum *
+                  </label>
+                  <input
+                    type="date"
+                    value={newInvoice.issueDate}
+                    onChange={(e) => setNewInvoice({ ...newInvoice, issueDate: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Vervaldatum *
+                  </label>
+                  <input
+                    type="date"
+                    value={newInvoice.dueDate}
+                    onChange={(e) => setNewInvoice({ ...newInvoice, dueDate: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    BTW Tarief (%)
+                  </label>
+                  <input
+                    type="number"
+                    value={newInvoice.vatRate}
+                    onChange={(e) => setNewInvoice({ ...newInvoice, vatRate: Number(e.target.value) })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Betalingstermijn
+                  </label>
+                  <input
+                    type="text"
+                    value={newInvoice.paymentTerms}
+                    onChange={(e) => setNewInvoice({ ...newInvoice, paymentTerms: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="14 dagen"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Notities
+                </label>
+                <textarea
+                  value={newInvoice.notes}
+                  onChange={(e) => setNewInvoice({ ...newInvoice, notes: e.target.value })}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Extra opmerkingen..."
+                />
+              </div>
+
+              {newInvoice.items.length > 0 && (
+                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Subtotaal:</span>
+                    <span className="font-semibold">€{calculateInvoiceTotals().subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">BTW ({newInvoice.vatRate}%):</span>
+                    <span className="font-semibold">€{calculateInvoiceTotals().vatAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-lg font-bold border-t pt-2">
+                    <span>Totaal:</span>
+                    <span className="text-primary">€{calculateInvoiceTotals().total.toFixed(2)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleSaveClonedInvoice}
+                className="flex-1 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold"
+              >
+                ✓ Gecloneerde Factuur Opslaan
+              </button>
+              <button
+                onClick={() => setShowCloneInvoiceModal(false)}
                 className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
               >
                 Annuleren
@@ -1656,6 +2353,13 @@ export const Accounting: React.FC<AccountingProps> = ({
                       </button>
                     )}
                     <button
+                      onClick={() => handleCloneQuote(quote.id)}
+                      className="px-3 py-2 bg-green-500 text-white text-sm rounded hover:bg-green-600 font-semibold"
+                      title="Offerte clonen"
+                    >
+                      📋 Clonen
+                    </button>
+                    <button
                       onClick={() => deleteQuote(quote.id)}
                       className="px-3 py-2 bg-gray-500 text-white text-sm rounded hover:bg-gray-600"
                     >
@@ -1680,7 +2384,10 @@ export const Accounting: React.FC<AccountingProps> = ({
         <>
           {/* Invoice Statistics */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <button
+              onClick={() => openOverviewModal('all')}
+              className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all transform hover:scale-105 cursor-pointer text-left"
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Totaal Gefactureerd</p>
@@ -1690,9 +2397,12 @@ export const Accounting: React.FC<AccountingProps> = ({
                   <span className="text-2xl">🧾</span>
                 </div>
               </div>
-            </div>
+            </button>
 
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <button
+              onClick={() => openOverviewModal('paid')}
+              className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all transform hover:scale-105 cursor-pointer text-left"
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Betaald</p>
@@ -1703,9 +2413,12 @@ export const Accounting: React.FC<AccountingProps> = ({
                   <span className="text-2xl">✅</span>
                 </div>
               </div>
-            </div>
+            </button>
 
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <button
+              onClick={() => openOverviewModal('outstanding')}
+              className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all transform hover:scale-105 cursor-pointer text-left"
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Uitstaand</p>
@@ -1716,9 +2429,12 @@ export const Accounting: React.FC<AccountingProps> = ({
                   <span className="text-2xl">⏳</span>
                 </div>
               </div>
-            </div>
+            </button>
 
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <button
+              onClick={() => openOverviewModal('overdue')}
+              className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all transform hover:scale-105 cursor-pointer text-left"
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Verlopen</p>
@@ -1729,7 +2445,7 @@ export const Accounting: React.FC<AccountingProps> = ({
                   <span className="text-2xl">⚠️</span>
                 </div>
               </div>
-            </div>
+            </button>
           </div>
 
           <div className="flex items-center justify-between mb-6">
@@ -2150,6 +2866,13 @@ export const Accounting: React.FC<AccountingProps> = ({
                         Annuleren
                       </button>
                     )}
+                    <button
+                      onClick={() => handleCloneInvoice(invoice.id)}
+                      className="px-3 py-2 bg-green-500 text-white text-sm rounded hover:bg-green-600 font-semibold"
+                      title="Factuur clonen"
+                    >
+                      📋 Clonen
+                    </button>
                     <button
                       onClick={() => deleteInvoice(invoice.id)}
                       className="px-3 py-2 bg-red-500 text-white text-sm rounded hover:bg-red-600"
