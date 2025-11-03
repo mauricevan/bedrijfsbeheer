@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import { ALL_MODULES, ADMIN_MODULE } from '../constants';
 import { ModuleKey, Notification } from '../types';
@@ -21,24 +21,60 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const visibleModules = ALL_MODULES.filter(module => activeModules[module.id]);
   const unreadCount = notifications.filter(n => !n.read).length;
+  
+  // Tip 4: Swipe gestures for mobile
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const minSwipeDistance = 50;
+  
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchEndX.current = null;
+    touchStartX.current = e.touches[0].clientX;
+  };
+  
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+  
+  const onTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isLeftSwipe && isMobileOpen) {
+      // Swipe left to close sidebar
+      onMobileClose();
+    } else if (isRightSwipe && !isMobileOpen) {
+      // Swipe right to open sidebar (handled by Header hamburger menu)
+    }
+  };
 
   return (
     <>
-      {/* Mobile Overlay */}
+      {/* Mobile Overlay with swipe gesture */}
       {isMobileOpen && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={onMobileClose}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
         />
       )}
       
-      {/* Sidebar */}
-      <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50
-        w-64 bg-neutral text-white flex flex-col
-        transform transition-transform duration-300 ease-in-out
-        ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
+      {/* Sidebar with swipe gesture */}
+      <aside 
+        className={`
+          fixed lg:static inset-y-0 left-0 z-50
+          w-64 bg-neutral text-white flex flex-col
+          transform transition-transform duration-300 ease-in-out
+          ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         {/* Header */}
         <div className="p-4 sm:p-6 border-b border-gray-700">
           <div className="flex items-center justify-between">
