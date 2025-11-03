@@ -477,9 +477,11 @@ export const POS: React.FC<POSProps> = ({
               />
               <button
                 onClick={() => setShowManualItemModal(true)}
-                className="px-6 py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors font-semibold whitespace-nowrap"
+                className="px-6 py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors font-semibold whitespace-nowrap flex items-center gap-2"
+                title="Handmatig item toevoegen voor éénmalig gebruik (wordt niet opgeslagen in voorraad)"
               >
-                + Nieuw Item
+                <span>➕</span>
+                <span>Handmatig Item (1x)</span>
               </button>
             </div>
           </div>
@@ -790,8 +792,8 @@ export const POS: React.FC<POSProps> = ({
                           <p className="font-medium text-neutral text-sm">{item.name}</p>
                           {item.sku && <p className="text-xs text-gray-500">{item.sku}</p>}
                           {item.isManual && (
-                            <span className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded mt-1 inline-block">
-                              Handmatig
+                            <span className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded mt-1 inline-block" title="Handmatig toegevoegd item - éénmalig gebruik, niet in voorraad">
+                              🆕 Handmatig (1x)
                             </span>
                           )}
                         </div>
@@ -960,13 +962,21 @@ export const POS: React.FC<POSProps> = ({
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-neutral">➕ Handmatig Item Toevoegen</h3>
+                <h3 className="text-xl font-bold text-neutral">➕ Handmatig Item Toevoegen (Éénmalig Gebruik)</h3>
                 <button
                   onClick={() => setShowManualItemModal(false)}
                   className="text-gray-500 hover:text-gray-700 text-2xl"
                 >
                   ×
                 </button>
+              </div>
+              
+              {/* Info Banner */}
+              <div className="bg-purple-50 border-l-4 border-purple-400 rounded-lg p-3 mb-4">
+                <p className="text-sm text-purple-800">
+                  <strong>ℹ️ Eenmalig Item:</strong> Dit item wordt alleen toegevoegd aan de winkelwagen en wordt <strong>niet opgeslagen</strong> in de voorraad. 
+                  Perfect voor diensten, meerwerk, of tijdelijke producten.
+                </p>
               </div>
               
               <div className="space-y-4">
