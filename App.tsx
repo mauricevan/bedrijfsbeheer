@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Login } from './components/Login';
 import { AdminSettings } from './components/AdminSettings';
+import { AnalyticsTracker } from './components/AnalyticsTracker';
 import { ALL_MODULES } from './constants';
 import { 
   ModuleKey, 
@@ -50,6 +51,7 @@ import { CRM } from './pages/CRM';
 import { HRM } from './pages/HRM';
 import { Reports } from './pages/Reports';
 import { Planning } from './pages/Planning';
+import { trackNavigation, trackAction } from './utils/analytics';
 
 // Default all modules to active
 const initialModulesState = ALL_MODULES.reduce((acc, module) => {
@@ -234,6 +236,7 @@ function App() {
 
   return (
     <div className="flex h-screen bg-base-100">
+      <AnalyticsTracker userId={currentUser.employeeId} userRole={currentUser.role} />
       <Sidebar 
         activeModules={activeModules} 
         isAdmin={currentUser.isAdmin} 

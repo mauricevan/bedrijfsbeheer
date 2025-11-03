@@ -354,3 +354,96 @@ export interface User {
     isAdmin: boolean; // Legacy: true als full_admin permission of isAdmin flag
     permissions?: Permission[]; // Granulaire rechten
 }
+
+// Analytics & Usage Tracking Types (Lean Six Sigma)
+export interface AnalyticsEvent {
+    id: string;
+    timestamp: string;
+    userId: string;
+    userRole: string;
+    module: ModuleKey;
+    action: string;
+    actionType: 'click' | 'navigate' | 'create' | 'update' | 'delete' | 'view' | 'error' | 'complete' | 'abandon';
+    duration?: number; // Milliseconds
+    metadata?: {
+        [key: string]: any;
+        feature?: string;
+        clicks?: number;
+        errors?: string[];
+        outcome?: 'success' | 'failure' | 'partial';
+    };
+}
+
+export interface ModuleUsageStats {
+    module: ModuleKey;
+    totalSessions: number;
+    totalTime: number; // Minutes
+    averageSessionDuration: number;
+    uniqueUsers: number;
+    actionsCount: number;
+    errorCount: number;
+    lastUsed: string;
+    usageTrend: 'increasing' | 'decreasing' | 'stable';
+}
+
+export interface UserActivityStats {
+    userId: string;
+    userName: string;
+    role: string;
+    totalSessions: number;
+    totalTime: number;
+    modulesUsed: ModuleKey[];
+    mostUsedModule: ModuleKey;
+    averageSessionDuration: number;
+    lastActive: string;
+    efficiencyScore: number; // 0-100
+}
+
+export interface ProcessMetrics {
+    processName: string;
+    averageCycleTime: number; // Minutes
+    averageSteps: number;
+    completionRate: number; // Percentage
+    errorRate: number; // Percentage
+    reworkRate: number; // Percentage
+    bottleneckSteps: Array<{
+        step: string;
+        averageWaitTime: number;
+        frequency: number;
+    }>;
+}
+
+export interface OptimizationRecommendation {
+    id: string;
+    priority: 'high' | 'medium' | 'low';
+    category: 'process' | 'feature' | 'usability' | 'automation' | 'quality';
+    title: string;
+    description: string;
+    impact: string; // Expected benefit
+    effort: 'low' | 'medium' | 'high';
+    roi: number; // Estimated ROI score (0-100)
+    metrics: {
+        current: number;
+        target: number;
+        unit: string;
+    };
+    actions: string[]; // Recommended actions
+}
+
+export interface AnalyticsDashboard {
+    period: 'day' | 'week' | 'month' | 'quarter' | 'year';
+    startDate: string;
+    endDate: string;
+    totalEvents: number;
+    totalUsers: number;
+    totalTime: number;
+    moduleStats: ModuleUsageStats[];
+    userStats: UserActivityStats[];
+    processMetrics: ProcessMetrics[];
+    recommendations: OptimizationRecommendation[];
+    trends: {
+        usageGrowth: number; // Percentage
+        efficiencyChange: number; // Percentage
+        errorRateChange: number; // Percentage
+    };
+}

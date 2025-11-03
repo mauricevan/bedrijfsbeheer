@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { WorkOrder, WorkOrderStatus, Employee, InventoryItem, Customer, User, Quote, Invoice, QuoteItem, QuoteLabor, InvoiceHistoryEntry } from '../types';
+import { WorkOrder, WorkOrderStatus, Employee, InventoryItem, Customer, User, Quote, Invoice, QuoteItem, QuoteLabor, InvoiceHistoryEntry, ModuleKey } from '../types';
+import { trackAction, trackTaskCompletion } from '../utils/analytics';
 
 interface WorkOrdersProps {
   workOrders: WorkOrder[];
@@ -205,6 +206,23 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
     };
 
     setWorkOrders([...workOrders, order]);
+    
+    // Track analytics
+    trackAction(
+      currentUser.employeeId,
+      currentUser.role,
+      ModuleKey.WORK_ORDERS,
+      'create_workorder',
+      'create',
+      {
+        workOrderId: order.id,
+        customerId: order.customerId,
+        assignedTo: order.assignedTo,
+        status: order.status,
+        materialsCount: order.requiredInventory.length,
+      }
+    );
+    
     setNewOrder({ 
       title: '', 
       description: '', 
@@ -472,6 +490,22 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
     if (status === 'Completed') {
       const order = workOrders.find(o => o.id === id);
       if (order) {
+        // Calculate duration if timestamps available
+        const duration = order.timestamps?.started 
+          ? Date.now() - new Date(order.timestamps.started).getTime()
+          : undefined;
+        
+        // Track task completion
+        trackTaskCompletion(
+          currentUser.employeeId,
+          currentUser.role,
+          ModuleKey.WORK_ORDERS,
+          'workorder',
+          duration || 0,
+          true,
+          []
+        );
+        
         // Deduct inventory
         const updatedInventory = [...inventory];
         order.requiredInventory.forEach(req => {
@@ -484,6 +518,23 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
 
         // Automatically create invoice from completed work order
         convertCompletedWorkOrderToInvoice(order);
+      }
+    } else {
+      // Track status change
+      const order = workOrders.find(o => o.id === id);
+      if (order) {
+        trackAction(
+          currentUser.employeeId,
+          currentUser.role,
+          ModuleKey.WORK_ORDERS,
+          `update_status_${status.toLowerCase().replace(' ', '_')}`,
+          'update',
+          {
+            workOrderId: order.id,
+            fromStatus: order.status,
+            toStatus: status,
+          }
+        );
       }
     }
   };
@@ -3342,6 +3393,57 @@ interface HistoryViewerProps {
 
 const HistoryViewer: React.FC<HistoryViewerProps> = ({ history, timestamps, getEmployeeName }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Tip 5: Copy timestamp to clipboard
+  const copyTimestampInfo = (type: 'created' | 'assigned' | 'started' | 'completed', timestamp?: string) => {
+    if (!timestamp && !timestamps?.[type]) return;
+    const ts = timestamp || timestamps?.[type];
+    if (!ts) return;
+    
+    const date = new Date(ts);
+    const formattedDate = date.toLocaleString('nl-NL', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    
+    let text = '';
+    if (type === 'started') {
+      const employeeName = history.find(e => e.action === 'status_changed' && e.toStatus === 'In Progress')?.performedBy 
+        ? getEmployeeName(history.find(e => e.action === 'status_changed' && e.toStatus === 'In Progress')!.performedBy)
+        : 'Onbekend';
+      text = `Uw opdracht is op ${formattedDate} gestart door ${employeeName}.`;
+    } else if (type === 'created') {
+      const employeeName = history.find(e => e.action === 'created')?.performedBy
+        ? getEmployeeName(history.find(e => e.action === 'created')!.performedBy)
+        : 'Onbekend';
+      text = `Opdracht aangemaakt op ${formattedDate} door ${employeeName}.`;
+    } else if (type === 'assigned') {
+      const entry = history.find(e => e.action === 'assigned');
+      const employeeName = entry?.toAssignee ? getEmployeeName(entry.toAssignee) : 'Onbekend';
+      text = `Opdracht toegewezen aan ${employeeName} op ${formattedDate}.`;
+    } else if (type === 'completed') {
+      const employeeName = history.find(e => e.action === 'completed')?.performedBy
+        ? getEmployeeName(history.find(e => e.action === 'completed')!.performedBy)
+        : 'Onbekend';
+      text = `Opdracht voltooid op ${formattedDate} door ${employeeName}.`;
+    }
+    
+    navigator.clipboard.writeText(text).then(() => {
+      alert('✅ Informatie gekopieerd naar klembord!');
+    }).catch(() => {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert('✅ Informatie gekopieerd naar klembord!');
+    });
+  };
 
   const getActionIcon = (action: string) => {
     switch (action) {
@@ -3389,11 +3491,18 @@ const HistoryViewer: React.FC<HistoryViewerProps> = ({ history, timestamps, getE
         <div className="mb-3 p-2 bg-gray-50 rounded-lg">
           <div className="grid grid-cols-2 gap-2 text-xs">
             {timestamps.created && (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 group">
                 <span className="text-gray-500">🆕 Aangemaakt:</span>
                 <span className="text-gray-700 font-medium" title={formatTimestamp(timestamps.created)}>
                   {formatRelativeTime(timestamps.created)}
                 </span>
+                <button
+                  onClick={() => copyTimestampInfo('created')}
+                  className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 rounded"
+                  title="Kopieer informatie"
+                >
+                  📋
+                </button>
               </div>
             )}
             {timestamps.converted && (
@@ -3405,27 +3514,48 @@ const HistoryViewer: React.FC<HistoryViewerProps> = ({ history, timestamps, getE
               </div>
             )}
             {timestamps.assigned && (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 group">
                 <span className="text-gray-500">👤 Toegewezen:</span>
                 <span className="text-gray-700 font-medium" title={formatTimestamp(timestamps.assigned)}>
                   {formatRelativeTime(timestamps.assigned)}
                 </span>
+                <button
+                  onClick={() => copyTimestampInfo('assigned')}
+                  className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 rounded"
+                  title="Kopieer informatie"
+                >
+                  📋
+                </button>
               </div>
             )}
             {timestamps.started && (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 group">
                 <span className="text-gray-500">▶️ Gestart:</span>
                 <span className="text-gray-700 font-medium" title={formatTimestamp(timestamps.started)}>
                   {formatRelativeTime(timestamps.started)}
                 </span>
+                <button
+                  onClick={() => copyTimestampInfo('started')}
+                  className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 rounded"
+                  title="Kopieer informatie"
+                >
+                  📋
+                </button>
               </div>
             )}
             {timestamps.completed && (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 group">
                 <span className="text-gray-500">✅ Voltooid:</span>
                 <span className="text-gray-700 font-medium" title={formatTimestamp(timestamps.completed)}>
                   {formatRelativeTime(timestamps.completed)}
                 </span>
+                <button
+                  onClick={() => copyTimestampInfo('completed')}
+                  className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 rounded"
+                  title="Kopieer informatie"
+                >
+                  📋
+                </button>
               </div>
             )}
           </div>
@@ -3458,17 +3588,58 @@ const HistoryViewer: React.FC<HistoryViewerProps> = ({ history, timestamps, getE
           {/* Expanded History */}
           {isExpanded && (
             <div className="mt-2 space-y-2 max-h-60 overflow-y-auto">
-              {history.map((entry, index) => (
-                <div key={index} className="flex gap-2 text-xs border-l-2 border-blue-300 pl-3 py-2 bg-blue-50 rounded-r">
-                  <span className="text-base">{getActionIcon(entry.action)}</span>
-                  <div className="flex-1">
-                    <p className="text-gray-700 leading-snug">{entry.details}</p>
-                    <p className="text-gray-500 text-xs mt-1">
-                      {formatTimestamp(entry.timestamp)}
-                    </p>
+              {history.map((entry, index) => {
+                const generateResponseText = () => {
+                  const formattedDate = formatTimestamp(entry.timestamp);
+                  const employeeName = getEmployeeName(entry.performedBy);
+                  
+                  if (entry.action === 'created') {
+                    return `Opdracht aangemaakt op ${formattedDate} door ${employeeName}.`;
+                  } else if (entry.action === 'assigned') {
+                    const assignedTo = entry.toAssignee ? getEmployeeName(entry.toAssignee) : employeeName;
+                    return `Opdracht toegewezen aan ${assignedTo} op ${formattedDate}.`;
+                  } else if (entry.action === 'status_changed' && entry.toStatus === 'In Progress') {
+                    return `Uw opdracht is op ${formattedDate} gestart door ${employeeName}.`;
+                  } else if (entry.action === 'completed') {
+                    return `Opdracht voltooid op ${formattedDate} door ${employeeName}.`;
+                  }
+                  return `${entry.details} - ${formattedDate}`;
+                };
+                
+                const copyEntryInfo = () => {
+                  const text = generateResponseText();
+                  navigator.clipboard.writeText(text).then(() => {
+                    alert('✅ Informatie gekopieerd naar klembord!');
+                  }).catch(() => {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    alert('✅ Informatie gekopieerd naar klembord!');
+                  });
+                };
+                
+                return (
+                  <div key={index} className="flex gap-2 text-xs border-l-2 border-blue-300 pl-3 py-2 bg-blue-50 rounded-r group">
+                    <span className="text-base">{getActionIcon(entry.action)}</span>
+                    <div className="flex-1">
+                      <p className="text-gray-700 leading-snug">{entry.details}</p>
+                      <p className="text-gray-500 text-xs mt-1">
+                        {formatTimestamp(entry.timestamp)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={copyEntryInfo}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-blue-200 rounded text-blue-600"
+                      title="Kopieer voor communicatie"
+                    >
+                      📋
+                    </button>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </>
@@ -3526,17 +3697,59 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
     setEditingPendingReason(false);
   };
 
+  // Tip 1: Get priority color and label based on index number
+  const getIndexPriority = (index?: number) => {
+    if (!index) return { color: 'gray', label: 'Normaal', bgColor: 'bg-gray-500', textColor: 'text-white', borderColor: 'border-gray-300' };
+    
+    if (index <= 5) {
+      return { 
+        color: 'red', 
+        label: 'Vandaag', 
+        bgColor: 'bg-red-500', 
+        textColor: 'text-white',
+        borderColor: 'border-red-300',
+        tooltip: '#1-#5: Vandaag afmaken (hoogste prioriteit)'
+      };
+    } else if (index <= 15) {
+      return { 
+        color: 'orange', 
+        label: 'Deze Week', 
+        bgColor: 'bg-orange-500', 
+        textColor: 'text-white',
+        borderColor: 'border-orange-300',
+        tooltip: '#6-#15: Deze week afronden'
+      };
+    } else {
+      return { 
+        color: 'green', 
+        label: 'Later', 
+        bgColor: 'bg-green-500', 
+        textColor: 'text-white',
+        borderColor: 'border-green-300',
+        tooltip: '#16+: Volgende week of later'
+      };
+    }
+  };
+
+  const indexPriority = getIndexPriority(order.sortIndex);
+
   return (
     <div 
-      className="bg-white rounded-lg shadow-md p-3 sm:p-4 border-l-4 border-gray-300 hover:shadow-lg transition-shadow cursor-pointer"
+      className={`bg-white rounded-lg shadow-md p-3 sm:p-4 border-l-4 ${indexPriority.borderColor} hover:shadow-lg transition-shadow cursor-pointer`}
       onDoubleClick={() => onOpenDetail && onOpenDetail(order)}
       title="Dubbelklik om factuur/offerte details te zien"
     >
-      {/* Index Badge */}
+      {/* Index Badge with Priority Indicator */}
       {order.sortIndex !== undefined && (
-        <div className="mb-2">
-          <span className="inline-block px-2 py-1 text-xs font-bold text-white bg-primary rounded">
+        <div className="mb-2 flex items-center gap-2">
+          <span 
+            className={`inline-block px-2 py-1 text-xs font-bold ${indexPriority.textColor} ${indexPriority.bgColor} rounded`}
+            title={indexPriority.tooltip}
+          >
             #{order.sortIndex}
+          </span>
+          <span className={`text-xs font-medium ${indexPriority.textColor.replace('text-white', `text-${indexPriority.color}-600`)}`}>
+            {indexPriority.label}
           </span>
         </div>
       )}
