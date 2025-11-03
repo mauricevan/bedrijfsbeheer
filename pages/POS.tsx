@@ -182,8 +182,8 @@ export const POS: React.FC<POSProps> = ({
 
   // Add manual item to cart
   const handleAddManualItem = () => {
-    if (!manualItem.name || !manualItem.price) {
-      alert('⚠️ Vul ten minste naam en prijs in.');
+    if (!manualItem.name || !manualItem.price || manualItem.price <= 0) {
+      alert('⚠️ Vul ten minste naam en een geldige prijs (groter dan 0) in.');
       return;
     }
 
@@ -196,6 +196,7 @@ export const POS: React.FC<POSProps> = ({
       customVatRate: manualItem.customVatRate,
       unit: manualItem.unit || 'stuk',
       isManual: true,
+      sku: `MAN-${Date.now().toString().slice(-6)}`, // Generieke SKU voor handmatige items
     };
 
     setCart([...cart, newCartItem]);
@@ -207,6 +208,7 @@ export const POS: React.FC<POSProps> = ({
       isManual: true,
     });
     setShowManualItemModal(false);
+    alert(`✅ Handmatig item "${newCartItem.name}" toegevoegd aan winkelwagen!\n\nDit item wordt alleen gebruikt voor deze transactie en wordt niet opgeslagen in de voorraad.`);
   };
 
   // Update cart item quantity
