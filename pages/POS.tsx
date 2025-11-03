@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   CartItem, 
   Sale, 
@@ -64,11 +64,11 @@ export const POS: React.FC<POSProps> = ({
   });
 
   // Sla favorieten op in localStorage
-  React.useEffect(() => {
+  useEffect(() => {
     localStorage.setItem('pos_favorites', JSON.stringify(favoriteItems));
   }, [favoriteItems]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     localStorage.setItem('pos_max_favorites', maxFavorites.toString());
   }, [maxFavorites]);
 
@@ -633,11 +633,44 @@ export const POS: React.FC<POSProps> = ({
             </div>
           )}
 
+          {/* Help Hint for Favorites */}
+          {favoriteItems.length === 0 && !searchTerm && (
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">💡</span>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-yellow-800 mb-1">Tip: Maak Snelkoppelingen</h3>
+                  <p className="text-sm text-yellow-700">
+                    Klik op de <strong>☆ ster</strong> rechtsboven op een item om het toe te voegen aan uw snelkoppelingen. 
+                    Snelkoppelingen verschijnen bovenaan voor snelle toegang!
+                  </p>
+                  <button
+                    onClick={() => setShowFavoritesSettings(true)}
+                    className="mt-2 text-sm text-yellow-800 underline hover:text-yellow-900 font-medium"
+                  >
+                    ⚙️ Configureer aantal snelkoppelingen
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Inventory Items Grid */}
           <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
-            <h2 className="text-lg font-semibold text-neutral mb-4">
-              {searchTerm ? `Zoekresultaten (${filteredInventory.length})` : 'Alle Items'}
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-neutral">
+                {searchTerm ? `Zoekresultaten (${filteredInventory.length})` : 'Alle Items'}
+              </h2>
+              {!searchTerm && favoriteItems.length > 0 && (
+                <button
+                  onClick={() => setShowFavoritesSettings(true)}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium px-3 py-1 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors flex items-center gap-1"
+                  title="Beheer favorieten"
+                >
+                  ⚙️ Favorieten ({favoriteItems.length}/{maxFavorites})
+                </button>
+              )}
+            </div>
             
             {filteredInventory.length === 0 ? (
               <div className="text-center py-12">
