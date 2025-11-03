@@ -15,6 +15,8 @@ interface WebshopProps {
   inventory: InventoryItem[];
   customers: Customer[];
   isAdmin: boolean;
+  webshopProducts: WebshopProduct[];
+  setWebshopProducts: React.Dispatch<React.SetStateAction<WebshopProduct[]>>;
 }
 
 type TabType = 'products' | 'categories' | 'orders';
@@ -23,11 +25,24 @@ export const Webshop: React.FC<WebshopProps> = ({
   inventory,
   customers,
   isAdmin,
+  webshopProducts,
+  setWebshopProducts,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('products');
   
-  // Products state
-  const [products, setProducts] = useState<WebshopProduct[]>([]);
+  // Products state - gebruik props als primary source
+  const [products, setProducts] = useState<WebshopProduct[]>(webshopProducts);
+  
+  // Sync local state met props
+  React.useEffect(() => {
+    setProducts(webshopProducts);
+  }, [webshopProducts]);
+  
+  // Update parent state wanneer local state verandert
+  const updateProducts = (newProducts: WebshopProduct[]) => {
+    setProducts(newProducts);
+    setWebshopProducts(newProducts);
+  };
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<WebshopProduct | null>(null);
   const [productSearchTerm, setProductSearchTerm] = useState('');
@@ -207,7 +222,7 @@ export const Webshop: React.FC<WebshopProps> = ({
       adminNotes: newProduct.adminNotes,
     };
 
-    setProducts([...products, product]);
+    updateProducts([...products, product]);
     setNewProduct({
       name: '',
       slug: '',
@@ -254,7 +269,7 @@ export const Webshop: React.FC<WebshopProps> = ({
       updatedAt: new Date().toISOString(),
     };
 
-    setProducts(products.map(p => p.id === editingProduct.id ? updatedProduct : p));
+    updateProducts(products.map(p => p.id === editingProduct.id ? updatedProduct : p));
     setEditingProduct(null);
     setShowProductForm(false);
     setNewProduct({
@@ -279,14 +294,14 @@ export const Webshop: React.FC<WebshopProps> = ({
   const handleDeleteProduct = (id: string) => {
     const product = products.find(p => p.id === id);
     if (product && confirm(`Weet u zeker dat u "${product.name}" wilt verwijderen?`)) {
-      setProducts(products.filter(p => p.id !== id));
+      updateProducts(products.filter(p => p.id !== id));
       alert(`✅ Product verwijderd.`);
     }
   };
 
   const handleToggleProductStatus = (product: WebshopProduct) => {
     const newStatus = product.status === 'active' ? 'draft' : 'active';
-    setProducts(products.map(p => 
+    updateProducts(products.map(p => 
       p.id === product.id 
         ? { ...p, status: newStatus, updatedAt: new Date().toISOString() }
         : p

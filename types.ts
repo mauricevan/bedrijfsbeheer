@@ -23,17 +23,50 @@ export interface Module {
 
 // Data models for integrated modules
 
+export interface Supplier {
+  id: string;
+  name: string;
+  contactPerson?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  averageLeadTime?: number; // Gemiddelde levertijd in dagen
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface InventoryItem {
   id: string;
   name: string;
   sku: string;
   quantity: number;
   reorderLevel: number;
-  supplier: string;
+  supplierId?: string; // Koppeling met Supplier
+  supplier?: string; // Legacy support - wordt gemigreerd naar supplierId
   lastRestocked?: string;
   location?: string;
-  price?: number; // Verkoopprijs per stuk
+  
+  // Prijsstructuur (NL-Compliant)
+  purchasePrice?: number; // Aankoopprijs (excl. BTW)
+  salePrice: number; // Verkoopprijs (excl. BTW)
+  margin?: number; // Automatisch berekend: ((salePrice - purchasePrice) / purchasePrice) * 100
+  
+  // BTW-instellingen per item (NL-Compliant)
+  vatRate: '21' | '9' | '0' | 'custom'; // Standaard 21%, Verlaagd 9%, Vrij 0%, Custom percentage
+  customVatRate?: number; // Alleen gebruikt als vatRate === 'custom'
+  
+  // Webshop Synchronisatie
+  syncEnabled: boolean; // Automatisch sync met webshop?
+  webshopId?: string; // ID in webshop (als gekoppeld)
+  webshopProductId?: string; // Koppeling met WebshopProduct
+  
   unit?: string; // Eenheid: stuk, meter, kg, etc.
+  price?: number; // Legacy - gebruik salePrice
+  
+  // Metadata
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Product {

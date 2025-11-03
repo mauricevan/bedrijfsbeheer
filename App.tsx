@@ -22,7 +22,8 @@ import {
   Notification,
   User,
   Lead,
-  Interaction
+  Interaction,
+  WebshopProduct
 } from './types';
 import {
   MOCK_INVENTORY,
@@ -84,6 +85,7 @@ function App() {
   const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
   const [leads, setLeads] = useState<Lead[]>(MOCK_LEADS);
   const [interactions, setInteractions] = useState<Interaction[]>(MOCK_INTERACTIONS);
+  const [webshopProducts, setWebshopProducts] = useState<WebshopProduct[]>([]);
 
   // IMPORTANT: useMemo must be called unconditionally (before any early returns)
   const visibleModules = useMemo(() => {
@@ -139,7 +141,9 @@ function App() {
       <Inventory 
         inventory={inventory} 
         setInventory={setInventory} 
-        isAdmin={currentUser.isAdmin} 
+        isAdmin={currentUser.isAdmin}
+        webshopProducts={webshopProducts}
+        setWebshopProducts={setWebshopProducts}
       />
     ),
     [ModuleKey.POS]: (
@@ -238,6 +242,8 @@ function App() {
         inventory={inventory}
         customers={customers}
         isAdmin={currentUser.isAdmin}
+        webshopProducts={webshopProducts}
+        setWebshopProducts={setWebshopProducts}
       />
     ),
   };
