@@ -10,6 +10,7 @@ import {
   HRMIcon,
   ReportsIcon,
   PlanningIcon,
+  WebshopIcon,
   AdminIcon,
 } from './components/icons/IconComponents';
 
@@ -67,6 +68,12 @@ export const ALL_MODULES: Module[] = [
     name: 'Rapportages', 
     description: 'Genereer rapporten en analyseer bedrijfsprestaties.',
     icon: ReportsIcon
+  },
+  { 
+    id: ModuleKey.WEBSHOP, 
+    name: 'Webshop', 
+    description: 'Beheer producten, categorieën en bestellingen voor uw online winkel.',
+    icon: WebshopIcon
   },
 ];
 

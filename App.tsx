@@ -51,6 +51,7 @@ import { CRM } from './pages/CRM';
 import { HRM } from './pages/HRM';
 import { Reports } from './pages/Reports';
 import { Planning } from './pages/Planning';
+import { Webshop } from './pages/Webshop';
 import { trackNavigation, trackAction } from './utils/analytics';
 
 // Default all modules to active
@@ -230,6 +231,13 @@ function App() {
         inventory={inventory}
         quotes={quotes}
         workOrders={workOrders}
+      />
+    ),
+    [ModuleKey.WEBSHOP]: (
+      <Webshop
+        inventory={inventory}
+        customers={customers}
+        isAdmin={currentUser.isAdmin}
       />
     ),
   };

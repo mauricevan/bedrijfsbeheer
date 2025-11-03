@@ -10,6 +10,7 @@ export enum ModuleKey {
   HRM = 'hrm',
   REPORTS = 'reports',
   PLANNING = 'planning',
+  WEBSHOP = 'webshop',
   ADMIN_SETTINGS = 'admin_settings'
 }
 
@@ -44,6 +45,249 @@ export interface Product {
 
 export interface CartItem extends Product {
     quantity: number;
+}
+
+// ==================== WEBSHOP TYPES ====================
+
+export interface WebshopProduct {
+  id: string;
+  name: string;
+  slug: string; // URL-vriendelijke naam (bijv. "staal-plaat-10mm")
+  description: string;
+  shortDescription?: string; // Korte beschrijving voor product cards
+  sku: string; // Stock Keeping Unit
+  price: number; // Verkoopprijs (inclusief BTW)
+  compareAtPrice?: number; // Wasprijs (voor strikethrough)
+  costPrice?: number; // Inkoopprijs (voor winstberekening)
+  inventoryItemId?: string; // Koppeling met Inventory module
+  stockQuantity: number; // Directe voorraad (kan gesynchroniseerd met inventoryItemId)
+  lowStockThreshold?: number; // Waarschuwing bij deze hoeveelheid
+  trackInventory: boolean; // Moet voorraad bijgehouden worden?
+  
+  // Product Categorieën
+  categoryIds: string[]; // Kan in meerdere categorieën
+  featuredCategoryId?: string; // Primaire categorie
+  
+  // Product Varianten (Kleuren, Maten, etc.)
+  hasVariants: boolean;
+  variants?: ProductVariant[];
+  
+  // Media (voorbereiding voor frontend)
+  images: ProductImage[]; // Product afbeeldingen
+  featuredImage?: string; // URL naar hoofdafbeelding
+  
+  // Product Status & Zichtbaarheid
+  status: 'draft' | 'active' | 'archived'; // draft = niet zichtbaar, active = live, archived = verborgen
+  visibility: 'public' | 'private' | 'hidden'; // public = voor iedereen, private = alleen ingelogde klanten, hidden = niet zichtbaar
+  
+  // SEO & Marketing (voorbereiding voor frontend)
+  metaTitle?: string; // SEO title tag
+  metaDescription?: string; // SEO meta description
+  tags: string[]; // Zoekbare tags
+  
+  // Verkoop Instellingen
+  weight?: number; // Gewicht in gram voor verzending
+  dimensions?: { // Afmetingen voor verzending
+    length?: number;
+    width?: number;
+    height?: number;
+  };
+  shippingRequired: boolean; // Moet dit verzonden worden?
+  shippingClass?: string; // Verzendcategorie (bijv. "normaal", "express", "groot")
+  
+  // Extra Opties
+  taxClass?: 'standard' | 'reduced' | 'zero' | 'exempt'; // BTW tarief
+  requireShipping: boolean; // Verzending vereist?
+  digitalProduct: boolean; // Digitaal product (download, geen verzending)
+  
+  // Reviews & Ratings (voorbereiding voor frontend)
+  allowReviews: boolean; // Zijn reviews toegestaan?
+  averageRating?: number; // Gemiddelde rating (0-5)
+  reviewCount?: number; // Aantal reviews
+  
+  // Datums & Metadata
+  createdAt: string;
+  updatedAt: string;
+  publishedAt?: string; // Wanneer gepubliceerd
+  
+  // Statistieken (voorbereiding voor frontend)
+  viewCount?: number; // Aantal keer bekeken
+  purchaseCount?: number; // Aantal keer gekocht
+  wishlistCount?: number; // Aantal keer op verlanglijst
+  
+  // Admin Notities
+  adminNotes?: string; // Interne notities (niet zichtbaar voor klanten)
+}
+
+export interface ProductVariant {
+  id: string;
+  productId: string;
+  name: string; // Bijv. "Rood - Groot"
+  sku?: string; // Unieke SKU voor variant
+  price?: number; // Variant specifieke prijs (overschrijft product prijs indien aanwezig)
+  compareAtPrice?: number;
+  stockQuantity: number;
+  weight?: number;
+  image?: string; // Variant specifieke afbeelding
+  
+  // Variant Opties (bijv. Kleur: Rood, Maat: L)
+  options: Record<string, string>; // { "kleur": "rood", "maat": "large" }
+  
+  // Status
+  active: boolean;
+  trackInventory: boolean;
+}
+
+export interface ProductImage {
+  id: string;
+  url: string; // URL naar afbeelding
+  alt?: string; // Alt text voor SEO en accessibility
+  order: number; // Volgorde voor weergave
+  isPrimary?: boolean; // Is dit de hoofdafbeelding?
+  variantId?: string; // Optioneel: gekoppeld aan specifieke variant
+}
+
+export interface ProductCategory {
+  id: string;
+  name: string;
+  slug: string; // URL-vriendelijke naam
+  description?: string;
+  parentId?: string; // Voor hiërarchische categorieën (subcategorieën)
+  image?: string; // Categorie afbeelding
+  order: number; // Sorteervolgorde
+  active: boolean; // Is categorie actief?
+  
+  // SEO
+  metaTitle?: string;
+  metaDescription?: string;
+  
+  // Statistieken
+  productCount?: number; // Aantal producten in categorie
+  
+  // Datums
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded' | 'partially_refunded';
+
+export interface Order {
+  id: string;
+  orderNumber: string; // Uniek ordernummer (bijv. "ORD-2025-001")
+  
+  // Klant Informatie
+  customerId?: string; // Koppeling met CRM Customer
+  customerEmail: string;
+  customerName: string;
+  customerPhone?: string;
+  
+  // Verzendadres
+  shippingAddress: Address;
+  billingAddress: Address;
+  
+  // Bestelde Items
+  items: OrderItem[];
+  
+  // Prijzen
+  subtotal: number; // Subtotaal (excl. BTW)
+  tax: number; // BTW bedrag
+  shippingCost: number; // Verzendkosten
+  discount: number; // Korting bedrag
+  total: number; // Totaal (incl. alles)
+  
+  // Status
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  
+  // Betaling
+  paymentMethod?: 'credit_card' | 'bank_transfer' | 'ideal' | 'paypal' | 'cash' | 'other';
+  paymentReference?: string; // Transactie referentie
+  paidAt?: string; // Wanneer betaald
+  
+  // Verzending
+  trackingNumber?: string;
+  carrier?: string; // Verzenddienst (PostNL, DHL, etc.)
+  shippedAt?: string;
+  deliveredAt?: string;
+  
+  // Notities
+  customerNotes?: string; // Notities van klant
+  adminNotes?: string; // Interne notities
+  
+  // Datums
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OrderItem {
+  id: string;
+  productId: string;
+  variantId?: string; // Als product variant heeft
+  productName: string; // Opgeslagen naam (voor historie)
+  productSku: string;
+  quantity: number;
+  price: number; // Prijs per stuk (zoals op moment van bestellen)
+  subtotal: number; // quantity * price
+  tax: number; // BTW voor dit item
+  total: number; // subtotal + tax
+  
+  // Product snapshot (voor historie als product wordt aangepast)
+  productSnapshot?: {
+    name: string;
+    image?: string;
+    variantName?: string;
+  };
+}
+
+export interface Address {
+  firstName: string;
+  lastName: string;
+  company?: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  postalCode: string;
+  country: string;
+  province?: string; // Provincie/Staat
+  phone?: string;
+}
+
+// Shopping Cart (voorbereiding voor frontend)
+export interface ShoppingCart {
+  id: string; // Session ID of User ID
+  items: WebshopCartItem[];
+  subtotal: number;
+  tax: number;
+  shippingCost: number;
+  discount: number;
+  total: number;
+  couponCode?: string;
+  updatedAt: string;
+}
+
+export interface WebshopCartItem {
+  productId: string;
+  variantId?: string;
+  quantity: number;
+  price: number; // Prijs op moment van toevoegen
+}
+
+// Coupon/Discount (voorbereiding voor frontend)
+export interface Coupon {
+  id: string;
+  code: string;
+  type: 'percentage' | 'fixed_amount'; // Percentage korting of vast bedrag
+  value: number; // Kortingspercentage of bedrag
+  minimumPurchase?: number; // Minimaal aankoopbedrag
+  maximumDiscount?: number; // Maximaal kortingsbedrag
+  usageLimit?: number; // Maximaal aantal keer te gebruiken
+  usageCount: number; // Huidig gebruik
+  validFrom: string;
+  validUntil: string;
+  active: boolean;
+  applicableCategories?: string[]; // Alleen voor bepaalde categorieën
+  applicableProducts?: string[]; // Alleen voor bepaalde producten
 }
 
 export interface Sale {
