@@ -1,0 +1,566 @@
+[
+  {
+    "category": "Connection",
+    "issue": "Database connection timeout",
+    "severity": "high",
+    "message": "Connections to Supabase free-tier instances may time out due to connection limits (max 60 connections) and inactive cold instances in NeonDB serverless. Connections exceeding pool size are rejected.",
+    "diagnostic_steps": [
+      "Check connection pool size in dashboard",
+      "Verify region proximity between app and database",
+      "Monitor connection count in real-time",
+      "Check for connection leaks in application code",
+      "Review connection timeout settings"
+    ],
+    "suggested_fix": [
+      "Upgrade to Pro plan for higher connection limits",
+      "Configure PgBouncer connection pooling (transaction mode)",
+      "Move database instance closer to application region",
+      "Implement connection retry logic with exponential backoff",
+      "Use connection pooling library (pg.Pool) instead of direct connections",
+      "Set max connection lifetime to prevent stale connections"
+    ],
+    "test_action": "retry_connection",
+    "latency": 120,
+    "occurrences": 5,
+    "vendor_specific_info": {
+      "supabase": "Free tier: 60 connections max. Use Supabase Pooler (port 6543) for better pooling.",
+      "neondb": "Serverless instances have cold start delays. Consider Provisioned compute for consistent performance.",
+      "planetscale": "Connection limits vary by plan. Branch connections count separately."
+    }
+  },
+  {
+    "category": "Auth",
+    "issue": "Invalid API Key",
+    "severity": "medium",
+    "message": "401 Unauthorized errors occur when SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, or NeonDB connection string credentials are invalid, expired, or missing from environment variables.",
+    "diagnostic_steps": [
+      "Verify environment variables are set correctly",
+      "Check key expiration in Supabase dashboard",
+      "Validate key format (should start with eyJ for JWT keys)",
+      "Test API key with curl or Postman",
+      "Check for key rotation in recent deployments"
+    ],
+    "suggested_fix": [
+      "Update keys in environment variables (.env file)",
+      "Regenerate keys in Supabase dashboard if compromised",
+      "Verify service role key is not exposed to frontend",
+      "Use Row Level Security (RLS) policies with anon key",
+      "Implement key rotation strategy"
+    ],
+    "test_action": "validate_keys",
+    "occurrences": 3
+  },
+  {
+    "category": "Auth",
+    "issue": "Row Level Security (RLS) blocking queries",
+    "severity": "medium",
+    "message": "Queries return empty results or 403 errors when RLS policies are incorrectly configured or missing. Common in Supabase when tables have RLS enabled but no policies defined.",
+    "diagnostic_steps": [
+      "Check RLS status in table settings (pgadmin or dashboard)",
+      "Review existing RLS policies in auth.policies table",
+      "Test query with service role key (bypasses RLS)",
+      "Check user authentication context (auth.uid())",
+      "Verify policy conditions match query filters"
+    ],
+    "suggested_fix": [
+      "Create appropriate RLS policies for SELECT, INSERT, UPDATE, DELETE",
+      "Use service role key for admin operations (server-side only)",
+      "Disable RLS on public tables if not needed (not recommended)",
+      "Test policies with different user roles",
+      "Use Supabase Dashboard to visualize and debug policies"
+    ],
+    "test_action": "test_rls_policies",
+    "occurrences": 8
+  },
+  {
+    "category": "Performance",
+    "issue": "Slow query execution (>2s)",
+    "severity": "high",
+    "message": "Queries take longer than 2 seconds due to missing indexes, full table scans, or inefficient joins. Especially problematic on large tables in NeonDB serverless with cold starts.",
+    "diagnostic_steps": [
+      "Run EXPLAIN ANALYZE on slow queries",
+      "Check for missing indexes on WHERE/FOREIGN KEY columns",
+      "Monitor query execution time in dashboard",
+      "Identify N+1 query patterns in application code",
+      "Review database query logs for slow queries"
+    ],
+    "suggested_fix": [
+      "Add indexes on frequently queried columns",
+      "Create composite indexes for multi-column filters",
+      "Use database query planner to optimize joins",
+      "Implement query result caching where appropriate",
+      "Consider denormalization for frequently joined data",
+      "Use prepared statements to improve query plan caching"
+    ],
+    "test_action": "analyze_query_performance",
+    "latency": 3200,
+    "occurrences": 12,
+    "vendor_specific_info": {
+      "neondb": "Serverless compute may have cold start delays (2-5s). Use Provisioned compute for consistent performance.",
+      "supabase": "Enable query performance monitoring in dashboard. Use Supabase Edge Functions for complex operations."
+    }
+  },
+  {
+    "category": "Performance",
+    "issue": "Cold start delay (serverless)",
+    "severity": "medium",
+    "message": "NeonDB serverless instances experience 2-5 second cold start delays when inactive for >5 minutes. First query after inactivity is significantly slower.",
+    "diagnostic_steps": [
+      "Measure first query latency after idle period",
+      "Monitor instance activation time in Neon dashboard",
+      "Check instance suspend settings",
+      "Compare cold vs warm query times"
+    ],
+    "suggested_fix": [
+      "Upgrade to Provisioned compute (no cold starts)",
+      "Implement keep-alive queries every 4 minutes",
+      "Use connection pooling with persistent connections",
+      "Add retry logic with longer timeout for first request",
+      "Pre-warm critical endpoints during deployment"
+    ],
+    "test_action": "test_cold_start",
+    "latency": 4500,
+    "occurrences": 15,
+    "vendor_specific_info": {
+      "neondb": "Free tier: auto-suspend after 5 min. Pro: 30 min. Provisioned: never suspends.",
+      "planetscale": "Serverless branches auto-scale, minimal cold start impact."
+    }
+  },
+  {
+    "category": "Connection",
+    "issue": "Connection pool exhausted",
+    "severity": "high",
+    "message": "All available database connections are in use, causing new connection attempts to fail. Common with connection leaks, too many concurrent requests, or insufficient pool size.",
+    "diagnostic_steps": [
+      "Check current connection count vs max limit",
+      "Identify long-running queries holding connections",
+      "Review application connection pool configuration",
+      "Check for unclosed database connections in code",
+      "Monitor connection duration and idle time"
+    ],
+    "suggested_fix": [
+      "Increase connection pool size (if plan allows)",
+      "Implement connection timeout and retry logic",
+      "Use connection pooler (Supabase Pooler, PgBouncer)",
+      "Fix connection leaks (always close connections)",
+      "Reduce connection lifetime (maxLifetime setting)",
+      "Upgrade database plan for higher connection limits"
+    ],
+    "test_action": "check_connection_pool",
+    "occurrences": 7,
+    "vendor_specific_info": {
+      "supabase": "Use port 6543 (Pooler) instead of 5432 (Direct) for better pooling. Pooler supports 200+ connections.",
+      "neondb": "Serverless: connection limits depend on compute size. Provisioned: higher limits available."
+    }
+  },
+  {
+    "category": "Schema",
+    "issue": "Migration failures on schema changes",
+    "severity": "high",
+    "message": "Database migrations fail due to foreign key constraints, existing data conflicts, or schema locks. Common when altering columns with data or adding NOT NULL constraints to existing tables.",
+    "diagnostic_steps": [
+      "Review migration SQL for constraint violations",
+      "Check for dependent foreign keys",
+      "Verify data compatibility with new schema",
+      "Test migration on staging branch first",
+      "Check for active transactions blocking DDL statements"
+    ],
+    "suggested_fix": [
+      "Add default values before NOT NULL constraints",
+      "Migrate data in separate steps (add column → populate → make required)",
+      "Drop foreign keys temporarily during migration",
+      "Use PlanetScale branch workflow for safe schema changes",
+      "Run migrations during low-traffic periods",
+      "Use transaction-safe migration tools (Prisma, Flyway)"
+    ],
+    "test_action": "test_migration",
+    "occurrences": 4,
+    "vendor_specific_info": {
+      "planetscale": "Use deploy requests to test schema changes on branch before merging to main.",
+      "supabase": "Use Supabase CLI for version-controlled migrations. Test on local instance first."
+    }
+  },
+  {
+    "category": "Schema",
+    "issue": "Missing foreign key constraints",
+    "severity": "low",
+    "message": "Tables lack foreign key relationships, leading to orphaned records and data integrity issues. May cause inconsistent data in relationships.",
+    "diagnostic_steps": [
+      "Audit table relationships for missing foreign keys",
+      "Check for orphaned records in related tables",
+      "Review application code for data integrity checks",
+      "Validate referential integrity with queries"
+    ],
+    "suggested_fix": [
+      "Add foreign key constraints to enforce relationships",
+      "Clean up existing orphaned records",
+      "Set CASCADE rules for DELETE/UPDATE operations",
+      "Add indexes on foreign key columns",
+      "Document schema relationships"
+    ],
+    "test_action": "validate_foreign_keys",
+    "occurrences": 6
+  },
+  {
+    "category": "Config",
+    "issue": "SSL/TLS connection requirement",
+    "severity": "medium",
+    "message": "Database connections fail when SSL is required but not enabled in connection string. Supabase and NeonDB require SSL for secure connections.",
+    "diagnostic_steps": [
+      "Verify connection string includes ?sslmode=require",
+      "Check for SSL certificate errors in logs",
+      "Test connection with SSL enabled/disabled",
+      "Review connection library SSL settings"
+    ],
+    "suggested_fix": [
+      "Add ?sslmode=require to connection string",
+      "Use ?sslmode=no-verify for development (not production)",
+      "Configure SSL certificates for custom domains",
+      "Update database client library to support SSL",
+      "Verify SSL certificate is not expired"
+    ],
+    "test_action": "test_ssl_connection",
+    "occurrences": 2
+  },
+  {
+    "category": "Platform",
+    "issue": "Database storage quota exceeded",
+    "severity": "high",
+    "message": "Database has reached storage limit (e.g., Supabase free tier: 500MB, NeonDB free: 3GB). Writes are blocked until storage is freed or plan is upgraded.",
+    "diagnostic_steps": [
+      "Check current storage usage in dashboard",
+      "Identify largest tables and indexes",
+      "Review table sizes with pg_total_relation_size",
+      "Check for unused indexes consuming space",
+      "Analyze growth trends"
+    ],
+    "suggested_fix": [
+      "Delete unused data or archive old records",
+      "Drop unused indexes",
+      "Vacuum database to reclaim space",
+      "Upgrade to higher tier plan",
+      "Implement data retention policies",
+      "Compress large text/JSON columns",
+      "Move historical data to cold storage"
+    ],
+    "test_action": "check_storage_usage",
+    "occurrences": 1,
+    "vendor_specific_info": {
+      "supabase": "Free: 500MB. Pro: 8GB+. Use Supabase Storage for file storage instead of database.",
+      "neondb": "Free: 3GB. Pro: 100GB+. Monitor branch storage separately."
+    }
+  },
+  {
+    "category": "Platform",
+    "issue": "Rate limit exceeded (API requests)",
+    "severity": "medium",
+    "message": "Supabase PostgREST API or NeonDB API requests exceed rate limits. Free tiers typically have 500 requests/second limit. Returns 429 Too Many Requests.",
+    "diagnostic_steps": [
+      "Monitor API request rate in dashboard",
+      "Identify endpoints with high request frequency",
+      "Check for N+1 query patterns",
+      "Review client-side polling intervals",
+      "Analyze API usage patterns"
+    ],
+    "suggested_fix": [
+      "Implement request batching where possible",
+      "Add client-side caching to reduce API calls",
+      "Use database subscriptions (Supabase Realtime) instead of polling",
+      "Implement rate limiting in application code",
+      "Upgrade to Pro plan for higher limits",
+      "Optimize queries to reduce round trips"
+    ],
+    "test_action": "check_rate_limits",
+    "occurrences": 9,
+    "vendor_specific_info": {
+      "supabase": "Free: 500 req/s. Pro: 2000 req/s. Use Supabase Realtime subscriptions to reduce polling.",
+      "neondb": "API limits depend on plan. Consider connection pooling to reduce API calls."
+    }
+  },
+  {
+    "category": "SDK",
+    "issue": "SDK version compatibility issues",
+    "severity": "low",
+    "message": "Outdated Supabase client library or PostgreSQL driver version causes deprecated API warnings, missing features, or connection errors.",
+    "diagnostic_steps": [
+      "Check installed SDK version vs latest release",
+      "Review changelog for breaking changes",
+      "Test with latest SDK version in development",
+      "Check for deprecation warnings in console",
+      "Verify Node.js/Python version compatibility"
+    ],
+    "suggested_fix": [
+      "Update to latest stable SDK version",
+      "Review migration guide for breaking changes",
+      "Update dependencies gradually",
+      "Test thoroughly after SDK upgrade",
+      "Pin versions in production after testing"
+    ],
+    "test_action": "check_sdk_version",
+    "occurrences": 3
+  },
+  {
+    "category": "Security",
+    "issue": "Exposed service role key in frontend",
+    "severity": "high",
+    "message": "SUPABASE_SERVICE_ROLE_KEY or database credentials are exposed in frontend code or environment variables, allowing full database access bypassing RLS.",
+    "diagnostic_steps": [
+      "Audit frontend code for hardcoded keys",
+      "Check browser Network tab for keys in requests",
+      "Review environment variable usage",
+      "Scan codebase for credential patterns",
+      "Check Git history for committed secrets"
+    ],
+    "suggested_fix": [
+      "Use only ANON key in frontend",
+      "Rotate exposed service role key immediately",
+      "Move service role key to backend-only environment",
+      "Use Supabase Edge Functions for authenticated operations",
+      "Implement proper server-side authentication",
+      "Add secrets scanning to CI/CD pipeline"
+    ],
+    "test_action": "scan_for_exposed_keys",
+    "occurrences": 2,
+    "vendor_specific_info": {
+      "supabase": "Service role key bypasses RLS - NEVER expose to frontend. Use only in server-side code or Edge Functions."
+    }
+  },
+  {
+    "category": "Security",
+    "issue": "Weak or default database passwords",
+    "severity": "high",
+    "message": "Database user passwords are weak, default, or reused across environments, creating security vulnerabilities.",
+    "diagnostic_steps": [
+      "Review password complexity requirements",
+      "Check for default passwords in connection strings",
+      "Audit password storage and rotation policies",
+      "Test password strength",
+      "Verify passwords are not in version control"
+    ],
+    "suggested_fix": [
+      "Generate strong, unique passwords (16+ chars, mixed case, numbers, symbols)",
+      "Use password manager for credential storage",
+      "Implement password rotation policy",
+      "Use managed authentication (Supabase Auth) instead of direct DB auth",
+      "Enable two-factor authentication where supported",
+      "Store passwords only in secure environment variables"
+    ],
+    "test_action": "validate_password_strength",
+    "occurrences": 1
+  },
+  {
+    "category": "Performance",
+    "issue": "N+1 query problem",
+    "severity": "medium",
+    "message": "Application executes one query per related record instead of batch fetching, causing hundreds of queries for list views. Common with Supabase client when fetching related data.",
+    "diagnostic_steps": [
+      "Monitor query count for list operations",
+      "Review application code for loops with database calls",
+      "Check for missing JOIN operations",
+      "Profile query execution patterns",
+      "Count database round trips per page load"
+    ],
+    "suggested_fix": [
+      "Use JOIN queries to fetch related data in single query",
+      "Implement data fetching with relations (Supabase select with joins)",
+      "Use GraphQL-style resolvers with batching",
+      "Add application-level caching",
+      "Fetch all needed data upfront, filter in memory if small"
+    ],
+    "test_action": "detect_n_plus_one",
+    "latency": 850,
+    "occurrences": 11
+  },
+  {
+    "category": "Config",
+    "issue": "Incorrect timezone configuration",
+    "severity": "low",
+    "message": "Database timezone differs from application timezone, causing timestamp mismatches. Dates stored in UTC but displayed in wrong timezone, or vice versa.",
+    "diagnostic_steps": [
+      "Check database timezone setting (SHOW timezone)",
+      "Compare with application timezone configuration",
+      "Verify timestamp storage format (UTC vs local)",
+      "Test date insertion and retrieval",
+      "Review client library timezone handling"
+    ],
+    "suggested_fix": [
+      "Set database timezone to UTC (standard practice)",
+      "Configure application to use UTC internally",
+      "Convert timezones only in presentation layer",
+      "Use TIMESTAMPTZ instead of TIMESTAMP in PostgreSQL",
+      "Document timezone handling strategy"
+    ],
+    "test_action": "check_timezone_config",
+    "occurrences": 4
+  },
+  {
+    "category": "Platform",
+    "issue": "Branch merge conflicts (PlanetScale)",
+    "severity": "medium",
+    "message": "Schema changes in development branch conflict with main branch when attempting to create deploy request. Common when multiple developers work on schema simultaneously.",
+    "diagnostic_steps": [
+      "Review schema differences between branches",
+      "Check for conflicting migrations",
+      "Verify branch is up to date with main",
+      "Compare table structures",
+      "Check PlanetScale deploy request status"
+    ],
+    "suggested_fix": [
+      "Merge main branch changes into dev branch first",
+      "Resolve schema conflicts manually",
+      "Coordinate schema changes with team",
+      "Use branching strategy to isolate schema changes",
+      "Test merge in staging before production"
+    ],
+    "test_action": "check_branch_conflicts",
+    "occurrences": 5,
+    "vendor_specific_info": {
+      "planetscale": "Use branching for schema changes. Merge conflicts must be resolved before deploy. Cannot force push to main branch."
+    }
+  },
+  {
+    "category": "Performance",
+    "issue": "Inefficient JSON/JSONB queries",
+    "severity": "medium",
+    "message": "Queries on JSONB columns lack GIN indexes, causing full table scans. JSON path queries without proper indexing are slow on large datasets.",
+    "diagnostic_steps": [
+      "Identify queries filtering JSONB columns",
+      "Check for existing GIN indexes on JSONB columns",
+      "Run EXPLAIN on JSONB queries",
+      "Measure query performance with/without indexes"
+    ],
+    "suggested_fix": [
+      "Create GIN indexes on JSONB columns used in WHERE clauses",
+      "Use jsonb_path_ops for better index performance",
+      "Extract frequently queried JSON fields to regular columns",
+      "Optimize JSONB query syntax for index usage",
+      "Consider document database for complex JSON structures"
+    ],
+    "test_action": "analyze_jsonb_queries",
+    "latency": 1800,
+    "occurrences": 6
+  },
+  {
+    "category": "Connection",
+    "issue": "Network latency to database region",
+    "severity": "medium",
+    "message": "High latency (>100ms) between application and database regions causes slow query responses. Common when app and DB are in different continents.",
+    "diagnostic_steps": [
+      "Measure ping latency to database host",
+      "Compare latency from different application regions",
+      "Check database region in dashboard",
+      "Test query times from multiple locations",
+      "Monitor network hops with traceroute"
+    ],
+    "suggested_fix": [
+      "Move database to same region as application",
+      "Use read replicas in multiple regions",
+      "Implement edge caching (CDN) for read-heavy queries",
+      "Use connection pooling with keep-alive",
+      "Consider multi-region deployment strategy"
+    ],
+    "test_action": "measure_latency",
+    "latency": 250,
+    "occurrences": 8,
+    "vendor_specific_info": {
+      "supabase": "Database regions: US, EU, APAC. Choose closest to users. Can migrate regions (downtime required).",
+      "neondb": "Multi-region support. Create read replicas in different regions for global apps."
+    }
+  },
+  {
+    "category": "Schema",
+    "issue": "Missing indexes on foreign keys",
+    "severity": "low",
+    "message": "Foreign key columns lack indexes, causing slow JOIN operations and FK constraint checks. PostgreSQL doesn't auto-create indexes on FK columns.",
+    "diagnostic_steps": [
+      "Identify foreign key columns without indexes",
+      "Check index usage statistics",
+      "Review slow JOIN queries",
+      "Run EXPLAIN on queries joining tables"
+    ],
+    "suggested_fix": [
+      "Create indexes on all foreign key columns",
+      "Use composite indexes for multi-column foreign keys",
+      "Review index usage and remove unused indexes",
+      "Monitor index maintenance overhead"
+    ],
+    "test_action": "check_foreign_key_indexes",
+    "latency": 600,
+    "occurrences": 10
+  },
+  {
+    "category": "Config",
+    "issue": "Connection string format errors",
+    "severity": "medium",
+    "message": "Database connection string is malformed, missing parameters, or contains special characters that break URL parsing. Common with environment variable substitutions.",
+    "diagnostic_steps": [
+      "Validate connection string format",
+      "Check for URL encoding issues with special characters",
+      "Verify all required parameters are present",
+      "Test connection string with database client",
+      "Review environment variable interpolation"
+    ],
+    "suggested_fix": [
+      "URL-encode special characters in password/connection string",
+      "Use connection string builder libraries",
+      "Store connection string in secure environment variable",
+      "Validate connection string on application startup",
+      "Document required connection string format",
+      "Use connection URI format: postgresql://user:pass@host:port/db"
+    ],
+    "test_action": "validate_connection_string",
+    "occurrences": 3
+  },
+  {
+    "category": "Misc",
+    "issue": "Database backup not configured",
+    "severity": "high",
+    "message": "No automated backups are configured, risking data loss in case of corruption, accidental deletion, or database failure. Free tiers may have limited backup retention.",
+    "diagnostic_steps": [
+      "Check backup settings in database dashboard",
+      "Verify backup frequency and retention period",
+      "Test backup restoration process",
+      "Review backup storage location",
+      "Check last successful backup timestamp"
+    ],
+    "suggested_fix": [
+      "Enable automated daily backups",
+      "Configure point-in-time recovery (PITR) if available",
+      "Test backup restoration regularly",
+      "Store backups in separate region for disaster recovery",
+      "Document backup and restore procedures",
+      "Upgrade plan for longer backup retention if needed"
+    ],
+    "test_action": "check_backup_status",
+    "occurrences": 2,
+    "vendor_specific_info": {
+      "supabase": "Pro plan: 7 days PITR. Free tier: limited backups. Export data manually.",
+      "neondb": "Automated backups available. PITR on Pro plan. Branch snapshots for schema changes.",
+      "planetscale": "Automatic daily backups. Branch-based backup strategy."
+    }
+  },
+  {
+    "category": "Performance",
+    "issue": "Large transaction rollbacks",
+    "severity": "medium",
+    "message": "Large transactions (updating thousands of rows) take long to rollback on failure, locking resources and blocking other queries. Rollback time can exceed original transaction time.",
+    "diagnostic_steps": [
+      "Monitor transaction duration and size",
+      "Check for long-running transactions in pg_stat_activity",
+      "Identify transactions with many row updates",
+      "Review application error handling and rollback frequency"
+    ],
+    "suggested_fix": [
+      "Break large transactions into smaller batches",
+      "Use idempotent operations to allow retries",
+      "Implement optimistic locking for conflicts",
+      "Set appropriate transaction timeout",
+      "Use savepoints for partial rollbacks",
+      "Consider async processing for large operations"
+    ],
+    "test_action": "monitor_transactions",
+    "latency": 5000,
+    "occurrences": 4
+  }
+]
+

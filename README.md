@@ -485,13 +485,34 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ Waarschuwingen bij afwijkingen
 - 🔄 Budget overschrijding alerts
 
-### 10. **Admin Instellingen**
+### 10. **Admin Instellingen** 🆕 **UITGEBREID MET ANALYTICS & DATABASE DIAGNOSTICS**
 - ✅ Modules in-/uitschakelen per module
 - ✅ Beschrijving per module
 - ✅ Visuele indicators (actief/inactief)
 - ✅ Per module toggle functionaliteit
 - ✅ Waarschuwing over impact
 - ✅ Alleen toegankelijk voor admins
+- 🆕 **Systeem Analytics & Optimalisatie Tab** - Lean Six Sigma analyse dashboard:
+  - Key metrics (totale events, actieve gebruikers, gebruikstijd, efficiency)
+  - Module gebruik statistieken met grafieken en tabellen
+  - Proces efficiëntie metrics (cyclus tijd, error rates, bottlenecks)
+  - Gebruiker efficiency scores met visualisaties
+  - Automatische optimalisatie aanbevelingen gebaseerd op gebruikspatronen
+  - Periode filters (dag/week/maand/kwartaal/jaar)
+  - Reset functionaliteit voor analytics data
+- 🆕 **Database Diagnostics Tab** - Baseline diagnostics voor managed databases:
+  - 20+ voorgedefinieerde database issues (Connection, Auth, Performance, Schema, Config, Platform, SDK, Security, Misc)
+  - Severity distributie (High/Medium/Low) met statistieken
+  - Categorie filter functionaliteit
+  - Gedetailleerde issue cards met:
+    - Diagnostische stappen per issue
+    - Voorgestelde oplossingen
+    - Platform-specifieke informatie (Supabase, NeonDB, PlanetScale)
+    - Test action buttons (klaar voor backend integratie)
+  - Issues per categorie overzicht
+  - Vendor-specific informatie voor populaire managed databases
+  - Latency en occurrences data voor performance issues
+  - Responsive design met mobile-optimized layout
 
 ### 11. **Notificaties Systeem**
 - ✅ **Notificaties bel** in header met badge counter
@@ -2017,6 +2038,97 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 
 ## 🏆 Changelog
 
+### Versie 4.9.0 🆕 **DATABASE DIAGNOSTICS & ANALYTICS DASHBOARD**
+
+**Nieuwe Features:**
+
+**1. Systeem Analytics & Optimalisatie Dashboard (Lean Six Sigma)**
+- 🆕 **Analytics Tab in Admin Instellingen** - Volledig analytics dashboard voor data-driven optimalisatie
+- 🆕 **Key Metrics Cards** - Totale events, actieve gebruikers, gebruikstijd, efficiency verandering
+- 🆕 **Module Gebruik Statistieken:**
+  - Bar charts voor sessies, acties en fouten per module
+  - Uitgebreide tabellen met trends (increasing/decreasing/stable)
+  - Totale sessies en tijd per module
+- 🆕 **Proces Efficiëntie Metrics:**
+  - Gemiddelde cyclus tijd per proces
+  - Completion rate, error rate, rework rate
+  - Bottleneck detectie met wachttijden
+  - Bar charts voor cyclus tijd visualisatie
+- 🆕 **Gebruiker Efficiency Scores:**
+  - Efficiency scores (0-100) per gebruiker
+  - Horizontal bar chart voor visuele vergelijking
+  - Meest gebruikte modules per gebruiker
+- 🆕 **Automatische Optimalisatie Aanbevelingen:**
+  - Prioriteit levels (high/medium/low)
+  - Categorieën (process/feature/usability/automation/quality)
+  - ROI scores en impact inschatting
+  - Aanbevolen acties per aanbeveling
+  - Kleurgecodeerde priority badges
+- 🆕 **Periode Filters** - Analyse per dag/week/maand/kwartaal/jaar
+- 🆕 **Analytics Tracking:**
+  - Automatische navigation tracking (via AnalyticsTracker component)
+  - Action tracking voor invoice/quote creation, validations, payments
+  - Work order tracking (creation, status updates, completions)
+  - Task completion tracking met duration
+  - LocalStorage voor data persistentie
+
+**2. Database Diagnostics Dashboard**
+- 🆕 **Database Diagnostics Tab in Admin Instellingen** - Baseline diagnostics voor managed databases
+- 🆕 **20+ Voorgedefinieerde Issues:**
+  - Connection issues (timeouts, pool exhaustion, latency)
+  - Authentication issues (invalid keys, RLS blocking)
+  - Performance issues (slow queries, cold starts, N+1 problems)
+  - Schema issues (migration failures, missing indexes)
+  - Configuration issues (SSL, timezone)
+  - Platform limits (storage quota, rate limits)
+  - SDK compatibility issues
+  - Security issues (exposed keys, weak passwords)
+- 🆕 **Severity Distributie:**
+  - Statistics cards voor High/Medium/Low severity
+  - Bar chart voor visuele verdeling
+  - Total issues counter
+- 🆕 **Categorie Filtering:**
+  - Filter op categorie (Connection, Auth, Performance, etc.)
+  - "Alle Categorieën" optie
+  - Klikbare categorie cards voor snelle filtering
+- 🆕 **Gedetailleerde Issue Cards:**
+  - Severity badges (kleurgecodeerd)
+  - Category badges
+  - Latency indicators (indien beschikbaar)
+  - Occurrences counters
+  - Diagnostische stappen (lijst met checkpoints)
+  - Voorgestelde oplossingen (actie-items)
+  - Platform-specifieke informatie (Supabase/NeonDB/PlanetScale)
+  - Test action buttons (klaar voor backend integratie)
+- 🆕 **Vendor-Specific Informatie:**
+  - Supabase-specifieke details (connection limits, pooling, etc.)
+  - NeonDB-specifieke details (serverless cold starts, provisioned compute)
+  - PlanetScale-specifieke details (branching, deploy requests)
+- 🆕 **Responsive Design:**
+  - Mobile-optimized layout
+  - Scrollable tabs voor kleine schermen
+  - Touch-friendly cards en buttons
+  - Adaptive grid layouts
+
+**Technische Updates:**
+- 🆕 `AnalyticsEvent`, `ModuleUsageStats`, `UserActivityStats`, `ProcessMetrics`, `OptimizationRecommendation`, `AnalyticsDashboard` types
+- 🆕 `utils/analytics.ts` - Analytics tracking en dashboard building functionaliteit
+- 🆕 `components/AnalyticsTracker.tsx` - Automatische navigation en session tracking
+- 🆕 `data/databaseDiagnostics.json` - Baseline diagnostics data (20 issues)
+- 🆕 Recharts integratie voor analytics visualisaties
+- 🆕 LocalStorage voor analytics data persistentie
+- 🆕 Process flows definities voor metric berekeningen
+- 🆕 Recommendation engine met regels voor automatische aanbevelingen
+
+**Voordelen:**
+- ✅ **Data-Driven Optimalisatie** - Beslissingen gebaseerd op echte gebruikspatronen
+- ✅ **Proactieve Probleem Detectie** - Identificeer bottlenecks voordat ze kritiek worden
+- ✅ **Database Health Monitoring** - Preventief database issues detecteren
+- ✅ **Performance Insights** - Begrijp waar gebruikers tijd aan besteden
+- ✅ **ROI Tracking** - Zie welke optimalisaties de meeste impact hebben
+- ✅ **Lean Six Sigma Principes** - Wasted reduction en value stream mapping
+- ✅ **Compliance Ready** - Audit trail voor alle systeem activiteiten
+
 ### Versie 4.8.0 🆕 **AUTOMATISCHE FACTUUR CONVERSIE BIJ VOLTOOIDE WERKORDERS**
 
 **Nieuwe Features:**
@@ -2608,6 +2720,8 @@ Draft → Sent → Paid
    - Werkorders → Beheer taken (volledig overzicht)
    - **Boekhouding** → Offertes & Facturen
    - Admin Instellingen → Schakel modules in/uit
+   - **Admin Instellingen → Systeem Analytics** → Data-driven optimalisatie dashboard
+   - **Admin Instellingen → Database Diagnostics** → Database health monitoring
 
 **Of login als User** (jan@bedrijf.nl / 1234) om het persoonlijke workboard te testen!
 
@@ -2682,8 +2796,8 @@ Dit project is ontwikkeld voor intern gebruik. Alle rechten voorbehouden.
 ---
 
 **Laatste update**: December 2024  
-**Versie**: 4.8.0 (Automatische Factuur Conversie)
-**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering, **volledig responsive mobile-first design**, **factuurbeheer vanuit CRM**, **persoonlijk dossier systeem**, en **automatische factuur generatie bij voltooide werkorders**
+**Versie**: 4.9.0 (Database Diagnostics & Analytics Dashboard)
+**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering, **volledig responsive mobile-first design**, **factuurbeheer vanuit CRM**, **persoonlijk dossier systeem**, **automatische factuur generatie bij voltooide werkorders**, **Lean Six Sigma analytics dashboard**, en **database diagnostics systeem**
 
 ---
 
