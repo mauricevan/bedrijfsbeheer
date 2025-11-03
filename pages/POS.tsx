@@ -43,6 +43,7 @@ export const POS: React.FC<POSProps> = ({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showPackingSlipModal, setShowPackingSlipModal] = useState(false);
   const [showFavoritesSettings, setShowFavoritesSettings] = useState(false);
+  const [posAlert, setPosAlert] = useState<{ itemName: string; message: string } | null>(null);
   
   // Favorieten / Snelkoppelingen
   const [favoriteItems, setFavoriteItems] = useState<string[]>(() => {
@@ -153,6 +154,14 @@ export const POS: React.FC<POSProps> = ({
     if (!item.isManual && item.quantity <= 0) {
       alert(`⚠️ "${item.name}" is niet op voorraad!`);
       return;
+    }
+
+    // Show POS alert if item has posAlertNote
+    if (item.posAlertNote && item.posAlertNote.trim()) {
+      setPosAlert({
+        itemName: item.name,
+        message: item.posAlertNote,
+      });
     }
 
     const priceInclVat = calculateVatInclusive(item.salePrice, item.vatRate, item.customVatRate);
@@ -582,7 +591,9 @@ export const POS: React.FC<POSProps> = ({
                     <div
                       key={item.id}
                       className={`relative p-4 rounded-lg border-2 text-left transition-all min-h-[100px] flex flex-col justify-between ${
-                        isOutOfStock && mode === 'b2c'
+                        item.posAlertNote && item.posAlertNote.trim()
+                          ? 'border-orange-300 bg-orange-50 hover:border-orange-500 hover:shadow-md'
+                          : isOutOfStock && mode === 'b2c'
                           ? 'border-red-200 bg-red-50 opacity-50'
                           : isLowStock
                           ? 'border-orange-200 bg-orange-50 hover:border-orange-400'
@@ -695,7 +706,9 @@ export const POS: React.FC<POSProps> = ({
                     <div
                       key={item.id}
                       className={`relative p-4 rounded-lg border-2 text-left transition-all min-h-[100px] flex flex-col justify-between ${
-                        isOutOfStock && mode === 'b2c'
+                        item.posAlertNote && item.posAlertNote.trim()
+                          ? 'border-orange-300 bg-orange-50 hover:border-orange-500 hover:shadow-md'
+                          : isOutOfStock && mode === 'b2c'
                           ? 'border-red-200 bg-red-50 opacity-50'
                           : isLowStock
                           ? 'border-orange-200 bg-orange-50 hover:border-orange-400 hover:bg-orange-100'
@@ -786,6 +799,12 @@ export const POS: React.FC<POSProps> = ({
                   const itemSubtotal = priceAfterDiscount * item.quantity;
                   const itemVat = itemSubtotal * (vatRate / 100);
                   const itemTotal = itemSubtotal + itemVat;
+                  
+                  // Check if this cart item has a POS alert note
+                  const inventoryItem = item.inventoryItemId 
+                    ? inventory.find(i => i.id === item.inventoryItemId)
+                    : null;
+                  const hasAlertNote = inventoryItem?.posAlertNote && inventoryItem.posAlertNote.trim();
 
                   return (
                     <div key={item.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
@@ -793,6 +812,11 @@ export const POS: React.FC<POSProps> = ({
                         <div className="flex-1">
                           <p className="font-medium text-neutral text-sm">{item.name}</p>
                           {item.sku && <p className="text-xs text-gray-500">{item.sku}</p>}
+                          {hasAlertNote && (
+                            <span className="text-xs bg-orange-200 text-orange-900 px-2 py-0.5 rounded mt-1 inline-block font-semibold" title={`Alert: ${inventoryItem.posAlertNote}`}>
+                              📢 Alert
+                            </span>
+                          )}
                           {item.isManual && (
                             <span className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded mt-1 inline-block" title="Handmatig toegevoegd item - éénmalig gebruik, niet in voorraad">
                               🆕 Handmatig (1x)

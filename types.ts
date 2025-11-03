@@ -67,6 +67,9 @@ export interface InventoryItem {
   // Metadata
   createdAt?: string;
   updatedAt?: string;
+  
+  // POS Alert Notitie (verschijnt als alert in kassa/pakbon)
+  posAlertNote?: string; // Bijv. "Vergeet verzendkosten niet!" - wordt getoond als alert wanneer item wordt toegevoegd
 }
 
 export interface Product {
