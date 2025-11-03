@@ -154,7 +154,9 @@ function App() {
         sales={sales} 
         setSales={setSales} 
         setTransactions={setTransactions} 
-        customers={customers} 
+        customers={customers}
+        invoices={invoices}
+        setInvoices={setInvoices}
       />
     ),
     [ModuleKey.WORK_ORDERS]: (

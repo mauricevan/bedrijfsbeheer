@@ -76,9 +76,37 @@ export interface Product {
     inventoryItemId: string;
 }
 
-export interface CartItem extends Product {
-    quantity: number;
+export interface CartItem {
+  id: string;
+  name: string;
+  price: number; // Prijs excl. BTW
+  quantity: number;
+  vatRate: '21' | '9' | '0' | 'custom'; // BTW tarief
+  customVatRate?: number; // Alleen bij custom
+  discount?: number; // Korting percentage (0-100)
+  inventoryItemId?: string; // Koppeling met inventory
+  sku?: string; // SKU voor bon
+  unit?: string; // Eenheid
+  isManual?: boolean; // Handmatig toegevoegd item (niet in voorraad)
 }
+
+export interface PackingSlip {
+  id: string;
+  packingSlipNumber: string; // Automatisch: PKB-2025-001
+  customerId: string;
+  customerName: string;
+  items: CartItem[];
+  subtotalExclVat: number;
+  totalVat: number;
+  totalInclVat: number;
+  dueDate: string; // ISO date string
+  createdAt: string;
+  status: 'pending' | 'sent' | 'paid';
+  invoiceId?: string; // Koppeling met factuur (als aangemaakt)
+  shippingAddress?: Address;
+}
+
+export type PaymentMethod = 'cash' | 'pin' | 'ideal' | 'bank_transfer' | 'credit';
 
 // ==================== WEBSHOP TYPES ====================
 
@@ -400,11 +428,13 @@ export interface Customer {
     email: string;
     phone: string;
     since: string;
-    type?: 'business' | 'private';
+    type?: 'business' | 'private' | 'individual';
     address?: string;
     notes?: string;
     source?: string; // Herkomst: website, referral, advertisement, etc.
     company?: string; // Bedrijfsnaam (voor zakelijke klanten)
+    creditLimit?: number; // Kredietlimiet voor B2B klanten
+    paymentTerms?: number; // Betaaltermijn in dagen (default 14)
 }
 
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost';
