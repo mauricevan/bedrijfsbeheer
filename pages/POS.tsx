@@ -1286,6 +1286,40 @@ export const POS: React.FC<POSProps> = ({
           </div>
         </div>
       )}
+
+      {/* POS Alert Modal */}
+      {posAlert && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">⚠️</span>
+                  <h3 className="text-xl font-bold text-orange-800">Product Alert</h3>
+                </div>
+                <button
+                  onClick={() => setPosAlert(null)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="bg-orange-50 border-l-4 border-orange-400 rounded-lg p-4 mb-4">
+                <p className="font-semibold text-orange-900 mb-2">{posAlert.itemName}</p>
+                <p className="text-sm text-orange-800 whitespace-pre-wrap">{posAlert.message}</p>
+              </div>
+              
+              <button
+                onClick={() => setPosAlert(null)}
+                className="w-full px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-semibold"
+              >
+                ✅ Begrepen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
