@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { WorkOrder, WorkOrderStatus, Employee, InventoryItem, Customer, User, Quote, Invoice, QuoteItem, QuoteLabor, InvoiceHistoryEntry, ModuleKey } from '../types';
 import { trackAction, trackTaskCompletion } from '../utils/analytics';
+import { ContextualRelatedItems, getRelatedItemsForQuote, getRelatedItemsForInvoice, getRelatedItemsForWorkOrder } from '../components/ContextualRelatedItems';
+import { validateWorkOrderToInvoice, getWorkflowGuardrailMessage } from '../utils/workflowValidation';
 
 interface WorkOrdersProps {
   workOrders: WorkOrder[];
@@ -2338,8 +2340,35 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
                     const vatAmount = subtotal * (quote.vatRate / 100);
                     const total = subtotal + vatAmount;
 
+                    // Get related items for quote
+                    const relatedItems = getRelatedItemsForQuote(
+                      quote,
+                      invoices || [],
+                      workOrders,
+                      (module, id) => {
+                        setShowDetailModal(false);
+                        if (module === ModuleKey.WORK_ORDERS) {
+                          const wo = workOrders.find(w => w.id === id);
+                          if (wo) {
+                            setSelectedWorkOrderForDetail(wo);
+                            setShowWorkOrderDetailModal(true);
+                          }
+                        } else if (module === ModuleKey.ACCOUNTING) {
+                          alert(`Navigeer naar Accounting module voor item ${id}`);
+                        }
+                      }
+                    );
+
                     return (
                       <>
+                        {/* Contextual Related Items */}
+                        {relatedItems.length > 0 && (
+                          <ContextualRelatedItems
+                            title="Gerelateerde Items"
+                            items={relatedItems}
+                          />
+                        )}
+
                         <div className="mb-4 grid grid-cols-2 gap-4">
                           <div>
                             <label className="text-sm font-semibold text-gray-600">Offerte ID:</label>
@@ -2421,8 +2450,35 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
                     const vatAmount = subtotal * (invoice.vatRate / 100);
                     const total = subtotal + vatAmount;
 
+                    // Get related items for invoice
+                    const relatedItems = getRelatedItemsForInvoice(
+                      invoice,
+                      quotes || [],
+                      workOrders,
+                      (module, id) => {
+                        setShowDetailModal(false);
+                        if (module === ModuleKey.WORK_ORDERS) {
+                          const wo = workOrders.find(w => w.id === id);
+                          if (wo) {
+                            setSelectedWorkOrderForDetail(wo);
+                            setShowWorkOrderDetailModal(true);
+                          }
+                        } else if (module === ModuleKey.ACCOUNTING) {
+                          alert(`Navigeer naar Accounting module voor item ${id}`);
+                        }
+                      }
+                    );
+
                     return (
                       <>
+                        {/* Contextual Related Items */}
+                        {relatedItems.length > 0 && (
+                          <ContextualRelatedItems
+                            title="Gerelateerde Items"
+                            items={relatedItems}
+                          />
+                        )}
+
                         <div className="mb-4 grid grid-cols-2 gap-4">
                           <div>
                             <label className="text-sm font-semibold text-gray-600">Factuurnummer:</label>
@@ -3094,113 +3150,194 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
         </div>
       )}
 
-      {/* WorkOrder Detail Modal (wanneer geen factuur/offerte) */}
+      {/* WorkOrder Detail Modal (wanneer geen factuur/offerte) - Improved UX/UI */}
       {showWorkOrderDetailModal && selectedWorkOrderForDetail && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-none sm:rounded-lg shadow-xl w-full sm:max-w-4xl sm:w-full h-full sm:h-auto sm:my-8 sm:max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between z-10">
-              <h2 className="text-2xl font-bold text-neutral">
-                📋 Werkorder Details
-              </h2>
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto animate-fadeIn"
+          onClick={() => {
+            setShowWorkOrderDetailModal(false);
+            setSelectedWorkOrderForDetail(null);
+          }}
+        >
+          <div 
+            className="bg-white rounded-xl shadow-2xl w-full sm:max-w-3xl sm:w-full h-full sm:h-auto sm:my-8 sm:max-h-[90vh] overflow-y-auto animate-slideIn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200 p-6 flex items-center justify-between z-10 rounded-t-xl">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">📋</span>
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-semibold text-neutral">
+                    Werkorder Details
+                  </h2>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+                    {selectedWorkOrderForDetail.id}
+                  </p>
+                </div>
+              </div>
               <button
                 onClick={() => {
                   setShowWorkOrderDetailModal(false);
                   setSelectedWorkOrderForDetail(null);
                 }}
-                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-2 transition-colors"
+                title="Sluiten"
               >
-                ×
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
-            <div className="p-6">
-              <div className="mb-4 grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-semibold text-gray-600">Werkorder ID:</label>
-                  <p className="text-neutral font-bold">{selectedWorkOrderForDetail.id}</p>
+            <div className="p-6 bg-gray-50">
+              {/* Hoofdinformatie Card */}
+              <div className="bg-white rounded-xl shadow-sm p-6 mb-4 border border-gray-100">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-xl sm:text-2xl font-semibold text-neutral mb-3">
+                      {selectedWorkOrderForDetail.title}
+                    </h3>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-base">📋</span>
+                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(selectedWorkOrderForDetail.status)}`}>
+                        {selectedWorkOrderForDetail.status === 'To Do' && 'To Do'}
+                        {selectedWorkOrderForDetail.status === 'Pending' && 'In Wacht'}
+                        {selectedWorkOrderForDetail.status === 'In Progress' && 'In Uitvoering'}
+                        {selectedWorkOrderForDetail.status === 'Completed' && 'Afgerond'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm font-semibold text-gray-600">Status:</label>
-                  <p className="text-neutral">
-                    <span className={`px-2 py-1 rounded text-sm font-semibold ${getStatusColor(selectedWorkOrderForDetail.status)}`}>
-                      {selectedWorkOrderForDetail.status}
-                    </span>
-                  </p>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">👤</span>
+                    <div>
+                      <p className="text-xs text-gray-500">Toegewezen aan</p>
+                      <p className="text-sm font-medium text-neutral">{getEmployeeName(selectedWorkOrderForDetail.assignedTo)}</p>
+                    </div>
+                  </div>
+                  
+                  {selectedWorkOrderForDetail.customerId && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">🏢</span>
+                      <div>
+                        <p className="text-xs text-gray-500">Klant</p>
+                        <p className="text-sm font-medium text-neutral">{getCustomerName(selectedWorkOrderForDetail.customerId) || 'Onbekend'}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">🗓️</span>
+                    <div>
+                      <p className="text-xs text-gray-500">Aangemaakt</p>
+                      <p className="text-sm font-medium text-neutral">
+                        {selectedWorkOrderForDetail.createdDate}
+                        {selectedWorkOrderForDetail.timestamps?.created && (
+                          <span className="text-gray-500 ml-2">
+                            {new Date(selectedWorkOrderForDetail.timestamps.created).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                  {selectedWorkOrderForDetail.location && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">📍</span>
+                      <div>
+                        <p className="text-xs text-gray-500">Locatie</p>
+                        <p className="text-sm font-medium text-neutral">{selectedWorkOrderForDetail.location}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedWorkOrderForDetail.scheduledDate && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">📅</span>
+                      <div>
+                        <p className="text-xs text-gray-500">Geplande datum</p>
+                        <p className="text-sm font-medium text-neutral">{selectedWorkOrderForDetail.scheduledDate}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedWorkOrderForDetail.estimatedHours && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">⏱️</span>
+                      <div>
+                        <p className="text-xs text-gray-500">Geschatte uren</p>
+                        <p className="text-sm font-medium text-neutral">{selectedWorkOrderForDetail.estimatedHours}u</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedWorkOrderForDetail.hoursSpent && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">⏱️</span>
+                      <div>
+                        <p className="text-xs text-gray-500">Gewerkte uren</p>
+                        <p className="text-sm font-medium text-primary">{selectedWorkOrderForDetail.hoursSpent}u</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedWorkOrderForDetail.estimatedCost && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">💰</span>
+                      <div>
+                        <p className="text-xs text-gray-500">Geschatte kosten</p>
+                        <p className="text-sm font-medium text-neutral">€{selectedWorkOrderForDetail.estimatedCost.toFixed(2)}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <label className="text-sm font-semibold text-gray-600">Titel:</label>
-                  <p className="text-neutral font-bold">{selectedWorkOrderForDetail.title}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-semibold text-gray-600">Toegewezen aan:</label>
-                  <p className="text-neutral">{getEmployeeName(selectedWorkOrderForDetail.assignedTo)}</p>
-                </div>
-                {selectedWorkOrderForDetail.customerId && (
-                  <div>
-                    <label className="text-sm font-semibold text-gray-600">Klant:</label>
-                    <p className="text-neutral">{getCustomerName(selectedWorkOrderForDetail.customerId) || 'Onbekend'}</p>
-                  </div>
-                )}
-                <div>
-                  <label className="text-sm font-semibold text-gray-600">Aanmaakdatum:</label>
-                  <p className="text-neutral">{selectedWorkOrderForDetail.createdDate}</p>
-                </div>
-                {selectedWorkOrderForDetail.location && (
-                  <div>
-                    <label className="text-sm font-semibold text-gray-600">Locatie:</label>
-                    <p className="text-neutral">{selectedWorkOrderForDetail.location}</p>
-                  </div>
-                )}
-                {selectedWorkOrderForDetail.scheduledDate && (
-                  <div>
-                    <label className="text-sm font-semibold text-gray-600">Geplande datum:</label>
-                    <p className="text-neutral">{selectedWorkOrderForDetail.scheduledDate}</p>
-                  </div>
-                )}
-                {selectedWorkOrderForDetail.estimatedHours && (
-                  <div>
-                    <label className="text-sm font-semibold text-gray-600">Geschatte uren:</label>
-                    <p className="text-neutral">{selectedWorkOrderForDetail.estimatedHours}u</p>
-                  </div>
-                )}
-                {selectedWorkOrderForDetail.hoursSpent && (
-                  <div>
-                    <label className="text-sm font-semibold text-gray-600">Gewerkte uren:</label>
-                    <p className="text-neutral">{selectedWorkOrderForDetail.hoursSpent}u</p>
-                  </div>
-                )}
-                {selectedWorkOrderForDetail.estimatedCost && (
-                  <div>
-                    <label className="text-sm font-semibold text-gray-600">Geschatte kosten:</label>
-                    <p className="text-neutral">€{selectedWorkOrderForDetail.estimatedCost.toFixed(2)}</p>
-                  </div>
-                )}
               </div>
 
+              {/* Beschrijving Card */}
               {selectedWorkOrderForDetail.description && (
-                <div className="mb-4">
-                  <label className="text-sm font-semibold text-gray-600 mb-2 block">Beschrijving:</label>
-                  <p className="text-neutral bg-gray-50 p-3 rounded-lg">{selectedWorkOrderForDetail.description}</p>
+                <div className="bg-white rounded-xl shadow-sm p-6 mb-4 border border-gray-100">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xl">📝</span>
+                    <h3 className="text-base font-semibold text-neutral">Beschrijving</h3>
+                  </div>
+                  <p className="text-sm text-gray-700 leading-relaxed">{selectedWorkOrderForDetail.description}</p>
                 </div>
               )}
 
+              {/* Pending Reason Card */}
               {selectedWorkOrderForDetail.pendingReason && (
-                <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <label className="text-sm font-semibold text-yellow-800 mb-2 block">Reden voor wachtstatus:</label>
-                  <p className="text-yellow-700">{selectedWorkOrderForDetail.pendingReason}</p>
+                <div className="bg-yellow-50 rounded-xl shadow-sm p-6 mb-4 border border-yellow-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xl">⚠️</span>
+                    <h3 className="text-base font-semibold text-yellow-800">Reden voor wachtstatus</h3>
+                  </div>
+                  <p className="text-sm text-yellow-700 leading-relaxed">{selectedWorkOrderForDetail.pendingReason}</p>
                 </div>
               )}
 
+              {/* Materialen Card */}
               {selectedWorkOrderForDetail.requiredInventory && selectedWorkOrderForDetail.requiredInventory.length > 0 && (
-                <div className="mb-4">
-                  <h3 className="font-semibold text-neutral mb-2">Benodigde Materialen:</h3>
+                <div className="bg-white rounded-xl shadow-sm p-6 mb-4 border border-gray-100">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-xl">🧱</span>
+                    <h3 className="text-base font-semibold text-neutral">Benodigde Materialen</h3>
+                  </div>
                   <div className="space-y-2">
                     {selectedWorkOrderForDetail.requiredInventory.map((material, idx) => {
                       const item = inventory.find(i => i.id === material.itemId);
                       return (
-                        <div key={idx} className="flex justify-between p-2 bg-blue-50 rounded">
-                          <span>{item?.name || 'Onbekend item'} × {material.quantity}</span>
-                          {item?.unit && <span className="text-gray-600">({item.unit})</span>}
+                        <div key={idx} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">•</span>
+                            <span className="text-sm font-medium text-neutral">{item?.name || 'Onbekend item'}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-600">× {material.quantity}</span>
+                            {item?.unit && <span className="text-xs text-gray-500">({item.unit})</span>}
+                          </div>
                         </div>
                       );
                     })}
@@ -3208,100 +3345,137 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
                 </div>
               )}
 
-              {selectedWorkOrderForDetail.notes && (
-                <div className="mb-4">
-                  <label className="text-sm font-semibold text-gray-600 mb-2 block">Notities:</label>
-                  <p className="text-neutral bg-gray-50 p-3 rounded-lg whitespace-pre-line">{selectedWorkOrderForDetail.notes}</p>
-                </div>
-              )}
-
+              {/* Tijdlijn Card */}
               {selectedWorkOrderForDetail.timestamps && (
-                <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-                  <h3 className="font-semibold text-neutral mb-3">Tijdlijn:</h3>
-                  <div className="space-y-2 text-sm">
+                <div className="bg-white rounded-xl shadow-sm p-6 mb-4 border border-gray-100">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-xl">🕒</span>
+                    <h3 className="text-base font-semibold text-neutral">Tijdlijn</h3>
+                  </div>
+                  <div className="space-y-3">
                     {selectedWorkOrderForDetail.timestamps.created && (
-                      <div>
-                        <span className="font-semibold">Aangemaakt:</span>{' '}
-                        {new Date(selectedWorkOrderForDetail.timestamps.created).toLocaleString('nl-NL')}
+                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <span className="text-sm">🕐</span>
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold text-gray-600">Aangemaakt</p>
+                          <p className="text-sm text-gray-700">{new Date(selectedWorkOrderForDetail.timestamps.created).toLocaleString('nl-NL')}</p>
+                        </div>
                       </div>
                     )}
                     {selectedWorkOrderForDetail.timestamps.assigned && (
-                      <div>
-                        <span className="font-semibold">Toegewezen:</span>{' '}
-                        {new Date(selectedWorkOrderForDetail.timestamps.assigned).toLocaleString('nl-NL')}
+                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <span className="text-sm">👤</span>
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold text-gray-600">Toegewezen</p>
+                          <p className="text-sm text-gray-700">{new Date(selectedWorkOrderForDetail.timestamps.assigned).toLocaleString('nl-NL')}</p>
+                        </div>
                       </div>
                     )}
                     {selectedWorkOrderForDetail.timestamps.started && (
-                      <div>
-                        <span className="font-semibold">Gestart:</span>{' '}
-                        {new Date(selectedWorkOrderForDetail.timestamps.started).toLocaleString('nl-NL')}
+                      <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                        <span className="text-sm">▶️</span>
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold text-gray-600">Gestart</p>
+                          <p className="text-sm text-gray-700">{new Date(selectedWorkOrderForDetail.timestamps.started).toLocaleString('nl-NL')}</p>
+                        </div>
                       </div>
                     )}
                     {selectedWorkOrderForDetail.timestamps.completed && (
-                      <div>
-                        <span className="font-semibold">Voltooid:</span>{' '}
-                        {new Date(selectedWorkOrderForDetail.timestamps.completed).toLocaleString('nl-NL')}
+                      <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                        <span className="text-sm">✓</span>
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold text-gray-600">Voltooid</p>
+                          <p className="text-sm text-gray-700">{new Date(selectedWorkOrderForDetail.timestamps.completed).toLocaleString('nl-NL')}</p>
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
               )}
 
-              {/* Link naar factuur/offerte als beschikbaar */}
-              {(selectedWorkOrderForDetail.quoteId || selectedWorkOrderForDetail.invoiceId) && (
-                <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                  <h3 className="font-semibold text-purple-800 mb-2">Gekoppeld document:</h3>
-                  {selectedWorkOrderForDetail.quoteId && (
-                    <p className="text-purple-700">
-                      📋 Offerte: {selectedWorkOrderForDetail.quoteId}
-                      <button
-                        onClick={() => {
-                          const quote = quotes.find(q => q.id === selectedWorkOrderForDetail.quoteId);
-                          if (quote) {
-                            setShowWorkOrderDetailModal(false);
-                            setDetailType('quote');
-                            setDetailItem(quote);
-                            setShowDetailModal(true);
-                          }
-                        }}
-                        className="ml-2 px-2 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600"
-                      >
-                        Bekijk Offerte
-                      </button>
-                    </p>
-                  )}
-                  {selectedWorkOrderForDetail.invoiceId && (
-                    <p className="text-purple-700">
-                      🧾 Factuur: {invoices.find(inv => inv.id === selectedWorkOrderForDetail.invoiceId)?.invoiceNumber || selectedWorkOrderForDetail.invoiceId}
-                      <button
-                        onClick={() => {
-                          const invoice = invoices.find(inv => inv.id === selectedWorkOrderForDetail.invoiceId);
-                          if (invoice) {
-                            setShowWorkOrderDetailModal(false);
-                            setDetailType('invoice');
-                            setDetailItem(invoice);
-                            setShowDetailModal(true);
-                          }
-                        }}
-                        className="ml-2 px-2 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600"
-                      >
-                        Bekijk Factuur
-                      </button>
-                    </p>
-                  )}
+              {/* Notities Card */}
+              {selectedWorkOrderForDetail.notes && (
+                <div className="bg-white rounded-xl shadow-sm p-6 mb-4 border border-gray-100">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xl">📄</span>
+                    <h3 className="text-base font-semibold text-neutral">Notities</h3>
+                  </div>
+                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{selectedWorkOrderForDetail.notes}</p>
                 </div>
               )}
 
-              <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200">
+              {/* Gekoppeld Document Card */}
+              {(selectedWorkOrderForDetail.quoteId || selectedWorkOrderForDetail.invoiceId) && (
+                <div className="bg-purple-50 rounded-xl shadow-sm p-6 mb-4 border border-purple-200">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-xl">📎</span>
+                    <h3 className="text-base font-semibold text-purple-800">Gekoppeld Document</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {selectedWorkOrderForDetail.quoteId && (
+                      <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-purple-100">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">📋</span>
+                          <span className="text-sm font-medium text-purple-700">Offerte: {selectedWorkOrderForDetail.quoteId}</span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const quote = quotes.find(q => q.id === selectedWorkOrderForDetail.quoteId);
+                            if (quote) {
+                              setShowWorkOrderDetailModal(false);
+                              setDetailType('quote');
+                              setDetailItem(quote);
+                              setShowDetailModal(true);
+                            }
+                          }}
+                          className="px-3 py-1.5 bg-purple-500 text-white text-xs rounded-lg hover:bg-purple-600 transition-colors font-medium"
+                        >
+                          Bekijk
+                        </button>
+                      </div>
+                    )}
+                    {selectedWorkOrderForDetail.invoiceId && (
+                      <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-purple-100">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">🧾</span>
+                          <span className="text-sm font-medium text-purple-700">
+                            Factuur: {invoices.find(inv => inv.id === selectedWorkOrderForDetail.invoiceId)?.invoiceNumber || selectedWorkOrderForDetail.invoiceId}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const invoice = invoices.find(inv => inv.id === selectedWorkOrderForDetail.invoiceId);
+                            if (invoice) {
+                              setShowWorkOrderDetailModal(false);
+                              setDetailType('invoice');
+                              setDetailItem(invoice);
+                              setShowDetailModal(true);
+                            }
+                          }}
+                          className="px-3 py-1.5 bg-purple-500 text-white text-xs rounded-lg hover:bg-purple-600 transition-colors font-medium"
+                        >
+                          Bekijk
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Acties */}
+              <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
                 {isAdmin && (
                   <button
                     onClick={() => {
                       setShowWorkOrderDetailModal(false);
                       handleEditOrder(selectedWorkOrderForDetail);
                     }}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold"
+                    className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 active:bg-blue-700 transition-colors font-semibold shadow-sm"
                   >
-                    ✏️ Bewerken
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Bewerken
                   </button>
                 )}
                 <button
@@ -3309,8 +3483,11 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
                     setShowWorkOrderDetailModal(false);
                     setSelectedWorkOrderForDetail(null);
                   }}
-                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-semibold"
+                  className="flex items-center gap-2 px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 active:bg-gray-700 transition-colors font-semibold shadow-sm"
                 >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                   Sluiten
                 </button>
               </div>
@@ -3736,9 +3913,25 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
   return (
     <div 
       className={`bg-white rounded-lg shadow-md p-3 sm:p-4 border-l-4 ${indexPriority.borderColor} hover:shadow-lg transition-shadow cursor-pointer`}
-      onDoubleClick={() => onOpenDetail && onOpenDetail(order)}
-      title="Dubbelklik om factuur/offerte details te zien"
+      onClick={(e) => {
+        // Only open detail if clicking on the card itself, not on buttons, inputs, or interactive elements
+        const target = e.target as HTMLElement;
+        const isInteractive = target.closest('button') || 
+                             target.closest('input') || 
+                             target.closest('textarea') || 
+                             target.closest('select') ||
+                             target.closest('a');
+        if (!isInteractive && (target === e.currentTarget || target.closest('.work-order-card-content'))) {
+          onOpenDetail && onOpenDetail(order);
+        }
+      }}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        onOpenDetail && onOpenDetail(order);
+      }}
+      title="Klik of dubbelklik om factuur/offerte details te zien"
     >
+      <div className="work-order-card-content">
       {/* Index Badge with Priority Indicator */}
       {order.sortIndex !== undefined && (
         <div className="mb-2 flex items-center gap-2">
@@ -3758,7 +3951,10 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
         <div className="flex items-center gap-1">
           {isAdmin && (
             <button
-              onClick={() => onEdit(order)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(order);
+              }}
               className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
               title="Bewerken"
             >
@@ -3769,7 +3965,10 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
           )}
           {isAdmin && (
             <button
-              onClick={() => onDelete(order.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(order.id);
+              }}
               className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
               title="Verwijderen"
             >
@@ -3800,14 +3999,18 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
                 className="w-full px-3 py-2 border border-yellow-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
               />
               <div className="flex gap-2">
-                <button
-                  onClick={handleSavePendingReason}
-                  className="px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700 transition-colors"
-                >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSavePendingReason();
+                }}
+                className="px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700 transition-colors"
+              >
                   Opslaan
                 </button>
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setPendingReason(order.pendingReason || '');
                     setEditingPendingReason(false);
                   }}
@@ -3835,7 +4038,10 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
                 </div>
                 {canEdit && (
                   <button
-                    onClick={() => setEditingPendingReason(true)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingPendingReason(true);
+                    }}
                     className="text-xs text-yellow-700 hover:text-yellow-900 hover:underline whitespace-nowrap"
                     title="Reden bewerken"
                   >
@@ -3965,13 +4171,19 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
               min="0"
             />
             <button
-              onClick={handleSaveHours}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSaveHours();
+              }}
               className="px-2 py-1 bg-primary text-white text-xs rounded hover:bg-secondary"
             >
               ✓
             </button>
             <button
-              onClick={() => setEditingHours(false)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditingHours(false);
+              }}
               className="px-2 py-1 bg-gray-300 text-gray-700 text-xs rounded hover:bg-gray-400"
             >
               ×
@@ -3984,7 +4196,10 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
               <span className="text-sm font-semibold text-primary">{order.hoursSpent || 0}u</span>
               {canEdit && order.status !== 'Completed' && (
                 <button
-                  onClick={() => setEditingHours(true)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingHours(true);
+                  }}
                   className="text-xs text-blue-600 hover:text-blue-800"
                 >
                   Bewerk
@@ -4001,13 +4216,19 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
           {order.status === 'To Do' && (
             <>
               <button
-                onClick={() => onUpdateStatus(order.id, 'In Progress')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onUpdateStatus(order.id, 'In Progress');
+                }}
                 className="w-full px-3 py-2.5 bg-blue-500 text-white text-sm sm:text-base rounded-lg hover:bg-blue-600 active:bg-blue-700 transition-colors font-medium"
               >
                 ▶ Start Werkorder
               </button>
               <button
-                onClick={() => onUpdateStatus(order.id, 'Pending')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onUpdateStatus(order.id, 'Pending');
+                }}
                 className="w-full px-3 py-2.5 bg-yellow-500 text-white text-sm sm:text-base rounded-lg hover:bg-yellow-600 active:bg-yellow-700 transition-colors font-medium"
               >
                 ⏸ In Wacht Zetten
@@ -4016,7 +4237,10 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
           )}
           {order.status === 'Pending' && (
             <button
-              onClick={() => onUpdateStatus(order.id, 'In Progress')}
+              onClick={(e) => {
+                e.stopPropagation();
+                onUpdateStatus(order.id, 'In Progress');
+              }}
               className="w-full px-3 py-2.5 bg-blue-500 text-white text-sm sm:text-base rounded-lg hover:bg-blue-600 active:bg-blue-700 transition-colors font-medium"
             >
               ▶ Start Werkorder
@@ -4024,7 +4248,10 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
           )}
           {order.status === 'In Progress' && (
             <button
-              onClick={() => onUpdateStatus(order.id, 'Completed')}
+              onClick={(e) => {
+                e.stopPropagation();
+                onUpdateStatus(order.id, 'Completed');
+              }}
               className="w-full px-3 py-2.5 bg-green-500 text-white text-sm sm:text-base rounded-lg hover:bg-green-600 active:bg-green-700 transition-colors font-medium"
             >
               ✓ Voltooi
@@ -4046,6 +4273,7 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
           getEmployeeName={getEmployeeName}
         />
       )}
+      </div>
     </div>
   );
 };

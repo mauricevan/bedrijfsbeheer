@@ -60,6 +60,7 @@ export const CRM: React.FC<CRMProps> = ({
   const [showAddInteractionForm, setShowAddInteractionForm] = useState(false);
   const [showAddTaskForm, setShowAddTaskForm] = useState(false);
   const [showFinancesModal, setShowFinancesModal] = useState(false);
+  const [showJourneyModal, setShowJourneyModal] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   
   // Invoice clone/edit states
@@ -458,6 +459,53 @@ export const CRM: React.FC<CRMProps> = ({
   const openFinances = (customerId: string) => {
     setSelectedCustomerId(customerId);
     setShowFinancesModal(true);
+  };
+
+  // Get Customer Journey Data - Helper function
+  const getCustomerJourney = (customerId: string) => {
+    const customerQuotes = quotes.filter(q => q.customerId === customerId);
+    const customerInvoices = invoices.filter(inv => inv.customerId === customerId);
+    const customerWorkOrders = workOrders.filter(wo => wo.customerId === customerId);
+
+    // Organize by status
+    const quotesByStatus = {
+      draft: customerQuotes.filter(q => q.status === 'draft'),
+      sent: customerQuotes.filter(q => q.status === 'sent'),
+      approved: customerQuotes.filter(q => q.status === 'approved'),
+      rejected: customerQuotes.filter(q => q.status === 'rejected'),
+      expired: customerQuotes.filter(q => q.status === 'expired'),
+    };
+
+    const invoicesByStatus = {
+      draft: customerInvoices.filter(inv => inv.status === 'draft'),
+      sent: customerInvoices.filter(inv => inv.status === 'sent'),
+      paid: customerInvoices.filter(inv => inv.status === 'paid'),
+      overdue: customerInvoices.filter(inv => inv.status === 'overdue'),
+    };
+
+    const workOrdersByStatus = {
+      todo: customerWorkOrders.filter(wo => wo.status === 'To Do'),
+      inProgress: customerWorkOrders.filter(wo => wo.status === 'In Uitvoering'),
+      pending: customerWorkOrders.filter(wo => wo.status === 'Pending'),
+      completed: customerWorkOrders.filter(wo => wo.status === 'Voltooid'),
+    };
+
+    // Calculate progress percentage
+    const totalSteps = customerQuotes.length + customerWorkOrders.length + customerInvoices.length;
+    const completedSteps = invoicesByStatus.paid.length;
+    const progressPercentage = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
+
+    return {
+      quotes: customerQuotes,
+      invoices: customerInvoices,
+      workOrders: customerWorkOrders,
+      quotesByStatus,
+      invoicesByStatus,
+      workOrdersByStatus,
+      progressPercentage,
+      totalSteps,
+      completedSteps,
+    };
   };
 
   const getCustomerFinances = (customerId: string) => {
@@ -1754,12 +1802,23 @@ export const CRM: React.FC<CRMProps> = ({
                   )}
 
                   <div className="flex flex-col gap-2">
-                    <button
-                      onClick={() => openFinances(customer.id)}
-                      className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-semibold"
-                    >
-                      💰 Financiën
-                    </button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => openFinances(customer.id)}
+                        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-semibold"
+                      >
+                        💰 Financiën
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedCustomerId(customer.id);
+                          setShowJourneyModal(true);
+                        }}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
+                      >
+                        🗺️ Journey
+                      </button>
+                    </div>
                     {isAdmin && (
                       <div className="flex gap-2">
                         <button
@@ -2189,6 +2248,367 @@ export const CRM: React.FC<CRMProps> = ({
                     </div>
                   ) : (
                     <p className="text-gray-500 text-center py-8">Geen offertes gevonden</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Customer Journey Modal */}
+      {showJourneyModal && selectedCustomerId && (() => {
+        const customer = customers.find(c => c.id === selectedCustomerId);
+        const journey = getCustomerJourney(selectedCustomerId);
+
+        return (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white rounded-none sm:rounded-lg shadow-xl w-full sm:max-w-6xl sm:w-full h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto">
+              {/* Header */}
+              <div className="sticky top-0 bg-white border-b p-4 sm:p-6 z-10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-neutral">
+                      🗺️ Customer Journey - {customer?.name}
+                    </h2>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Volledig overzicht van offerte → werkorder → factuur → betaald
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowJourneyModal(false);
+                      setSelectedCustomerId(null);
+                    }}
+                    className="text-gray-500 hover:text-gray-700 text-3xl leading-none"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-4 sm:p-6">
+                {/* Visual Pipeline */}
+                <div className="mb-8">
+                  <h3 className="text-lg font-semibold text-neutral mb-4">Pipeline Status</h3>
+                  <div className="flex items-center justify-between relative">
+                    {/* Progress Bar */}
+                    <div className="absolute top-1/2 left-0 w-full h-2 bg-gray-200 rounded-full -translate-y-1/2 z-0">
+                      <div 
+                        className="h-full bg-gradient-to-r from-blue-500 via-green-500 to-purple-500 rounded-full transition-all duration-500"
+                        style={{ width: `${journey.progressPercentage}%` }}
+                      />
+                    </div>
+                    
+                    {/* Steps */}
+                    <div className="relative z-10 flex items-center justify-between w-full">
+                      <div className="flex flex-col items-center">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white ${
+                          journey.quotes.length > 0 ? 'bg-blue-500' : 'bg-gray-300'
+                        }`}>
+                          {journey.quotes.length > 0 ? '✓' : '1'}
+                        </div>
+                        <span className="text-xs font-medium mt-2 text-center">Offerte</span>
+                        <span className="text-xs text-gray-500">{journey.quotes.length}</span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white ${
+                          journey.workOrders.length > 0 ? 'bg-green-500' : 'bg-gray-300'
+                        }`}>
+                          {journey.workOrders.length > 0 ? '✓' : '2'}
+                        </div>
+                        <span className="text-xs font-medium mt-2 text-center">Werkorder</span>
+                        <span className="text-xs text-gray-500">{journey.workOrders.length}</span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white ${
+                          journey.invoices.length > 0 ? 'bg-purple-500' : 'bg-gray-300'
+                        }`}>
+                          {journey.invoices.length > 0 ? '✓' : '3'}
+                        </div>
+                        <span className="text-xs font-medium mt-2 text-center">Factuur</span>
+                        <span className="text-xs text-gray-500">{journey.invoices.length}</span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white ${
+                          journey.invoicesByStatus.paid.length > 0 ? 'bg-green-600' : 'bg-gray-300'
+                        }`}>
+                          {journey.invoicesByStatus.paid.length > 0 ? '✓' : '4'}
+                        </div>
+                        <span className="text-xs font-medium mt-2 text-center">Betaald</span>
+                        <span className="text-xs text-gray-500">{journey.invoicesByStatus.paid.length}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                    <div className="text-sm text-blue-700 font-medium mb-1">📋 Offertes</div>
+                    <div className="text-2xl font-bold text-blue-900">{journey.quotes.length}</div>
+                    {journey.quotesByStatus.approved.length > 0 && (
+                      <div className="text-xs text-blue-600 mt-1">
+                        {journey.quotesByStatus.approved.length} geaccepteerd
+                      </div>
+                    )}
+                  </div>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                    <div className="text-sm text-green-700 font-medium mb-1">📦 Werkorders</div>
+                    <div className="text-2xl font-bold text-green-900">{journey.workOrders.length}</div>
+                    {journey.workOrdersByStatus.inProgress.length > 0 && (
+                      <div className="text-xs text-green-600 mt-1">
+                        {journey.workOrdersByStatus.inProgress.length} in uitvoering
+                      </div>
+                    )}
+                  </div>
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
+                    <div className="text-sm text-purple-700 font-medium mb-1">🧾 Facturen</div>
+                    <div className="text-2xl font-bold text-purple-900">{journey.invoices.length}</div>
+                    {journey.invoicesByStatus.sent.length > 0 && (
+                      <div className="text-xs text-purple-600 mt-1">
+                        {journey.invoicesByStatus.sent.length} verzonden
+                      </div>
+                    )}
+                  </div>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+                    <div className="text-sm text-yellow-700 font-medium mb-1">💰 Betaald</div>
+                    <div className="text-2xl font-bold text-yellow-900">{journey.invoicesByStatus.paid.length}</div>
+                    {journey.invoicesByStatus.overdue.length > 0 && (
+                      <div className="text-xs text-red-600 mt-1">
+                        {journey.invoicesByStatus.overdue.length} verlopen
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Timeline View */}
+                <div className="space-y-6">
+                  {/* Quotes Section */}
+                  {journey.quotes.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-neutral mb-4 flex items-center gap-2">
+                        <span className="text-blue-500">📋</span>
+                        Offertes ({journey.quotes.length})
+                      </h3>
+                      <div className="space-y-3">
+                        {journey.quotes.map(quote => {
+                          const relatedWorkOrder = quote.workOrderId ? journey.workOrders.find(wo => wo.id === quote.workOrderId) : null;
+                          const relatedInvoice = quote.invoiceId ? journey.invoices.find(inv => inv.id === quote.invoiceId) : null;
+                          
+                          return (
+                            <div key={quote.id} className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="font-semibold text-neutral">{quote.id}</span>
+                                    <span className={`px-2 py-1 rounded text-xs font-semibold ${getQuoteStatusColor(quote.status)}`}>
+                                      {quote.status === 'approved' && 'Geaccepteerd'}
+                                      {quote.status === 'sent' && 'Verzonden'}
+                                      {quote.status === 'rejected' && 'Afgewezen'}
+                                      {quote.status === 'draft' && 'Concept'}
+                                      {quote.status === 'expired' && 'Verlopen'}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-gray-600 mb-2">
+                                    Aangemaakt: {quote.createdDate} • €{quote.total.toFixed(2)}
+                                  </p>
+                                  {relatedWorkOrder && (
+                                    <div className="flex items-center gap-2 text-sm text-green-700">
+                                      <span>→</span>
+                                      <span>Werkorder: {relatedWorkOrder.id}</span>
+                                      <span className={`px-2 py-0.5 rounded text-xs ${relatedWorkOrder.status === 'Voltooid' ? 'bg-green-200' : 'bg-yellow-200'}`}>
+                                        {relatedWorkOrder.status}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {relatedInvoice && (
+                                    <div className="flex items-center gap-2 text-sm text-purple-700 mt-1">
+                                      <span>→</span>
+                                      <span>Factuur: {relatedInvoice.invoiceNumber}</span>
+                                      <span className={`px-2 py-0.5 rounded text-xs ${relatedInvoice.status === 'paid' ? 'bg-green-200' : 'bg-yellow-200'}`}>
+                                        {relatedInvoice.status === 'paid' ? 'Betaald' : relatedInvoice.status}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex gap-2">
+                                  {quote.status === 'approved' && !quote.workOrderId && (
+                                    <button
+                                      onClick={() => {
+                                        setShowJourneyModal(false);
+                                        convertQuoteToWorkOrder(quote.id);
+                                      }}
+                                      className="px-3 py-1 bg-orange-500 text-white text-xs rounded-lg hover:bg-orange-600 transition-colors"
+                                      title="Maak Werkorder"
+                                    >
+                                      📋 Werkorder
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => {
+                                      setShowJourneyModal(false);
+                                      openDetailModal('quote', quote.id);
+                                    }}
+                                    className="px-3 py-1 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors"
+                                    title="Details"
+                                  >
+                                    👁️
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Work Orders Section */}
+                  {journey.workOrders.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-neutral mb-4 flex items-center gap-2">
+                        <span className="text-green-500">📦</span>
+                        Werkorders ({journey.workOrders.length})
+                      </h3>
+                      <div className="space-y-3">
+                        {journey.workOrders.map(workOrder => {
+                          const relatedQuote = workOrder.quoteId ? journey.quotes.find(q => q.id === workOrder.quoteId) : null;
+                          const relatedInvoice = workOrder.invoiceId ? journey.invoices.find(inv => inv.id === workOrder.invoiceId) : null;
+                          
+                          return (
+                            <div key={workOrder.id} className="bg-green-50 border-l-4 border-green-500 rounded-lg p-4">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="font-semibold text-neutral">{workOrder.id}</span>
+                                    <span className="text-xs text-gray-600">• {workOrder.title}</span>
+                                    <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                      workOrder.status === 'Voltooid' ? 'bg-green-200 text-green-800' :
+                                      workOrder.status === 'In Uitvoering' ? 'bg-blue-200 text-blue-800' :
+                                      'bg-gray-200 text-gray-800'
+                                    }`}>
+                                      {workOrder.status}
+                                    </span>
+                                  </div>
+                                  {relatedQuote && (
+                                    <div className="flex items-center gap-2 text-sm text-blue-700 mb-1">
+                                      <span>←</span>
+                                      <span>Offerte: {relatedQuote.id}</span>
+                                    </div>
+                                  )}
+                                  {relatedInvoice && (
+                                    <div className="flex items-center gap-2 text-sm text-purple-700">
+                                      <span>→</span>
+                                      <span>Factuur: {relatedInvoice.invoiceNumber}</span>
+                                      <span className={`px-2 py-0.5 rounded text-xs ${relatedInvoice.status === 'paid' ? 'bg-green-200' : 'bg-yellow-200'}`}>
+                                        {relatedInvoice.status === 'paid' ? 'Betaald' : relatedInvoice.status}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                                {workOrder.status === 'Voltooid' && !relatedInvoice && (
+                                  <button
+                                    onClick={() => {
+                                      setShowJourneyModal(false);
+                                      // Navigate to work orders to create invoice
+                                      alert('Ga naar Werkorders om factuur aan te maken');
+                                    }}
+                                    className="px-3 py-1 bg-purple-500 text-white text-xs rounded-lg hover:bg-purple-600 transition-colors"
+                                    title="Maak Factuur"
+                                  >
+                                    🧾 Factuur
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Invoices Section */}
+                  {journey.invoices.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-neutral mb-4 flex items-center gap-2">
+                        <span className="text-purple-500">🧾</span>
+                        Facturen ({journey.invoices.length})
+                      </h3>
+                      <div className="space-y-3">
+                        {journey.invoices.map(invoice => {
+                          const relatedQuote = invoice.quoteId ? journey.quotes.find(q => q.id === invoice.quoteId) : null;
+                          const relatedWorkOrder = invoice.workOrderId ? journey.workOrders.find(wo => wo.id === invoice.workOrderId) : null;
+                          
+                          return (
+                            <div key={invoice.id} className={`border-l-4 rounded-lg p-4 ${
+                              invoice.status === 'paid' ? 'bg-green-50 border-green-500' :
+                              invoice.status === 'overdue' ? 'bg-red-50 border-red-500' :
+                              'bg-purple-50 border-purple-500'
+                            }`}>
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="font-semibold text-neutral">{invoice.invoiceNumber}</span>
+                                    <span className={`px-2 py-1 rounded text-xs font-semibold ${getInvoiceStatusColor(invoice.status)}`}>
+                                      {invoice.status === 'paid' && 'Betaald'}
+                                      {invoice.status === 'sent' && 'Verzonden'}
+                                      {invoice.status === 'overdue' && 'Verlopen'}
+                                      {invoice.status === 'draft' && 'Concept'}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-gray-600 mb-2">
+                                    {invoice.issueDate} • €{invoice.total.toFixed(2)}
+                                    {invoice.dueDate && ` • Vervaldatum: ${invoice.dueDate}`}
+                                  </p>
+                                  {relatedQuote && (
+                                    <div className="flex items-center gap-2 text-sm text-blue-700 mb-1">
+                                      <span>←</span>
+                                      <span>Offerte: {relatedQuote.id}</span>
+                                    </div>
+                                  )}
+                                  {relatedWorkOrder && (
+                                    <div className="flex items-center gap-2 text-sm text-green-700">
+                                      <span>←</span>
+                                      <span>Werkorder: {relatedWorkOrder.id}</span>
+                                    </div>
+                                  )}
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    setShowJourneyModal(false);
+                                    openDetailModal('invoice', invoice.id);
+                                  }}
+                                  className="px-3 py-1 bg-purple-500 text-white text-xs rounded-lg hover:bg-purple-600 transition-colors"
+                                  title="Details"
+                                >
+                                  👁️
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Empty State */}
+                  {journey.quotes.length === 0 && journey.workOrders.length === 0 && journey.invoices.length === 0 && (
+                    <div className="text-center py-12 bg-gray-50 rounded-lg">
+                      <p className="text-gray-500 mb-4">Geen activiteit gevonden voor deze klant</p>
+                      <div className="flex gap-2 justify-center">
+                        <button
+                          onClick={() => {
+                            setShowJourneyModal(false);
+                            // Navigate to create quote
+                            alert('Maak een offerte aan in het Accounting module');
+                          }}
+                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                        >
+                          📋 Maak Offerte
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>

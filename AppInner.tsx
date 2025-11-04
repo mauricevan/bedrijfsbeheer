@@ -1,8 +1,7 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
-import { Login } from './components/Login';
 import { AdminSettings } from './components/AdminSettings';
 import { AnalyticsTracker } from './components/AnalyticsTracker';
 import { ALL_MODULES } from './constants';
@@ -42,7 +41,7 @@ import {
   MOCK_INTERACTIONS,
 } from './data/mockData';
 
-// Import functional pages
+// Import all page components
 import { Dashboard } from './pages/Dashboard';
 import { Inventory } from './pages/Inventory';
 import { POS } from './pages/POS';
@@ -50,85 +49,96 @@ import { WorkOrders } from './pages/WorkOrders';
 import { Accounting } from './pages/Accounting';
 import { CRM } from './pages/CRM';
 import { HRM } from './pages/HRM';
-import { Reports } from './pages/Reports';
 import { Planning } from './pages/Planning';
+import { Reports } from './pages/Reports';
 import { Webshop } from './pages/Webshop';
-import { trackNavigation, trackAction } from './utils/analytics';
 
-// Default all modules to active
-const initialModulesState = ALL_MODULES.reduce((acc, module) => {
-  acc[module.id] = true;
-  return acc;
-}, {} as Record<ModuleKey, boolean>);
+interface AppInnerProps {
+  currentUser: User;
+  setCurrentUser: (user: User | null) => void;
+  activeModules: Record<ModuleKey, boolean>;
+  setActiveModules: React.Dispatch<React.SetStateAction<Record<ModuleKey, boolean>>>;
+  inventory: InventoryItem[];
+  setInventory: React.Dispatch<React.SetStateAction<InventoryItem[]>>;
+  products: Product[];
+  setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
+  sales: Sale[];
+  setSales: React.Dispatch<React.SetStateAction<Sale[]>>;
+  workOrders: WorkOrder[];
+  setWorkOrders: React.Dispatch<React.SetStateAction<WorkOrder[]>>;
+  customers: Customer[];
+  setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;
+  employees: Employee[];
+  setEmployees: React.Dispatch<React.SetStateAction<Employee[]>>;
+  transactions: Transaction[];
+  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+  quotes: Quote[];
+  setQuotes: React.Dispatch<React.SetStateAction<Quote[]>>;
+  invoices: Invoice[];
+  setInvoices: React.Dispatch<React.SetStateAction<Invoice[]>>;
+  tasks: Task[];
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
+  calendarEvents: CalendarEvent[];
+  setCalendarEvents: React.Dispatch<React.SetStateAction<CalendarEvent[]>>;
+  notifications: Notification[];
+  setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
+  leads: Lead[];
+  setLeads: React.Dispatch<React.SetStateAction<Lead[]>>;
+  interactions: Interaction[];
+  setInteractions: React.Dispatch<React.SetStateAction<Interaction[]>>;
+  webshopProducts: WebshopProduct[];
+  setWebshopProducts: React.Dispatch<React.SetStateAction<WebshopProduct[]>>;
+  isMobileSidebarOpen: boolean;
+  setIsMobileSidebarOpen: (open: boolean) => void;
+  handleLogout: () => void;
+}
 
-function App() {
+export const AppInner: React.FC<AppInnerProps> = ({
+  currentUser,
+  setCurrentUser,
+  activeModules,
+  setActiveModules,
+  inventory,
+  setInventory,
+  products,
+  setProducts,
+  sales,
+  setSales,
+  workOrders,
+  setWorkOrders,
+  customers,
+  setCustomers,
+  employees,
+  setEmployees,
+  transactions,
+  setTransactions,
+  quotes,
+  setQuotes,
+  invoices,
+  setInvoices,
+  tasks,
+  setTasks,
+  calendarEvents,
+  setCalendarEvents,
+  notifications,
+  setNotifications,
+  leads,
+  setLeads,
+  interactions,
+  setInteractions,
+  webshopProducts,
+  setWebshopProducts,
+  isMobileSidebarOpen,
+  setIsMobileSidebarOpen,
+  handleLogout,
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // Authentication State
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  
-  // Mobile Sidebar State
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  
-  const [activeModules, setActiveModules] = useState<Record<ModuleKey, boolean>>(initialModulesState);
-
-  // Centralized State Management for all modules
-  const [inventory, setInventory] = useState<InventoryItem[]>(MOCK_INVENTORY);
-  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
-  const [sales, setSales] = useState<Sale[]>(MOCK_SALES);
-  const [workOrders, setWorkOrders] = useState<WorkOrder[]>(MOCK_WORK_ORDERS);
-  const [customers, setCustomers] = useState<Customer[]>(MOCK_CUSTOMERS);
-  const [employees, setEmployees] = useState<Employee[]>(MOCK_EMPLOYEES);
-  const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
-  const [quotes, setQuotes] = useState<Quote[]>(MOCK_QUOTES);
-  const [invoices, setInvoices] = useState<Invoice[]>(MOCK_INVOICES);
-  const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS);
-  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>(MOCK_CALENDAR_EVENTS);
-  const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
-  const [leads, setLeads] = useState<Lead[]>(MOCK_LEADS);
-  const [interactions, setInteractions] = useState<Interaction[]>(MOCK_INTERACTIONS);
-  const [webshopProducts, setWebshopProducts] = useState<WebshopProduct[]>([]);
 
   // IMPORTANT: useMemo must be called unconditionally (before any early returns)
   const visibleModules = useMemo(() => {
     return ALL_MODULES.filter(module => activeModules[module.id]);
   }, [activeModules]);
-
-  // Handle login
-  const handleLogin = (employee: Employee) => {
-    // Determine if user is admin (Manager Productie OR has full_admin permission OR isAdmin flag)
-    const hasFullAdmin = employee.isAdmin || 
-                        employee.permissions?.includes('full_admin') || 
-                        employee.role === 'Manager Productie';
-    
-    // Get permissions from employee
-    const permissions = hasFullAdmin 
-      ? ['full_admin']
-      : employee.permissions || [];
-    
-    const user: User = {
-      id: `user_${employee.id}`,
-      employeeId: employee.id,
-      name: employee.name,
-      email: employee.email,
-      role: employee.role,
-      isAdmin: hasFullAdmin,
-      permissions: permissions.length > 0 ? permissions : undefined,
-    };
-    
-    setCurrentUser(user);
-  };
-
-  // Handle logout
-  const handleLogout = () => {
-    setCurrentUser(null);
-  };
-
-  // If not logged in, show login screen
-  if (!currentUser) {
-    return <Login employees={employees} onLogin={handleLogin} />;
-  }
 
   // Navigation handler for unified search
   const handleNavigate = (module: ModuleKey, id: string) => {
@@ -143,6 +153,7 @@ function App() {
     }, 100);
   };
 
+  // Module routes configuration
   const moduleRoutes = {
     [ModuleKey.DASHBOARD]: (
       <Dashboard 
@@ -324,6 +335,5 @@ function App() {
       </div>
     </div>
   );
-}
+};
 
-export default App;

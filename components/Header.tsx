@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Notification, User } from '../types';
+import { Notification, User, Quote, Invoice, WorkOrder, Customer, ModuleKey } from '../types';
+import { UnifiedSearch } from './UnifiedSearch';
 
 interface HeaderProps {
   isAdmin: boolean;
@@ -8,6 +9,11 @@ interface HeaderProps {
   currentUser: User;
   onLogout: () => void;
   onMobileMenuToggle: () => void;
+  quotes?: Quote[];
+  invoices?: Invoice[];
+  workOrders?: WorkOrder[];
+  customers?: Customer[];
+  onNavigate?: (module: ModuleKey, id: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
@@ -16,7 +22,12 @@ export const Header: React.FC<HeaderProps> = ({
   setNotifications,
   currentUser,
   onLogout,
-  onMobileMenuToggle
+  onMobileMenuToggle,
+  quotes = [],
+  invoices = [],
+  workOrders = [],
+  customers = [],
+  onNavigate,
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -52,30 +63,44 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="bg-white border-b border-base-300 px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex items-center justify-between">
-      {/* Left side - Hamburger + Title */}
-      <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-        {/* Mobile Hamburger Menu */}
-        <button
-          onClick={onMobileMenuToggle}
-          className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
-          aria-label="Open menu"
-        >
-          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-        
-        <div className="min-w-0">
-          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-neutral truncate">
-            Welkom, {currentUser.name.split(' ')[0]}
-          </h2>
-          <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">Bedrijfsbeheer Dashboard</p>
+    <header className="bg-white border-b border-base-300 px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+      <div className="flex items-center justify-between gap-4">
+        {/* Left side - Hamburger + Title */}
+        <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+          {/* Mobile Hamburger Menu */}
+          <button
+            onClick={onMobileMenuToggle}
+            className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+            aria-label="Open menu"
+          >
+            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-neutral truncate">
+              Welkom, {currentUser.name.split(' ')[0]}
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">Bedrijfsbeheer Dashboard</p>
+          </div>
         </div>
-      </div>
+
+        {/* Center - Unified Search (hidden on mobile, shown on tablet+) */}
+        {onNavigate && (
+          <div className="hidden md:block flex-1 max-w-2xl mx-4">
+            <UnifiedSearch
+              quotes={quotes}
+              invoices={invoices}
+              workOrders={workOrders}
+              customers={customers}
+              onNavigate={onNavigate}
+            />
+          </div>
+        )}
       
-      {/* Right side - Notifications + Admin Badge + User Menu */}
-      <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 flex-shrink-0">
+        {/* Right side - Notifications + Admin Badge + User Menu */}
+        <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 flex-shrink-0">
         {/* Notifications Bell */}
         <div className="relative">
           <button
@@ -121,17 +146,59 @@ export const Header: React.FC<HeaderProps> = ({
                     notifications.slice(0, 10).map(notif => (
                       <div
                         key={notif.id}
-                        className={`p-3 sm:p-4 hover:bg-gray-50 cursor-pointer border-l-4 ${getNotificationColor(notif.type)} ${
-                          !notif.read ? 'bg-blue-50' : ''
+                        className={`p-3 sm:p-4 border-l-4 ${getNotificationColor(notif.type)} ${
+                          !notif.read ? 'bg-blue-50' : 'bg-white'
                         }`}
-                        onClick={() => markAsRead(notif.id)}
                       >
-                        <p className={`text-xs sm:text-sm ${!notif.read ? 'font-semibold' : ''} text-neutral`}>
-                          {notif.message}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {new Date(notif.date).toLocaleString('nl-NL')}
-                        </p>
+                        <div className="flex items-start justify-between gap-2">
+                          <div 
+                            className="flex-1 cursor-pointer"
+                            onClick={() => markAsRead(notif.id)}
+                          >
+                            <p className={`text-xs sm:text-sm ${!notif.read ? 'font-semibold' : ''} text-neutral`}>
+                              {notif.message}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {new Date(notif.date).toLocaleString('nl-NL')}
+                            </p>
+                          </div>
+                          {!notif.read && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                markAsRead(notif.id);
+                              }}
+                              className="text-gray-400 hover:text-gray-600 text-xs"
+                              title="Markeer als gelezen"
+                            >
+                              ✓
+                            </button>
+                          )}
+                        </div>
+                        {/* Smart Actions */}
+                        {notif.actions && notif.actions.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-gray-200 flex gap-2 flex-wrap">
+                            {notif.actions.map((action, idx) => (
+                              <button
+                                key={idx}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  action.action();
+                                  markAsRead(notif.id);
+                                }}
+                                className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-colors ${
+                                  action.variant === 'primary' ? 'bg-blue-500 text-white hover:bg-blue-600' :
+                                  action.variant === 'secondary' ? 'bg-gray-500 text-white hover:bg-gray-600' :
+                                  action.variant === 'danger' ? 'bg-red-500 text-white hover:bg-red-600' :
+                                  action.variant === 'success' ? 'bg-green-500 text-white hover:bg-green-600' :
+                                  'bg-blue-500 text-white hover:bg-blue-600'
+                                }`}
+                              >
+                                {action.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))
                   )}
@@ -199,6 +266,7 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             </>
           )}
+        </div>
         </div>
       </div>
     </header>

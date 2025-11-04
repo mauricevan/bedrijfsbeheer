@@ -28,8 +28,22 @@ import {
   Employee,
   User,
   ModuleKey,
+  Notification,
 } from "../types";
 import { trackAction } from "../utils/analytics";
+import {
+  createQuoteApprovedNotification,
+  createInvoiceSentNotification,
+} from "../utils/smartNotifications";
+import {
+  validateQuoteToWorkOrder,
+  validateQuoteToInvoice,
+  validateInvoiceToWorkOrder,
+  validateQuoteEdit,
+  validateInvoiceEdit,
+  getWorkflowGuardrailMessage,
+  WorkflowValidationResult,
+} from "../utils/workflowValidation";
 
 interface AccountingProps {
   transactions: Transaction[];
@@ -44,6 +58,8 @@ interface AccountingProps {
   employees: Employee[];
   currentUser: User;
   isAdmin: boolean;
+  notifications?: Notification[];
+  setNotifications?: React.Dispatch<React.SetStateAction<Notification[]>>;
 }
 
 export const Accounting: React.FC<AccountingProps> = ({
@@ -59,6 +75,8 @@ export const Accounting: React.FC<AccountingProps> = ({
   employees,
   currentUser,
   isAdmin,
+  notifications = [],
+  setNotifications,
 }) => {
   const [activeTab, setActiveTab] = useState<
     "dashboard" | "transactions" | "quotes" | "invoices"
@@ -94,6 +112,11 @@ export const Accounting: React.FC<AccountingProps> = ({
     minAmount: "",
     maxAmount: "",
   });
+
+  // 🆕 Batch Operations States
+  const [selectedQuotes, setSelectedQuotes] = useState<string[]>([]);
+  const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
+  const [batchMode, setBatchMode] = useState(false);
 
   // NEW: User selection modal state
   const [showUserSelectionModal, setShowUserSelectionModal] = useState(false);
@@ -1604,9 +1627,54 @@ export const Accounting: React.FC<AccountingProps> = ({
     if (quote?.workOrderId && newStatus === "approved") {
       syncQuoteToWorkOrder(quoteId);
     }
+
+    // Create smart notification when quote is approved
+    if (newStatus === "approved" && setNotifications) {
+      const approvedQuote = quotes.find((q) => q.id === quoteId);
+      if (approvedQuote && !approvedQuote.workOrderId) {
+        const notification = createQuoteApprovedNotification(
+          approvedQuote,
+          () => {
+            // Action: Convert to work order
+            convertQuoteToWorkOrder(quoteId);
+          },
+          () => {
+            // Action: View quote (scroll to quote or show details)
+            setActiveTab("quotes");
+            // Could add scroll to quote functionality here
+          }
+        );
+        setNotifications((prev) => [notification, ...prev]);
+      }
+    }
   };
 
   const handleQuoteUpdate = (quote: Quote) => {
+    // Workflow validation before update
+    const existingQuote = quotes.find((q) => q.id === quote.id);
+    if (existingQuote) {
+      const validation = validateQuoteEdit(existingQuote, workOrders);
+      if (!validation.canProceed && validation.severity === "error") {
+        const guardrail = getWorkflowGuardrailMessage(validation);
+        alert(
+          `${guardrail.icon} ${validation.message}\n\n${
+            validation.suggestedAction || ""
+          }`
+        );
+        return;
+      }
+
+      if (validation.severity === "warning") {
+        const guardrail = getWorkflowGuardrailMessage(validation);
+        const proceed = window.confirm(
+          `${guardrail.icon} ${validation.message}\n\n${
+            validation.suggestedAction || ""
+          }\n\nWil je doorgaan?`
+        );
+        if (!proceed) return;
+      }
+    }
+
     setQuotes(quotes.map((q) => (q.id === quote.id ? quote : q)));
 
     // Sync to workorder if exists
@@ -1712,15 +1780,15 @@ export const Accounting: React.FC<AccountingProps> = ({
     const quote = quotes.find((q) => q.id === quoteId);
     if (!quote) return;
 
-    if (quote.status !== "approved") {
+    // Workflow validation
+    const validation = validateQuoteToWorkOrder(quote, workOrders);
+    if (!validation.canProceed) {
+      const guardrail = getWorkflowGuardrailMessage(validation);
       alert(
-        "Alleen geaccepteerde offertes kunnen worden omgezet naar werkorders!"
+        `${guardrail.icon} ${validation.message}\n\n${
+          validation.suggestedAction || ""
+        }`
       );
-      return;
-    }
-
-    if (quote.workOrderId) {
-      alert("Deze offerte heeft al een gekoppelde werkorder!");
       return;
     }
 
@@ -3122,6 +3190,7 @@ export const Accounting: React.FC<AccountingProps> = ({
               ) : (
                 <div className="space-y-3">
                   {getFilteredInvoices().map((invoice) => {
+                    const isSelected = selectedInvoices.includes(invoice.id);
                     const workOrder = getWorkOrderStatus(invoice.workOrderId);
                     const badge = getWorkOrderBadge(workOrder);
 
@@ -4314,18 +4383,126 @@ export const Accounting: React.FC<AccountingProps> = ({
             </button>
           </div>
 
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
             <div className="text-sm text-gray-600">
               Totaal: {quotes.length} offertes
+              {batchMode && selectedQuotes.length > 0 && (
+                <span className="ml-3 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                  {selectedQuotes.length} geselecteerd
+                </span>
+              )}
             </div>
-            {isAdmin && (
-              <button
-                onClick={() => setShowQuoteForm(!showQuoteForm)}
-                className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors"
-              >
-                + Nieuwe Offerte
-              </button>
-            )}
+            <div className="flex gap-2">
+              {isAdmin && (
+                <>
+                  <button
+                    onClick={() => {
+                      setBatchMode(!batchMode);
+                      if (batchMode) {
+                        setSelectedQuotes([]);
+                      }
+                    }}
+                    className={`px-4 py-2 rounded-lg transition-colors ${
+                      batchMode
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                  >
+                    {batchMode ? "✓ Selectie Modus" : "☐ Batch Selectie"}
+                  </button>
+                  {batchMode && selectedQuotes.length > 0 && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          // Bulk convert to work orders
+                          const approvedQuotes = quotes.filter(
+                            (q) =>
+                              selectedQuotes.includes(q.id) &&
+                              q.status === "approved" &&
+                              !q.workOrderId
+                          );
+                          if (approvedQuotes.length === 0) {
+                            alert(
+                              "Geen geaccepteerde offertes zonder werkorder geselecteerd!"
+                            );
+                            return;
+                          }
+                          if (
+                            confirm(
+                              `Wil je ${approvedQuotes.length} offerte(s) omzetten naar werkorders?`
+                            )
+                          ) {
+                            approvedQuotes.forEach((q) =>
+                              convertQuoteToWorkOrder(q.id)
+                            );
+                            setSelectedQuotes([]);
+                            setBatchMode(false);
+                          }
+                        }}
+                        className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                      >
+                        📋 Maak Werkorders (
+                        {
+                          selectedQuotes.filter((id) => {
+                            const q = quotes.find((qu) => qu.id === id);
+                            return q?.status === "approved" && !q.workOrderId;
+                          }).length
+                        }
+                        )
+                      </button>
+                      <button
+                        onClick={() => {
+                          // Bulk status update
+                          const draftQuotes = quotes.filter(
+                            (q) =>
+                              selectedQuotes.includes(q.id) &&
+                              q.status === "draft"
+                          );
+                          if (draftQuotes.length > 0) {
+                            if (
+                              confirm(
+                                `Wil je ${draftQuotes.length} concept offerte(s) verzenden?`
+                              )
+                            ) {
+                              draftQuotes.forEach((q) =>
+                                updateQuoteStatus(q.id, "sent")
+                              );
+                              setSelectedQuotes([]);
+                              setBatchMode(false);
+                            }
+                          }
+                        }}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                      >
+                        📤 Verzend (
+                        {
+                          selectedQuotes.filter((id) => {
+                            const q = quotes.find((qu) => qu.id === id);
+                            return q?.status === "draft";
+                          }).length
+                        }
+                        )
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedQuotes([]);
+                          setBatchMode(false);
+                        }}
+                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                      >
+                        Annuleren
+                      </button>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => setShowQuoteForm(!showQuoteForm)}
+                    className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors"
+                  >
+                    + Nieuwe Offerte
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Add Quote Form - Existing form code here... */}
@@ -4608,15 +4785,40 @@ export const Accounting: React.FC<AccountingProps> = ({
               const workOrder = getWorkOrderStatus(quote.workOrderId);
               const workOrderBadge = getWorkOrderBadge(workOrder);
               const isCompleted = workOrder?.status === "Completed";
+              const isSelected = selectedQuotes.includes(quote.id);
 
               return (
                 <div
                   key={quote.id}
-                  className={`bg-white rounded-lg shadow-md p-6 ${
+                  className={`bg-white rounded-lg shadow-md p-6 transition-all ${
                     isCompleted ? "border-l-4 border-green-500" : ""
+                  } ${
+                    batchMode && isSelected
+                      ? "ring-4 ring-blue-500 border-blue-500"
+                      : batchMode
+                      ? "hover:ring-2 hover:ring-gray-300"
+                      : ""
                   }`}
                 >
                   <div className="flex items-start justify-between mb-4">
+                    {batchMode && (
+                      <div className="mr-3 mt-1">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedQuotes([...selectedQuotes, quote.id]);
+                            } else {
+                              setSelectedQuotes(
+                                selectedQuotes.filter((id) => id !== quote.id)
+                              );
+                            }
+                          }}
+                          className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                        />
+                      </div>
+                    )}
                     <div>
                       <h3 className="font-semibold text-lg text-neutral">
                         {quote.id}
@@ -4729,6 +4931,119 @@ export const Accounting: React.FC<AccountingProps> = ({
                       <p className="text-sm text-gray-700">{quote.notes}</p>
                     </div>
                   )}
+
+                  {/* Visual Pipeline Status */}
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between relative mb-2">
+                      {/* Progress Bar Background */}
+                      <div className="absolute top-1/2 left-0 w-full h-1.5 bg-gray-200 rounded-full -translate-y-1/2 z-0"></div>
+                      {/* Progress Bar Fill */}
+                      <div
+                        className="absolute top-1/2 left-0 h-1.5 bg-gradient-to-r from-blue-500 via-green-500 to-purple-500 rounded-full -translate-y-1/2 z-0 transition-all duration-500"
+                        style={{
+                          width: `${(() => {
+                            let progress = 0;
+                            if (
+                              quote.status === "approved" ||
+                              quote.status === "sent"
+                            )
+                              progress = 25;
+                            if (quote.workOrderId) progress = 50;
+                            const invoice = invoices.find(
+                              (inv) =>
+                                inv.quoteId === quote.id ||
+                                inv.workOrderId === quote.workOrderId
+                            );
+                            if (invoice) progress = 75;
+                            if (invoice?.status === "paid") progress = 100;
+                            return progress;
+                          })()}%`,
+                        }}
+                      ></div>
+
+                      {/* Pipeline Steps */}
+                      <div className="relative z-10 flex items-center justify-between w-full">
+                        <div className="flex flex-col items-center">
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-xs ${
+                              quote.status === "approved" ||
+                              quote.status === "sent"
+                                ? "bg-blue-500"
+                                : "bg-gray-300"
+                            }`}
+                          >
+                            {quote.status === "approved" ||
+                            quote.status === "sent"
+                              ? "✓"
+                              : "1"}
+                          </div>
+                          <span className="text-xs text-gray-600 mt-1 text-center">
+                            Offerte
+                          </span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-xs ${
+                              quote.workOrderId ? "bg-green-500" : "bg-gray-300"
+                            }`}
+                          >
+                            {quote.workOrderId ? "✓" : "2"}
+                          </div>
+                          <span className="text-xs text-gray-600 mt-1 text-center">
+                            Werkorder
+                          </span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-xs ${
+                              invoices.find(
+                                (inv) =>
+                                  inv.quoteId === quote.id ||
+                                  inv.workOrderId === quote.workOrderId
+                              )
+                                ? "bg-purple-500"
+                                : "bg-gray-300"
+                            }`}
+                          >
+                            {invoices.find(
+                              (inv) =>
+                                inv.quoteId === quote.id ||
+                                inv.workOrderId === quote.workOrderId
+                            )
+                              ? "✓"
+                              : "3"}
+                          </div>
+                          <span className="text-xs text-gray-600 mt-1 text-center">
+                            Factuur
+                          </span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-xs ${
+                              invoices.find(
+                                (inv) =>
+                                  inv.quoteId === quote.id ||
+                                  inv.workOrderId === quote.workOrderId
+                              )?.status === "paid"
+                                ? "bg-green-600"
+                                : "bg-gray-300"
+                            }`}
+                          >
+                            {invoices.find(
+                              (inv) =>
+                                inv.quoteId === quote.id ||
+                                inv.workOrderId === quote.workOrderId
+                            )?.status === "paid"
+                              ? "✓"
+                              : "4"}
+                          </div>
+                          <span className="text-xs text-gray-600 mt-1 text-center">
+                            Betaald
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Work Order Status Info for Completed */}
                   {isCompleted && workOrder && (
@@ -5275,6 +5590,182 @@ export const Accounting: React.FC<AccountingProps> = ({
             </div>
           )}
 
+          {/* Invoices Header - Batch Operations */}
+          <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+            <div className="text-sm text-gray-600">
+              Totaal: {invoices.length} facturen
+              {batchMode && selectedInvoices.length > 0 && (
+                <span className="ml-3 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                  {selectedInvoices.length} geselecteerd
+                </span>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {isAdmin && (
+                <>
+                  <button
+                    onClick={() => {
+                      setBatchMode(!batchMode);
+                      if (batchMode) {
+                        setSelectedInvoices([]);
+                      }
+                    }}
+                    className={`px-4 py-2 rounded-lg transition-colors ${
+                      batchMode
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                  >
+                    {batchMode ? "✓ Selectie Modus" : "☐ Batch Selectie"}
+                  </button>
+                  {batchMode && selectedInvoices.length > 0 && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          // Bulk mark as paid
+                          const unpaidInvoices = invoices.filter(
+                            (inv) =>
+                              selectedInvoices.includes(inv.id) &&
+                              inv.status !== "paid"
+                          );
+                          if (unpaidInvoices.length === 0) {
+                            alert("Geen onbetaalde facturen geselecteerd!");
+                            return;
+                          }
+                          if (
+                            confirm(
+                              `Wil je ${unpaidInvoices.length} factuur(en) als betaald markeren?`
+                            )
+                          ) {
+                            unpaidInvoices.forEach((inv) => {
+                              const updatedInvoice = {
+                                ...inv,
+                                status: "paid" as const,
+                                paidDate: new Date()
+                                  .toISOString()
+                                  .split("T")[0],
+                                history: [
+                                  ...(inv.history || []),
+                                  {
+                                    timestamp: new Date().toISOString(),
+                                    action: "paid" as const,
+                                    performedBy:
+                                      currentUser.id || currentUser.name,
+                                    details: `Status gewijzigd van ${inv.status} naar betaald`,
+                                    fromStatus: inv.status,
+                                    toStatus: "paid" as const,
+                                  } as InvoiceHistoryEntry,
+                                ],
+                              };
+                              setInvoices(
+                                invoices.map((i) =>
+                                  i.id === inv.id ? updatedInvoice : i
+                                )
+                              );
+                            });
+                            setSelectedInvoices([]);
+                            setBatchMode(false);
+                          }
+                        }}
+                        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                      >
+                        ✅ Markeer Betaald (
+                        {
+                          selectedInvoices.filter((id) => {
+                            const inv = invoices.find((i) => i.id === id);
+                            return inv?.status !== "paid";
+                          }).length
+                        }
+                        )
+                      </button>
+                      <button
+                        onClick={() => {
+                          // Bulk send drafts
+                          const draftInvoices = invoices.filter(
+                            (inv) =>
+                              selectedInvoices.includes(inv.id) &&
+                              inv.status === "draft"
+                          );
+                          if (draftInvoices.length > 0) {
+                            if (
+                              confirm(
+                                `Wil je ${draftInvoices.length} concept factuur(en) verzenden?`
+                              )
+                            ) {
+                              draftInvoices.forEach((inv) => {
+                                const updatedInvoice = {
+                                  ...inv,
+                                  status: "sent" as const,
+                                  history: [
+                                    ...(inv.history || []),
+                                    {
+                                      timestamp: new Date().toISOString(),
+                                      action: "sent" as const,
+                                      performedBy:
+                                        currentUser.id || currentUser.name,
+                                      details:
+                                        "Status gewijzigd van concept naar verzonden",
+                                      fromStatus: "draft" as const,
+                                      toStatus: "sent" as const,
+                                    } as InvoiceHistoryEntry,
+                                  ],
+                                };
+                                setInvoices(
+                                  invoices.map((i) =>
+                                    i.id === inv.id ? updatedInvoice : i
+                                  )
+                                );
+                                trackAction(
+                                  currentUser.id || currentUser.name,
+                                  currentUser.role || "user",
+                                  ModuleKey.ACCOUNTING,
+                                  "invoice_status_updated",
+                                  "update",
+                                  {
+                                    invoiceId: inv.id,
+                                    fromStatus: "draft",
+                                    toStatus: "sent",
+                                  }
+                                );
+                              });
+                              setSelectedInvoices([]);
+                              setBatchMode(false);
+                            }
+                          }
+                        }}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                      >
+                        📤 Verzend (
+                        {
+                          selectedInvoices.filter((id) => {
+                            const inv = invoices.find((i) => i.id === id);
+                            return inv?.status === "draft";
+                          }).length
+                        }
+                        )
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedInvoices([]);
+                          setBatchMode(false);
+                        }}
+                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                      >
+                        Annuleren
+                      </button>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => setShowInvoiceForm(!showInvoiceForm)}
+                    className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors"
+                  >
+                    + Nieuwe Factuur
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
           {/* Invoices Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {invoices.map((invoice) => {
@@ -5282,20 +5773,50 @@ export const Accounting: React.FC<AccountingProps> = ({
               const workOrderBadge = getWorkOrderBadge(workOrder);
               const isCompleted = workOrder?.status === "Completed";
               const hasOverdue = invoice.status === "overdue";
+              const isSelected = selectedInvoices.includes(invoice.id);
 
               return (
                 <div
                   key={invoice.id}
-                  className={`bg-white rounded-lg shadow-md p-6 ${
+                  className={`bg-white rounded-lg shadow-md p-6 transition-all ${
                     hasOverdue
                       ? "border-l-4 border-red-500"
                       : isCompleted
                       ? "border-l-4 border-green-500"
                       : ""
+                  } ${
+                    batchMode && isSelected
+                      ? "ring-4 ring-blue-500 border-blue-500"
+                      : batchMode
+                      ? "hover:ring-2 hover:ring-gray-300"
+                      : ""
                   }`}
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <div>
+                    {batchMode && (
+                      <div className="mr-3 mt-1">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedInvoices([
+                                ...selectedInvoices,
+                                invoice.id,
+                              ]);
+                            } else {
+                              setSelectedInvoices(
+                                selectedInvoices.filter(
+                                  (id) => id !== invoice.id
+                                )
+                              );
+                            }
+                          }}
+                          className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1">
                       <h3 className="font-semibold text-lg text-neutral">
                         {invoice.invoiceNumber}
                       </h3>

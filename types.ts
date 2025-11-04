@@ -645,6 +645,12 @@ export interface CalendarEvent {
     customerId?: string;
 }
 
+export interface NotificationAction {
+    label: string;
+    action: () => void;
+    variant?: 'primary' | 'secondary' | 'danger' | 'success';
+}
+
 export interface Notification {
     id: string;
     type: 'info' | 'warning' | 'error' | 'success';
@@ -653,6 +659,7 @@ export interface Notification {
     read: boolean;
     relatedModule?: ModuleKey;
     relatedId?: string;
+    actions?: NotificationAction[]; // Smart actions - directe acties vanuit notificatie
 }
 
 export interface User {

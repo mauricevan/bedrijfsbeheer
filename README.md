@@ -2909,6 +2909,44 @@ Draft → Sent → Paid
 - ✅ Planning & Agenda module
 - ✅ Uitgebreide rapportages (4 types)
 
+### Versie 5.1.0 🆕 **BATCH OPERATIONS & UX VERBETERINGEN**
+**Nieuwe Features:**
+- ✅ **Batch Operations voor Offertes** - Selecteer meerdere offertes en voer bulk acties uit:
+  - Meerdere offertes omzetten naar werkorders
+  - Meerdere concept offertes verzenden
+  - Visuele selectie met checkboxes
+  - Teller met aantal geselecteerde items
+- ✅ **Batch Operations voor Facturen** - Selecteer meerdere facturen en voer bulk acties uit:
+  - Meerdere facturen als betaald markeren
+  - Meerdere concept facturen verzenden
+  - Visuele selectie met checkboxes
+  - Teller met aantal geselecteerde items
+- ✅ **Verbeterde Werkorder Detail Modal** - Volledig herontworpen met:
+  - Visuele blokken/cards voor duidelijke structuur
+  - Contextuele iconen voor snelle herkenning
+  - Betere typografie en kleuren hiërarchie
+  - Fade-in en slide-in animaties
+  - Click-outside-to-close functionaliteit
+  - Verbeterde button styling met iconen
+- ✅ **Fix voor Werkorder Klik Functionaliteit** - Alle statussen (To Do, In Wacht, In Uitvoering, Afgerond) kunnen nu worden geklikt om details te zien
+- ✅ **POS Verbetering** - Handmatig item prijsveld gebruikt nu placeholder in plaats van vaste "0" waarde
+- ✅ **Header Fix** - JSX structuur gecorrigeerd voor betere compatibiliteit
+
+**UX Verbeteringen:**
+- ✅ Visuele hiërarchie met cards en subtiele schaduwen
+- ✅ Contextuele iconen (📋, 👤, 🏢, 🗓️, 📍, ⏱️, 💰, 📝, ⚠️, 🧱, 🕒, 📄, 📎)
+- ✅ Emotionele beleving met zachte achtergrondtinten en afgeronde hoeken
+- ✅ Interactie & focus met animaties en betere knoppen
+- ✅ Batch selectie modus met duidelijke visuele feedback
+
+**Technische Updates:**
+- ✅ Nieuwe `ContextualRelatedItems` component voor gerelateerde items
+- ✅ Nieuwe `UnifiedSearch` component voor globale zoekfunctionaliteit
+- ✅ Nieuwe `smartNotifications` utility voor contextuele notificaties
+- ✅ Nieuwe `workflowValidation` utility voor workflow guardrails
+- ✅ CSS animaties voor modal fade-in en slide-in effecten
+- ✅ Verbeterde event handling met stopPropagation voor betere UX
+
 ### Versie 1.0.0
 - Basis modules (Dashboard, Inventory, POS, etc.)
 - Admin instellingen
@@ -3011,13 +3049,17 @@ Dit project is ontwikkeld voor intern gebruik. Alle rechten voorbehouden.
 ---
 
 **Laatste update**: December 2024  
-**Versie**: 5.0.0 (Webshop Module)
-**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering, **volledig responsive mobile-first design**, **factuurbeheer vanuit CRM**, **persoonlijk dossier systeem**, **automatische factuur generatie bij voltooide werkorders**, **Lean Six Sigma analytics dashboard**, **database diagnostics systeem**, en **volledig webshop beheer systeem met producten, categorieën en bestellingen**
+**Versie**: 5.1.0 (Batch Operations & UX Verbeteringen)
+**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering, **volledig responsive mobile-first design**, **factuurbeheer vanuit CRM**, **persoonlijk dossier systeem**, **automatische factuur generatie bij voltooide werkorders**, **Lean Six Sigma analytics dashboard**, **database diagnostics systeem**, **volledig webshop beheer systeem met producten, categorieën en bestellingen**, **batch operations voor offertes en facturen**, en **verbeterde UX/UI met moderne modal design**
 
 ---
 
 **Veel succes met het Bedrijfsbeheer Dashboard! 🚀**
 
+**✨ Nieuw in V5.1: Batch Operations & UX Verbeteringen - werk efficiënter met bulk acties en verbeterde gebruikerservaring! 🎯 ✨**
+**✨ Batch selectie voor offertes en facturen - voer meerdere acties tegelijk uit! ✨**
+**✨ Volledig herontworpen werkorder detail modal met moderne card-based design! ✨**
+**✨ Verbeterde klikfunctionaliteit - alle werkorder statussen zijn nu volledig interactief! ✨**
 **✨ Nieuw in V5.0: Webshop Module - volledig e-commerce beheer systeem met producten, categorieën en bestellingen! 🛒 ✨**
 **✨ Product beheer met automatische slug/SKU generatie, SEO velden, en inventory koppeling! ✨**
 **✨ Hiërarchisch categorieën systeem met multi-categorie support! ✨**

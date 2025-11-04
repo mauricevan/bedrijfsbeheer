@@ -58,7 +58,7 @@ export const POS: React.FC<POSProps> = ({
   // Manual item form
   const [manualItem, setManualItem] = useState<Partial<CartItem>>({
     name: '',
-    price: 0,
+    price: undefined,
     vatRate: '21',
     unit: 'stuk',
     isManual: true,
@@ -211,7 +211,7 @@ export const POS: React.FC<POSProps> = ({
     setCart([...cart, newCartItem]);
     setManualItem({
       name: '',
-      price: 0,
+      price: undefined,
       vatRate: '21',
       unit: 'stuk',
       isManual: true,
@@ -1026,8 +1026,16 @@ export const POS: React.FC<POSProps> = ({
                   <input
                     type="number"
                     step="0.01"
-                    value={manualItem.price || 0}
-                    onChange={(e) => setManualItem({ ...manualItem, price: parseFloat(e.target.value) || 0 })}
+                    min="0"
+                    value={manualItem.price !== undefined ? manualItem.price : ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setManualItem({ 
+                        ...manualItem, 
+                        price: value === '' ? undefined : parseFloat(value) || undefined 
+                      });
+                    }}
+                    placeholder="0.00"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
