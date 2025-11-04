@@ -20,9 +20,11 @@ Een volledig geïntegreerd dashboard/backend-systeem waarmee de eigenaar alle be
 ## 🎯 Algemeen
 
 ### Projectdoel
+
 Een dashboard/backend-systeem waarmee de eigenaar alle bedrijfsprocessen kan overzien en regelen, en medewerkers alle tools hebben die nodig zijn om hun taken efficiënt uit te voeren.
 
 ### Gebruikerstypes / Rollen
+
 - **Admin** (Manager Productie): Volledige toegang, modules in- en uitschakelen, rechten beheren, alle werkorders overzien
 - **User / Medewerker**: Toegang afhankelijk van rol, persoonlijk workboard met eigen taken, kan taken van collega's bekijken
 
@@ -31,22 +33,26 @@ Een dashboard/backend-systeem waarmee de eigenaar alle bedrijfsprocessen kan ove
 ## 🚀 Installatie
 
 ### Vereisten
+
 - Node.js (v18 of hoger)
 - npm of yarn
 
 ### Stappen
 
 1. **Clone of download het project**
+
    ```bash
    cd C:\Users\hp\Desktop\Bedrijfsbeheer2.0
    ```
 
 2. **Installeer dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Start development server**
+
    ```bash
    npm run dev
    ```
@@ -56,6 +62,7 @@ Een dashboard/backend-systeem waarmee de eigenaar alle bedrijfsprocessen kan ove
    - Login met één van de demo accounts (zie hieronder)
 
 ### Build voor productie
+
 ```bash
 npm run build
 npm run preview
@@ -69,14 +76,15 @@ npm run preview
 
 Het systeem heeft een volledig werkend login systeem met 4 test accounts:
 
-| Naam | Email | Rol | Admin | Wachtwoord |
-|------|-------|-----|-------|------------|
-| Sophie van Dam | sophie@bedrijf.nl | Manager Productie | ✅ Ja | 1234 |
-| Jan de Vries | jan@bedrijf.nl | Productiemedewerker | ❌ Nee | 1234 |
-| Maria Jansen | maria@bedrijf.nl | Lasser | ❌ Nee | 1234 |
-| Peter Bakker | peter@bedrijf.nl | Spuiter | ❌ Nee | 1234 |
+| Naam           | Email             | Rol                 | Admin  | Wachtwoord |
+| -------------- | ----------------- | ------------------- | ------ | ---------- |
+| Sophie van Dam | sophie@bedrijf.nl | Manager Productie   | ✅ Ja  | 1234       |
+| Jan de Vries   | jan@bedrijf.nl    | Productiemedewerker | ❌ Nee | 1234       |
+| Maria Jansen   | maria@bedrijf.nl  | Lasser              | ❌ Nee | 1234       |
+| Peter Bakker   | peter@bedrijf.nl  | Spuiter             | ❌ Nee | 1234       |
 
 ### Login Features
+
 - ✅ Email + wachtwoord authenticatie
 - ✅ Quick login knoppen voor snelle demo toegang
 - ✅ Modern login scherm met gradient achtergrond
@@ -89,7 +97,9 @@ Het systeem heeft een volledig werkend login systeem met 4 test accounts:
 ## 🔧 Modules & Functionaliteiten
 
 ### 1. **Dashboard / Overzicht**
+
 Realtime weergave van bedrijfsactiviteiten:
+
 - ✅ Omzet overzicht met KPI cards
 - ✅ Werkbonnen status samenvatting
 - ✅ Voorraadniveau waarschuwingen
@@ -98,6 +108,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ Recente werkorders overzicht
 
 ### 2. **Voorraadbeheer (Inventory Management)**
+
 - ✅ Beheer van grondstoffen, halffabricaten en eindproducten
 - ✅ SKU-nummers en locatie tracking
 - ✅ Eén magazijn/opslaglocatie
@@ -117,6 +128,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ❌ Geen barcode/QR-code (voorlopig niet)
 
 ### 3. **Kassasysteem (POS)**
+
 - ✅ Producten verkopen met real-time voorraad check
 - ✅ Winkelwagen beheer
 - ✅ Klant selectie (optioneel)
@@ -127,9 +139,11 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ **Koppeling met werkorders** - materialen gereserveerd voor werkorders worden getoond
 
 ### 4. **Werkorders / Workboard** 🆕 **VOLLEDIG VERNIEUWD + HISTORY VIEWER + INDEXERING**
+
 **Persoonlijk Workboard Systeem:**
 
 **Voor Reguliere Users:**
+
 - ✅ **Persoonlijk workboard** met alleen eigen toegewezen taken
 - ✅ Kanban-stijl layout met **4 kolommen** (To Do / In Wacht / In Uitvoering / Afgerond)
 - ✅ **Uren registratie** per taak (bewerkbaar tijdens werk)
@@ -147,6 +161,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🆕 **Compacte/Uitgebreide weergave toggle** - Schakel tussen compacte (alleen omschrijving) en uitgebreide (volledige details) weergave
 
 **Voor Admin:**
+
 - ✅ **Volledig overzicht** van alle werkorders (dropdown "Alle medewerkers")
 - 🆕 **Gegroepeerd per medewerker** - bij "Alle medewerkers" krijgt elke medewerker een eigen sectie
 - 🆕 **Overzichtelijke weergave** - zie direct per medewerker wat er nog te doen is
@@ -185,6 +200,7 @@ Realtime weergave van bedrijfsactiviteiten:
 **🆕 History Viewer Functionaliteit:**
 
 **Timestamp Summary (voor iedereen zichtbaar):**
+
 - 🆕 Aangemaakt - wanneer werkorder is aangemaakt
 - 🆕 Geconverteerd - indien vanuit offerte/factuur (met link)
 - 🆕 Toegewezen - wanneer aan medewerker toegewezen
@@ -192,6 +208,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🆕 Voltooid - wanneer werkorder is afgerond
 
 **Uitklapbare Volledige Geschiedenis:**
+
 - 🆕 Alle acties met tijdstip en uitvoerder
 - 🆕 Status wijzigingen tracking
 - 🆕 Toewijzing wijzigingen (van X naar Y)
@@ -200,6 +217,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🆕 Maximum 260px hoogte met scroll voor lange histories
 
 **Voordelen:**
+
 - ✅ **Transparantie** - iedereen ziet wanneer taken zijn toegewezen
 - ✅ **Verantwoordelijkheid** - wie heeft wat wanneer gedaan
 - ✅ **Analyse** - inzicht in doorlooptijden en bottlenecks
@@ -209,12 +227,14 @@ Realtime weergave van bedrijfsactiviteiten:
 ### 5. **Boekhouding, Offertes & Facturen** 🆕 **VOLLEDIG UITGEBREID + WERKORDER INTEGRATIE V4.0 + CLONE FUNCTIE V4.6**
 
 **Transacties Tab:**
+
 - ✅ Overzicht transacties (inkomsten/uitgaven)
 - ✅ Filter op type (alle/inkomsten/uitgaven)
 - ✅ KPI cards (totale inkomsten, uitgaven, netto winst)
 - ✅ Transactie historie met datum
 
 **Offertes Tab:** 🆕 **UITGEBREID MET OVERZICHT MODALS V4.7**
+
 - ✅ **Offertes maken en beheren** met meerdere items
 - ✅ **Items uit voorraad selecteren** - Dropdown met alle voorraad items inclusief prijzen
 - ✅ **Custom items toevoegen** - Voor items die niet in voorraad staan
@@ -247,6 +267,7 @@ Realtime weergave van bedrijfsactiviteiten:
   - 📤 Naar Werkorder knop (alleen voor approved/sent zonder werkorder)
 
 **Facturen Tab:** 🆕 **NIEUW TOEGEVOEGD + WERKORDER INTEGRATIE V4.0 + OVERZICHT MODAL V4.7**
+
 - ✅ **Volledig factuurbeheer systeem**
 - ✅ **4 Statistiek Cards:**
   - Totaal Gefactureerd (€ alle facturen) - Klikbaar → Overzicht modal
@@ -307,6 +328,7 @@ Realtime weergave van bedrijfsactiviteiten:
 **NIEUWE V4.0 Features - Werkorder Integratie:**
 
 **1. Offerte/Factuur → Werkorder Conversie**
+
 - 🆕 Knop "📋 Maak Werkorder" bij geaccepteerde offertes
 - 🆕 Knop "📋 Maak Werkorder" bij verzonden facturen
 - 🆕 Automatische werkorder aanmaken met:
@@ -318,6 +340,7 @@ Realtime weergave van bedrijfsactiviteiten:
   - Referentie naar originele offerte/factuur
 
 **2. Werkorder Status Weergave**
+
 - 🆕 **Status Badge** in offerte/factuur card:
   - 🔵 "Werkorder: To Do" (blauw)
   - 🟡 "Werkorder: In Wacht" (geel)
@@ -327,6 +350,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🆕 **Real-time updates** - Status wordt automatisch bijgewerkt
 
 **3. Tussentijdse Aanpassing & Synchronisatie**
+
 - 🆕 **"✏️ Bewerk & Update Werkorder" knop** in offertes/facturen
 - 🆕 **Bidirectionele synchronisatie:**
   - Wijzig items in offerte → Materialen in werkorder worden bijgewerkt
@@ -338,21 +362,25 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🆕 **Audit trail** - Alle wijzigingen worden gelogd
 
 **4. Voltooiings Workflow**
+
 - 🆕 **Groen Voltooiings Badge** bij afgeronde werkorders
 - 🆕 **Automatische factuur update** - Betaal knop wordt actief
 - 🆕 **Gewerkte uren tonen** - Daadwerkelijke vs. geschatte uren
 - 🆕 **Materiaalgebruik overzicht** - Werkelijk vs. gepland
 
 **5. Visuele Indicatoren**
+
 - 🆕 **Groene border** rond offerte/factuur met voltooide werkorder
 - 🆕 **Status icon** in header (🔧 = in uitvoering, ✅ = voltooid)
 - 🆕 **Progress indicator** - % voltooid in werkorder sectie
 - 🆕 **Tijdlijn weergave** - Van offerte → werkorder → voltooiing
 
 ### 5.5. **Boekhouding & Dossier** 🆕 **NIEUWE MODULE - MKB-READY, NL-COMPLIANT** 🆕 **V5.4: KASSA VERKOPEN TAB & KLIKBARE FACTUREN**
+
 **Volledig Digitaal Boekhouddossier - Alles wat een boekhouder nodig heeft**
 
 **Doel:**
+
 - ✅ Geen fouten in BTW-aangifte
 - ✅ Volledig digitaal dossier per klant/leverancier
 - ✅ Direct klaar voor controle (Belastingdienst, accountant)
@@ -361,6 +389,7 @@ Realtime weergave van bedrijfsactiviteiten:
 **6 Kernfuncties:**
 
 **1. Grootboekrekeningen (Standaard MKB-Set)**
+
 - ✅ **10 Standaard rekeningen** ingesteld (niet aanpasbaar):
   - 1300 – Debiteuren (openstaande facturen)
   - 1400 – Voorraad
@@ -375,8 +404,12 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ **Export functionaliteit** - Exporteer grootboek naar CSV (voor Exact, Twinfield, etc.)
 - ✅ **Tabel overzicht** - Alle rekeningen met type, categorie en omschrijving
 
-**2. Factuur & Pakbon Archief (Digitaal Dossier)** 🆕 **V5.4: KLIKBARE FACTUREN MET DETAIL MODAL**
+**2. Factuur & Pakbon Archief (Digitaal Dossier)** 🆕 **V5.4: KLIKBARE FACTUREN + FINANCIEEL OVERZICHT**
+
 - ✅ **Automatisch archief** - Elke factuur wordt automatisch toegevoegd aan archief
+- ✅ **Twee weergaven:**
+  - 📄 **Facturen Lijst** - Overzicht van alle facturen als cards
+  - 📊 **Financieel Overzicht** - Excel-achtige tabel met gedetailleerde item breakdown
 - ✅ **Per document informatie:**
   - Factuurnummer (auto: 2025-001)
   - Datum uitgifte / vervaldatum
@@ -384,9 +417,21 @@ Realtime weergave van bedrijfsactiviteiten:
   - Totaal excl. / BTW / incl.
   - Status: Betaald / Openstaand / Herinnering / Vervallen
   - Koppeling aan: Werkorder / Pakbon / Kassa
-- ✅ **Zoeken & Filteren:**
+- ✅ **Zoeken & Filteren (Lijst weergave):**
   - Zoek op nummer, klant, datum
   - Filter op status (Openstaand / Betaald / Vervallen)
+- 🆕 **Financieel Overzicht Features:**
+  - 📅 **Periode filter** - Vandaag, Deze Week, Dit Kwartaal, Dit Jaar, Alle Facturen, Aangepaste Periode
+  - 🔍 **Klantnaam filter** - Zoek op (deel van) klantnaam
+  - 📊 **Summary cards (2 rijen):**
+    - Eerste rij: Totaal Items, Totaal Aantal, Omzet (incl. BTW), BTW Totaal
+    - Tweede rij: Betaald Omzet, Openstaand Omzet, Vervallen Omzet, Draft Omzet
+  - 📋 **Excel-achtige tabel** met alle factuur items:
+    - Datum, Factuur, Klant, Status, Product, Aantal, Prijs per stuk, BTW %, BTW bedrag, Totaal (incl. BTW)
+    - Totaalrij onderaan
+    - Sorteerbaar op datum (nieuwste eerst)
+  - 📥 **CSV export** - Exporteer gefilterde data naar CSV
+  - 📈 **Extra statistieken** - Unieke Facturen, Unieke Producten, Unieke Klanten
 - ✅ **Klikbare facturen** 🆕 - Klik op elke factuur om volledige details te zien
 - ✅ **Detail modal (read-only)** 🆕 - Volledige factuurdetails in overzichtelijke modal:
   - Factuurnummer, status, klant, datums
@@ -410,6 +455,7 @@ Realtime weergave van bedrijfsactiviteiten:
   - Cursor pointer en hover-effecten voor duidelijkheid
 
 **3. Kassa Verkopen** 🆕 **V5.4: NIEUWE TAB VOOR KASSA TRANSACTIES**
+
 - 🆕 **Aparte tab** - "🛒 Kassa Verkopen" in Boekhouding & Dossier module
 - 🆕 **Automatische filtering** - Toont alle facturen via kassasysteem:
   - Herkend aan "Kassa verkoop" in notes
@@ -422,6 +468,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🆕 **Clone functionaliteit** - Kan ook gekloond worden naar factuur of offerte
 
 **4. BTW-Overzicht (Aangifte-Ready)**
+
 - ✅ **Automatische berekening** per maand/kwartaal
 - ✅ **Periode rapport met:**
   - Omzet 21% → BTW af te dragen
@@ -437,6 +484,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ **Periode selectie** - Kies maand/kwartaal voor rapport
 
 **5. Klant- & Leveranciersdossiers**
+
 - ✅ **Alles op één plek** - Zoals een fysiek dossierkast
 - ✅ **Per relatie informatie:**
   - Naam, adres, KvK, BTW-nummer
@@ -454,6 +502,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ **Zoekfunctionaliteit** - Zoek klant of leverancier
 
 **6. Transactieregistratie (Journaal)**
+
 - ✅ **Volledig automatisch** - Elke factuur genereert journaalpost
 - ✅ **Journaalstructuur:**
   - Journaalnummer (JRN-2025-001, etc.)
@@ -475,11 +524,13 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ **Export functionaliteit** - Exporteer journaal naar CSV (placeholder)
 
 **Permissions Systeem:**
+
 - ✅ **Admin/Boekhouder** - Volledige toegang (grootboek, facturen, BTW, journaal, dossiers)
 - ✅ **Verkoper/Inkoop** - Alleen dossiers tab (klant- en leveranciersdossiers)
 - ✅ **Monteur** - Geen toegang
 
 **Integratie met Bestaande Modules:**
+
 - ✅ **POS / Kassa** → Automatische factuur + journaalpost + kassa verkopen tab
 - ✅ **Pakbon (B2B)** → Wordt factuur bij "Markeer als gefactureerd"
 - ✅ **Voorraad** → Inkoopfactuur → voorraad + crediteuren
@@ -488,6 +539,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🆕 **Kassa Verkopen** → Direct zichtbaar in aparte tab met betaalmethode
 
 **Technische Details:**
+
 - ✅ Nieuwe types: `LedgerAccount`, `JournalEntry`, `JournalEntryLine`, `VATReport`, `CustomerDossier`, `SupplierDossier`, `InvoiceArchiveItem`, `DossierNote`
 - ✅ Automatische journaalpost generatie vanuit facturen
 - ✅ Automatische BTW berekening per periode
@@ -496,6 +548,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ Responsive design voor mobile en desktop
 
 **Voordelen:**
+
 - ✅ **MKB-Ready** - Standaard MKB grootboekset ingebouwd
 - ✅ **NL-Compliant** - BTW per tarief (21%, 9%, 0%) gesplitst
 - ✅ **Aangifte-Ready** - BTW-rapport klaar voor accountant/belastingdienst
@@ -505,6 +558,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ **Controle-ready** - Direct klaar voor Belastingdienst controle
 
 **Toekomstige Uitbreidingen:**
+
 - 🔄 XML export voor BTW-aangifte (Belastingdienst portaal)
 - 🔄 PDF generatie voor facturen
 - 🔄 Herinneringen systeem voor openstaande facturen
@@ -514,9 +568,11 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🔄 Handmatige journaalposten toevoegen UI
 
 ### 6. **CRM (Klantrelatiebeheer)** 🆕 **VOLLEDIG VERNIEUWD**
+
 **Professioneel CRM Systeem:**
 
 **Dashboard Tab:**
+
 - ✅ **KPI Cards** - Real-time statistieken en conversie rates
 - ✅ Leads tracking (totaal/actief/gewonnen/verloren)
 - ✅ Conversie percentage (lead naar klant)
@@ -527,6 +583,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ Verlopen taken waarschuwingen
 
 **Leads & Pipeline Tab:**
+
 - ✅ **Lead management** - Volledige lead tracking
 - ✅ **7-fase Pipeline** - Kanban-stijl board (Nieuw → Contact → Gekwalificeerd → Voorstel → Onderhandeling → Gewonnen/Verloren)
 - ✅ Lead informatie (naam, email, telefoon, bedrijf)
@@ -539,6 +596,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ Drag & drop tussen fasen (visueel)
 
 **Klanten Tab:**
+
 - ✅ Klantgegevens beheer (naam, email, telefoon, adres)
 - ✅ **Klanttypes: zakelijk en particulier**
 - ✅ **Herkomst tracking** - Weet waar klanten vandaan komen
@@ -561,6 +619,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🆕 **Werkorder conversie** - Factuur naar werkorder met specifieke user toewijzing
 
 **Interacties Tab:**
+
 - ✅ **Communicatie geschiedenis** - Alle contactmomenten vastleggen
 - ✅ 5 Interactie types (📞 Call, 📧 Email, 🤝 Meeting, 📝 Note, 💬 SMS)
 - ✅ Koppeling aan leads of klanten
@@ -573,6 +632,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ Visuele iconen per interactie type
 
 **Taken Tab:**
+
 - ✅ **Taken/follow-ups** per klant
 - ✅ Prioriteit levels (laag/gemiddeld/hoog)
 - ✅ Status tracking (todo/in_progress/done)
@@ -582,6 +642,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ Add/Delete/Update functionaliteit
 
 ### 7. **HRM (Personeelsbeheer)** 🆕 **VOLLEDIG UITGEBREID**
+
 - ✅ Medewerker beheer (CRUD)
 - ✅ Functie/rol overzicht
 - ✅ Contactgegevens
@@ -608,6 +669,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🔄 Planning en roosters
 
 ### 8. **Planning & Agenda**
+
 - ✅ **Volledige kalender module** met dag/week/maand views
 - ✅ Evenementen toevoegen (werkorder/meeting/vakantie/overig)
 - ✅ Medewerker toewijzing aan evenementen
@@ -623,26 +685,31 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🔄 Leverdata tracking
 
 ### 9. **Rapportages & Analyse**
+
 **4 Rapport Types:**
 
 **Verkoop Rapport:**
+
 - ✅ Totale omzet, gemiddelde verkoop, verkochte items
 - ✅ Top 5 producten met omzet
 - ✅ Verkopen per datum timeline
 
 **Voorraad Rapport:**
+
 - ✅ Totale voorraadwaarde
 - ✅ Lage voorraad items
 - ✅ Niet op voorraad alerts
 - ✅ Volledige voorraad tabel met status
 
 **Offertes Rapport:**
+
 - ✅ Totale offertes waarde
 - ✅ Geaccepteerde waarde
 - ✅ **Conversie rate** berekening
 - ✅ Status breakdown (draft/sent/approved/rejected/expired)
 
 **Werkorders Rapport:**
+
 - ✅ Totaal orders, afgerond count
 - ✅ Totaal gewerkte uren
 - ✅ Gemiddelde uren per order
@@ -655,14 +722,17 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🔄 Budget overschrijding alerts
 
 ### 10. **Webshop Beheer** 🆕 **NIEUWE MODULE - VOLLEDIG GEÏMPLEMENTEERD**
+
 **Professioneel E-commerce Beheer Systeem:**
 
 **Dashboard:**
+
 - ✅ Real-time statistieken (actieve producten, bestellingen, omzet)
 - ✅ KPI cards met visuele indicatoren
 - ✅ Overzicht van webshop performance
 
 **Product Beheer Tab:**
+
 - ✅ **Volledige Product CRUD** - Maak, bewerk, verwijder en archiveer producten
 - ✅ **Uitgebreid Product Formulier** met georganiseerde secties:
   - 📝 Basis Informatie (naam, slug, SKU, beschrijvingen)
@@ -698,6 +768,7 @@ Realtime weergave van bedrijfsactiviteiten:
   - Quick toggle knoppen
 
 **Categorieën Tab:**
+
 - ✅ **Volledig Categorie Beheer** (CRUD)
 - ✅ **Hiërarchische Structuur** - Parent/child categorieën
 - ✅ **Multi-categorie Support** - Producten kunnen in meerdere categorieën
@@ -709,6 +780,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ **Actief/Inactief Toggle** - Verberg categorieën zonder verwijderen
 
 **Bestellingen Tab:**
+
 - ✅ **Volledig Order Overzicht** - Alle bestellingen met details
 - ✅ **Zoeken & Filteren:**
   - Zoek op ordernummer, klantnaam, email
@@ -739,6 +811,7 @@ Realtime weergave van bedrijfsactiviteiten:
   - Order totalen highlight
 
 **Design & UX Principes:**
+
 - ✅ **Progressive Disclosure** - Georganiseerde secties met duidelijke headers
 - ✅ **Color Coding** - Verschillende kleuren per sectie voor snelle scanning
 - ✅ **Error Prevention** - Automatische generatie, validatie, confirmation dialogs
@@ -748,6 +821,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ **Consistent Patterns** - Herkenbare UI patterns door hele module
 
 **Frontend Voorbereiding:**
+
 - ✅ **SEO-Ready** - Slugs, meta titles, descriptions voor alle producten
 - ✅ **Image Structure** - Image arrays en featured images voorbereid
 - ✅ **Variant System** - Structuur voor product varianten (kleuren, maten)
@@ -758,6 +832,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ **Statistics Ready** - View count, purchase count, wishlist count voorbereid
 
 **Inventory Integratie:**
+
 - ✅ Koppeling met Inventory module
 - ✅ Dropdown selectie van voorraad items
 - ✅ Synchronisatie voorbereid (voorraad sync in toekomstige versie)
@@ -770,6 +845,7 @@ Realtime weergave van bedrijfsactiviteiten:
 🔄 Export/import functionaliteit
 
 ### 11. **Admin Instellingen** 🆕 **UITGEBREID MET ANALYTICS & DATABASE DIAGNOSTICS**
+
 - ✅ Modules in-/uitschakelen per module
 - ✅ Beschrijving per module
 - ✅ Visuele indicators (actief/inactief)
@@ -799,6 +875,7 @@ Realtime weergave van bedrijfsactiviteiten:
   - Responsive design met mobile-optimized layout
 
 ### 11. **Notificaties Systeem**
+
 - ✅ **Notificaties bel** in header met badge counter
 - ✅ Dropdown met ongelezen meldingen
 - ✅ 4 types: info, warning, error, success
@@ -810,6 +887,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ Meldingen bij offerte acceptatie
 
 **Legenda:**
+
 - ✅ Volledig geïmplementeerd en werkend
 - 🆕 Nieuw in versie 4.0 (Werkorder Integratie)
 - 🔄 In ontwikkeling / Geplanned
@@ -820,7 +898,9 @@ Realtime weergave van bedrijfsactiviteiten:
 ## 👥 Gebruikersrollen
 
 ### Admin (Manager Productie)
+
 **Volledige Toegang:**
+
 - ✅ Alle modules beheren en in-/uitschakelen
 - ✅ **Alle werkorders van alle medewerkers zien**
 - ✅ Dropdown optie "Alle medewerkers" in workboard
@@ -830,7 +910,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ Toegang tot rapportages en analyses
 - ✅ Admin Instellingen module
 - ✅ Offertes beheren en status updaten
-- ✅ **Offertes omzetten naar facturen** 
+- ✅ **Offertes omzetten naar facturen**
 - ✅ **Facturen aanmaken en beheren**
 - ✅ **Betalingen registreren**
 - ✅ Taken toewijzen aan medewerkers
@@ -839,7 +919,9 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🆕 **Tussentijdse aanpassingen doorvoeren met synchronisatie**
 
 ### User / Medewerker
+
 **Beperkte Toegang:**
+
 - ✅ **Persoonlijk workboard** met alleen eigen taken
 - ✅ Eigen werkorders beheren (status updaten)
 - ✅ **Uren registreren** op eigen taken
@@ -867,7 +949,7 @@ Realtime weergave van bedrijfsactiviteiten:
    ├─ Maak offerte met items en werkuren
    ├─ Verstuur naar klant
    └─ Klant accepteert
-   
+
 2. WERKORDER CREATIE
    ├─ Klik "📋 Maak Werkorder"
    ├─ Werkorder automatisch aangemaakt:
@@ -909,31 +991,37 @@ Realtime weergave van bedrijfsactiviteiten:
 **Key Features van Integratie:**
 
 **Bidirectionele Synchronisatie:**
+
 - 🆕 Wijzig offerte → Werkorder wordt automatisch bijgewerkt
 - 🆕 Voltooi werkorder → Offerte toont voltooiingsstatus
 - 🆕 Update factuur → Gekoppelde werkorder aangepast
 - 🆕 Materiaalverbruik → Real-time synchronisatie
 
 **Smart Business Logic:**
+
 - 🆕 **Voorraad controle** bij conversie (waarschuwing bij tekort)
 - 🆕 **Status guards** (blokkeer bewerking bij voltooide werkorder)
 - 🆕 **Conflict detectie** (waarschuwing bij overlappende wijzigingen)
 - 🆕 **Audit trail** (alle wijzigingen worden gelogd)
 
 **Visuele Feedback:**
+
 - 🆕 **Real-time status badges** in offertes/facturen
 - 🆕 **Kleurgecodeerde borders** (groen = voltooid, blauw = actief)
 - 🆕 **Progress indicators** (percentage voortgang)
 - 🆕 **Direct links** naar gekoppelde werkorders
 
 **Gebruikersgemak:**
+
 - 🆕 **Eén klik conversie** (offerte → werkorder → factuur)
 - 🆕 **Automatische materiaal toewijzing**
 - 🆕 **Gewerkte vs geschatte uren** vergelijking
 - 🆕 **Snelle status updates** via badges
 
 ### Factuur Workflow (Basis - Bestaand)
+
 **Volledige Factuur Levenscyclus:**
+
 1. **Offerte Fase**: Maak offerte voor klant
 2. **Acceptatie**: Klant accepteert offerte
 3. **Conversie**: Klik "🧾 Omzetten naar Factuur" (paarse knop)
@@ -949,6 +1037,7 @@ Realtime weergave van bedrijfsactiviteiten:
 7. **Tracking**: Altijd overzicht van uitstaande en verlopen facturen
 
 **Of handmatig factuur aanmaken:**
+
 1. Klik "+ Nieuwe Factuur" in Facturen tab
 2. Vul klant, datums, betalingstermijn in
 3. Voeg items uit voorraad of custom items toe
@@ -956,6 +1045,7 @@ Realtime weergave van bedrijfsactiviteiten:
 5. Sla op → factuur krijgt automatisch nummer
 
 **Factuur Features:**
+
 - ✅ Automatische factuurnummer generatie per jaar
 - ✅ Link naar originele offerte (indien geconverteerd)
 - ✅ Status tracking (draft/sent/paid/overdue/cancelled)
@@ -966,6 +1056,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ Betaling historie
 
 ### Login & Authenticatie
+
 - ✅ **Volledig login systeem** met email + wachtwoord
 - ✅ Quick login knoppen voor demo
 - ✅ Automatische rol detectie (admin/user)
@@ -974,6 +1065,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ User menu met profiel details
 
 ### Mobiele Toegankelijkheid 📱 **VOLLEDIG GEOPTIMALISEERD V4.5**
+
 - ✅ **Volledig responsive design** voor smartphone, tablet en desktop
 - ✅ **Hamburger menu** op mobiel met slide-in sidebar
 - ✅ **Touch-optimized controls** - grotere knoppen en swipe gestures
@@ -985,6 +1077,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ **Optimized voor verschillende schermformaten** - iPhone, Android, iPad
 
 ### Beveiliging & Privacy
+
 - ✅ Rolgebaseerde toegang (admin/user)
 - ✅ Login authenticatie
 - ✅ Wachtwoord beveiliging
@@ -993,6 +1086,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ Veilige data opslag (in-memory voor demo)
 
 ### Notificaties & Alerts
+
 - ✅ **Real-time notificaties systeem**
 - ✅ Lage voorraad waarschuwingen
 - ✅ Offerte acceptatie meldingen
@@ -1002,6 +1096,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🔄 Onbetaalde facturen herinneringen
 
 ### Data Export & Rapportage
+
 - ✅ Realtime dashboards met KPI's
 - ✅ 4 verschillende rapport types
 - ✅ Overzichtelijke rapporten met statistieken
@@ -1011,6 +1106,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🔄 PDF generatie
 
 ### Digitalisering
+
 - 🔄 Fotobewijs uploads
 - 🔄 Digitale handtekeningen
 - ✅ Elektronische offertes
@@ -1023,7 +1119,9 @@ Realtime weergave van bedrijfsactiviteiten:
 ## 📱 Mobile Optimalisatie Guide
 
 ### Responsive Breakpoints
+
 Het project gebruikt Tailwind CSS breakpoints:
+
 - **sm**: 640px en groter (grote smartphones landscape)
 - **md**: 768px en groter (tablets portrait)
 - **lg**: 1024px en groter (tablets landscape, kleine laptops)
@@ -1032,18 +1130,21 @@ Het project gebruikt Tailwind CSS breakpoints:
 ### Mobile-First Principes
 
 **1. Hamburger Menu**
+
 - Op schermen < 1024px verschijnt een hamburger menu icoon in de header
 - Sidebar schuift in vanaf links met smooth animatie
 - Click buiten sidebar sluit het menu automatisch
 - Touch-friendly met grote knoppen (min 44x44px)
 
 **2. Touch Optimalisaties**
+
 - Alle knoppen hebben `touch-manipulation` voor betere responsiviteit
 - Minimum button size van 44x44px voor vingertoppen
 - Active states voor directe feedback bij tap
 - Swipe gestures voor sidebar
 
 **3. Responsive Layouts**
+
 ```tsx
 // Desktop: 3 kolommen, Tablet: 2 kolommen, Mobile: 1 kolom
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1062,30 +1163,36 @@ Het project gebruikt Tailwind CSS breakpoints:
 ```
 
 **4. Formulieren**
+
 - Input font-size: 16px (voorkomt zoom op iOS)
 - Stack layout op mobile, side-by-side op desktop
 - Touch-friendly spacing tussen velden
 
 **5. Tabellen**
+
 - Horizontale scroll op mobile
 - Compacte weergave met essentiële kolommen
 - Responsive column hiding:
+
 ```tsx
 <td className="hidden md:table-cell">Desktop only kolom</td>
 ```
 
 **6. Modals & Dropdowns**
+
 - Full-screen op mobile (< 640px)
 - Centered op desktop
 - Touch-dismissable overlay
 
 ### Performance Tips
+
 - Lighter shadows op mobile voor betere performance
 - Reduced motion support voor accessibility
 - Lazy loading voor images in lange lijsten
 - Debounced scroll events
 
 ### Testing Checklist
+
 ✅ Test op iPhone (portrait + landscape)
 ✅ Test op Android (verschillende schermgroottes)
 ✅ Test op iPad (portrait + landscape)  
@@ -1097,7 +1204,9 @@ Het project gebruikt Tailwind CSS breakpoints:
 ✅ Test met één hand bediening
 
 ### Browser DevTools
+
 Test responsive design in Chrome DevTools:
+
 1. Open DevTools (F12)
 2. Toggle Device Toolbar (Ctrl+Shift+M)
 3. Selecteer verschillende devices
@@ -1125,6 +1234,7 @@ Test responsive design in Chrome DevTools:
 ## 🛠 Technische Stack
 
 ### Frontend
+
 - **React 19** - UI Framework met latest features
 - **TypeScript** - Type safety en betere DX
 - **React Router 7** - Client-side routing
@@ -1132,18 +1242,21 @@ Test responsive design in Chrome DevTools:
 - **Vite 6** - Lightning fast build tool
 
 ### State Management
+
 - React Hooks (useState, useMemo, useEffect)
 - Centralized state in App component
 - Props drilling voor data flow
 - Context API ready voor toekomstige scaling
 
 ### Authentication
+
 - Simple email/password authentication
 - Role-based access control (RBAC)
 - Session management met React state
 - Secure logout functionaliteit
 
 ### Architectuur
+
 - **Modulair design** - Elke module is los in/uit te schakelen
 - **Component-based** - Herbruikbare componenten
 - **Type-safe** - TypeScript interfaces voor alle data
@@ -1151,6 +1264,7 @@ Test responsive design in Chrome DevTools:
 - **Role-based** - Admin en user rollen met verschillende rechten
 
 ### Bestandsstructuur
+
 ```
 Bedrijfsbeheer2.0/
 ├── components/          # Herbruikbare UI componenten
@@ -1204,6 +1318,7 @@ De volgende functionaliteiten zijn **niet** opgenomen of worden voorlopig uitges
 ## 🔮 Toekomstige Ontwikkelingen
 
 ### Fase 1: Kernfunctionaliteiten ✅ **VOLTOOID**
+
 - ✅ Basis modules (Dashboard, Inventory, POS, Work Orders, CRM, HRM)
 - ✅ Admin functionaliteit
 - ✅ Rapportages basis
@@ -1215,6 +1330,7 @@ De volgende functionaliteiten zijn **niet** opgenomen of worden voorlopig uitges
 - ✅ Persoonlijk workboard
 
 ### Fase 2: Uitbreiding ✅ **VOLTOOID**
+
 - ✅ Taken management (CRM)
 - ✅ Kalender/agenda functionaliteit
 - ✅ Uren registratie per werkorder
@@ -1230,6 +1346,7 @@ De volgende functionaliteiten zijn **niet** opgenomen of worden voorlopig uitges
 - 🔄 Email notificaties
 
 ### Fase 3: Werkorder Integratie ✅ **VOLTOOID IN V4.0**
+
 - ✅ **Offerte → Werkorder conversie**
 - ✅ **Factuur → Werkorder conversie**
 - ✅ **Real-time status tracking in offertes/facturen**
@@ -1240,6 +1357,7 @@ De volgende functionaliteiten zijn **niet** opgenomen of worden voorlopig uitges
 - ✅ **Gewerkte vs geschatte uren vergelijking**
 
 ### Fase 4: Advanced Features (Gepland)
+
 - 🔄 Klantenportaal (login voor klanten)
 - 🔄 Klanten kunnen facturen online inzien
 - 🔄 Klanten kunnen werkorder voortgang volgen 🆕
@@ -1257,6 +1375,7 @@ De volgende functionaliteiten zijn **niet** opgenomen of worden voorlopig uitges
 - 🔄 Werkorder history per klant 🆕
 
 ### Fase 5: Optimalisatie & Scaling (Lange termijn)
+
 - 🔄 Performance optimalisatie
 - 🔄 Backend database integratie (PostgreSQL/MongoDB)
 - 🔄 REST API of GraphQL
@@ -1280,6 +1399,7 @@ Voor complete stap-voor-stap instructies over het aanmaken van nieuwe klanten in
 📄 **[NIEUWE_KLANT_HANDLEIDING.md](./NIEUWE_KLANT_HANDLEIDING.md)**
 
 **Quick Start:**
+
 1. Login als **Admin** (sophie@bedrijf.nl / 1234)
 2. Ga naar **CRM** module → Tab **"👥 Klanten"**
 3. Klik **"+ Nieuwe Klant"** (rechtsboven)
@@ -1289,6 +1409,7 @@ Voor complete stap-voor-stap instructies over het aanmaken van nieuwe klanten in
 7. **Klant is direct beschikbaar** in alle modules!
 
 **Features:**
+
 - ✅ Verplichte velden: Naam + Email
 - ✅ Klant types: Zakelijk en Particulier
 - ✅ Herkomst tracking
@@ -1297,6 +1418,7 @@ Voor complete stap-voor-stap instructies over het aanmaken van nieuwe klanten in
 - ✅ Direct beschikbaar in POS, Werkorders, Offertes, Facturen
 
 **Let op:**
+
 - ❌ Geen edit functionaliteit (verwijderen en opnieuw aanmaken)
 - ⚠️ Verwijderen is permanent
 - 🔄 Edit functie komt in toekomstige versie
@@ -1308,12 +1430,14 @@ Voor complete stap-voor-stap instructies over het aanmaken van nieuwe klanten in
 #### Offerte Omzetten naar Werkorder
 
 **Stap 1: Offerte Accepteren**
+
 1. Ga naar "Boekhouding, Offertes & Facturen" module
 2. Klik op tab "📋 Offertes"
 3. Zoek offerte met status "Verzonden"
 4. Klik "Accepteren" knop → status wordt "Geaccepteerd"
 
 **Stap 2: Werkorder Aanmaken**
+
 1. Bij geaccepteerde offerte verschijnt oranje knop: **"📋 Maak Werkorder"**
 2. Klik op deze knop
 3. Systeem:
@@ -1327,12 +1451,14 @@ Voor complete stap-voor-stap instructies over het aanmaken van nieuwe klanten in
 5. Badge verschijnt in offerte: **"🔵 Werkorder: To Do"**
 
 **Stap 3: Werkorder Uitvoeren**
+
 1. Ga naar Werkorders module
 2. Medewerker ziet nieuwe taak in "To Do" kolom
 3. Klik "▶ Start Werkorder"
 4. Offerte toont nu: **"🟢 Werkorder: In Uitvoering"**
 
 **Stap 4: Real-time Volgen (Admin)**
+
 1. Blijf in Offertes tab
 2. Status badge update automatisch:
    - 🔵 To Do
@@ -1342,20 +1468,23 @@ Voor complete stap-voor-stap instructies over het aanmaken van nieuwe klanten in
 3. Klik op badge → Spring direct naar werkorder in workboard
 
 **Stap 5: Tussentijdse Aanpassing**
-*Scenario: Klant wil extra item tijdens uitvoering*
+_Scenario: Klant wil extra item tijdens uitvoering_
 
 1. **In Offerte:**
+
    - Klik **"✏️ Bewerk & Update Werkorder"** knop
    - Systeem controleert werkorder status
    - Waarschuwing als werkorder al voltooid is
 
 2. **Voeg Item Toe:**
+
    - Klik "+ Uit Voorraad" of "+ Custom Item"
    - Selecteer extra materiaal
    - Voer aantal in
    - Systeem controleert voorraad
 
 3. **Synchronisatie:**
+
    - Klik "💾 Opslaan & Update Werkorder"
    - Materiaal wordt automatisch toegevoegd aan werkorder
    - Medewerker ziet update in workboard
@@ -1366,6 +1495,7 @@ Voor complete stap-voor-stap instructies over het aanmaken van nieuwe klanten in
    - Badge blijft status tonen
 
 **Stap 6: Voltooiing**
+
 1. Medewerker voltooit werkorder
 2. Voorraad automatisch afgetrokken
 3. Offerte toont: **"✅ Werkorder: Voltooid"**
@@ -1373,6 +1503,7 @@ Voor complete stap-voor-stap instructies over het aanmaken van nieuwe klanten in
 5. Gewerkte uren zichtbaar: "Gewerkt: 8.5u (Geschat: 8u)"
 
 **Stap 7: Factuur Maken**
+
 1. Klik "🧾 Omzetten naar Factuur" (paarse knop)
 2. Factuur bevat:
    - Alle items uit offerte
@@ -1387,12 +1518,14 @@ Voor complete stap-voor-stap instructies over het aanmaken van nieuwe klanten in
 **Voor situaties waar je direct factureert (zonder offerte):**
 
 **Stap 1: Factuur Aanmaken**
+
 1. Ga naar Facturen tab
 2. Klik "+ Nieuwe Factuur"
 3. Voeg klant, items en werkuren toe
 4. Status: Draft
 
 **Stap 2: Werkorder Creëren**
+
 1. Update factuur status naar "Verzonden"
 2. Oranje knop verschijnt: **"📋 Maak Werkorder"**
 3. Klik op knop
@@ -1403,19 +1536,20 @@ Voor complete stap-voor-stap instructies over het aanmaken van nieuwe klanten in
 5. Badge in factuur: **"🔵 Werkorder: To Do"**
 
 **Stap 3: Synchronisatie Tijdens Uitvoering**
-*Zelfde flow als bij offertes*
+_Zelfde flow als bij offertes_
 
 #### Conflicten & Waarschuwingen Afhandelen
 
 **Scenario 1: Aanpassing bij Actieve Werkorder**
+
 ```
 Gebruiker probeert: Materiaal toevoegen aan offerte
 Werkorder status: In Uitvoering
 Systeem toont: ⚠️ Waarschuwing
 
 Bericht:
-"Deze werkorder is momenteel actief. 
-Weet je zeker dat je wijzigingen wilt doorvoeren? 
+"Deze werkorder is momenteel actief.
+Weet je zeker dat je wijzigingen wilt doorvoeren?
 De toegewezen medewerker ontvangt een notificatie."
 
 Opties:
@@ -1423,13 +1557,14 @@ Opties:
 ```
 
 **Scenario 2: Aanpassing bij Voltooide Werkorder**
+
 ```
 Gebruiker probeert: Offerte bewerken
 Werkorder status: Voltooid
 Systeem toont: 🔒 Blokkade
 
 Bericht:
-"Deze werkorder is al voltooid. 
+"Deze werkorder is al voltooid.
 Materialen en uren kunnen niet meer worden aangepast.
 Je kunt alleen notities toevoegen."
 
@@ -1438,6 +1573,7 @@ Opties:
 ```
 
 **Scenario 3: Onvoldoende Voorraad**
+
 ```
 Gebruiker probeert: Extra materiaal toevoegen
 Voorraad: 5 stuks beschikbaar
@@ -1445,7 +1581,7 @@ Aanvraag: 10 stuks
 Systeem toont: ❌ Fout
 
 Bericht:
-"Onvoldoende voorraad voor Staal plaat. 
+"Onvoldoende voorraad voor Staal plaat.
 Beschikbaar: 5 stuks
 Nodig: 10 stuks
 
@@ -1459,19 +1595,20 @@ Opties:
 
 **Badge Kleuren & Betekenis:**
 
-| Badge | Betekenis | Actie |
-|-------|-----------|-------|
-| 🔵 **Werkorder: To Do** | Werkorder aangemaakt, wacht op start | Normaal, medewerker kan starten |
-| 🟡 **Werkorder: In Wacht** | Werkorder gepauzeerd (+ reden) | Check reden, mogelijk actie nodig |
-| 🟢 **Werkorder: In Uitvoering** | Actief aan het werk | Monitoring, wacht op voltooiing |
-| ✅ **Werkorder: Voltooid** | Werk klaar, klaar voor facturatie | Factuur maken of betaling verwerken |
-| 🔴 **Geen Werkorder** | Nog niet omgezet | Actie: Maak werkorder |
+| Badge                           | Betekenis                            | Actie                               |
+| ------------------------------- | ------------------------------------ | ----------------------------------- |
+| 🔵 **Werkorder: To Do**         | Werkorder aangemaakt, wacht op start | Normaal, medewerker kan starten     |
+| 🟡 **Werkorder: In Wacht**      | Werkorder gepauzeerd (+ reden)       | Check reden, mogelijk actie nodig   |
+| 🟢 **Werkorder: In Uitvoering** | Actief aan het werk                  | Monitoring, wacht op voltooiing     |
+| ✅ **Werkorder: Voltooid**      | Werk klaar, klaar voor facturatie    | Factuur maken of betaling verwerken |
+| 🔴 **Geen Werkorder**           | Nog niet omgezet                     | Actie: Maak werkorder               |
 
 **Klikbaar:** Alle badges zijn klikbaar en springen naar de werkorder in het workboard.
 
 #### Gewerkte vs Geschatte Uren
 
 **Weergave na Voltooiing:**
+
 ```
 In Offerte/Factuur Card:
 ┌─────────────────────────────────────┐
@@ -1482,6 +1619,7 @@ In Offerte/Factuur Card:
 ```
 
 **Kleuren:**
+
 - Groen: Binnen 110% van schatting (goed!)
 - Oranje: 110-125% van schatting (redelijk)
 - Rood: >125% van schatting (check wat er gebeurde)
@@ -1489,6 +1627,7 @@ In Offerte/Factuur Card:
 #### Materiaalverbruik Tracking
 
 **Weergave bij Voltooide Werkorder:**
+
 ```
 Materialen Sectie in Werkorder:
 ┌─────────────────────────────────────┐
@@ -1502,6 +1641,7 @@ Voorraad automatisch afgetrokken: 10 stuks, 6 meter, 2 kg
 ```
 
 **Acties bij Verschil:**
+
 - Positief verschil (meer gebruikt): Check of dit gefactureerd moet worden
 - Negatief verschil (minder gebruikt): Materiaal terug in voorraad
 
@@ -1512,6 +1652,7 @@ Voorraad automatisch afgetrokken: 10 stuks, 6 meter, 2 kg
 Wanneer een werkorder wordt voltooid, wordt **automatisch** een factuur aangemaakt of bijgewerkt in de Boekhouding module. Geen handmatige actie meer nodig!
 
 **Automatische Workflow:**
+
 ```
 1. Medewerker voltooit werkorder
    ↓
@@ -1527,6 +1668,7 @@ Wanneer een werkorder wordt voltooid, wordt **automatisch** een factuur aangemaa
 #### Wat Er Gebeurt Bij Voltooiing
 
 **Scenario 1: Nieuwe Factuur Aanmaken**
+
 - Werkorder heeft nog geen factuur
 - Systeem maakt automatisch nieuwe factuur aan:
   - Factuurnummer: Automatisch gegenereerd (bijv. 2025-015)
@@ -1539,6 +1681,7 @@ Wanneer een werkorder wordt voltooid, wordt **automatisch** een factuur aangemaa
   - Link: `workOrderId` en `quoteId` (indien aanwezig)
 
 **Scenario 2: Bestaande Factuur Bijwerken**
+
 - Werkorder heeft al een factuur (bijv. vanuit offerte)
 - Systeem werkt bestaande factuur bij:
   - Werkuren worden bijgewerkt met werkelijke uren
@@ -1547,6 +1690,7 @@ Wanneer een werkorder wordt voltooid, wordt **automatisch** een factuur aangemaa
   - Geen dubbele factuur
 
 **Scenario 3: Offerte Factuur Bijwerken**
+
 - Werkorder komt van een offerte die al een factuur heeft
 - Systeem werkt die factuur bij met werkelijke gewerkte uren
 - Items blijven hetzelfde (van offerte)
@@ -1555,6 +1699,7 @@ Wanneer een werkorder wordt voltooid, wordt **automatisch** een factuur aangemaa
 #### Wat Je Ziet
 
 **Na Voltooiing Werkorder:**
+
 - ✅ Melding: "Factuur 2025-015 automatisch aangemaakt voor voltooide werkorder WO123!"
 - ✅ Factuur verschijnt in Boekhouding module
 - ✅ Status: Draft
@@ -1562,6 +1707,7 @@ Wanneer een werkorder wordt voltooid, wordt **automatisch** een factuur aangemaa
 - ✅ Factuur krijgt `workOrderId` koppeling
 
 **In Boekhouding Module:**
+
 - Factuur staat in "Facturen" tab
 - Status: Draft (gele badge)
 - Link naar werkorder zichtbaar
@@ -1571,11 +1717,13 @@ Wanneer een werkorder wordt voltooid, wordt **automatisch** een factuur aangemaa
 #### Wat Je Moet Doen
 
 **Direct Na Voltooiing:**
+
 - ✅ Niets! Factuur is al aangemaakt
 - ✅ Ga naar Boekhouding module
 - ✅ Controleer factuur (items, bedragen, klant)
 
 **Voor Verzending:**
+
 1. Open factuur in Boekhouding module
 2. Controleer bedragen en items
 3. Pas aan indien nodig (admin)
@@ -1583,6 +1731,7 @@ Wanneer een werkorder wordt voltooid, wordt **automatisch** een factuur aangemaa
 5. Status wordt "Verzonden"
 
 **Voor Betaling:**
+
 1. Wanneer klant betaalt
 2. Klik "✓ Markeer als Betaald"
 3. Betaaldatum wordt automatisch ingevuld
@@ -1594,11 +1743,12 @@ Wanneer een werkorder wordt voltooid, wordt **automatisch** een factuur aangemaa
 ✅ **Minder Fouten** - Automatische berekeningen  
 ✅ **Werkelijke Uren** - Facturen bevatten echte gewerkte tijd  
 ✅ **Volledige Koppeling** - Alle links behouden  
-✅ **Seamless Workflow** - Van werkorder naar factuur in één stap  
+✅ **Seamless Workflow** - Van werkorder naar factuur in één stap
 
 #### Tips & Best Practices
 
 **Voor Admins:**
+
 - ✅ Controleer automatisch aangemaakte facturen voordat je ze verzendt
 - ✅ Pas indien nodig werkuren of items aan
 - ✅ Gebruik werkelijke uren voor accurate facturatie
@@ -1606,11 +1756,13 @@ Wanneer een werkorder wordt voltooid, wordt **automatisch** een factuur aangemaa
 - ✅ Documenteer eventuele afwijkingen in notities
 
 **Voor Medewerkers:**
+
 - ✅ Zorg dat je uren correct zijn ingevuld (`hoursSpent`)
 - ✅ Bij voltooiing wordt automatisch factuur aangemaakt
 - ✅ Je hoeft niets te doen, admin verzorgt facturatie
 
 **Let Op:**
+
 - ⚠️ Factuur krijgt status "Draft" - controleer altijd voordat je verzendt
 - ⚠️ Als factuur al bestaat, wordt deze bijgewerkt (geen nieuwe)
 - ⚠️ Werkelijke uren overschrijven geschatte uren in factuur
@@ -1621,12 +1773,14 @@ Wanneer een werkorder wordt voltooid, wordt **automatisch** een factuur aangemaa
 #### Offerte Omzetten naar Factuur (Aanbevolen Methode)
 
 **Stap 1: Offerte Accepteren**
+
 1. Ga naar "Boekhouding, Offertes & Facturen" module
 2. Klik op tab "📋 Offertes"
 3. Zoek offerte met status "Verzonden"
 4. Klik "Accepteren" knop → status wordt "Geaccepteerd"
 
 **Stap 2: Conversie naar Factuur**
+
 1. Bij geaccepteerde offerte verschijnt paarse knop: **"🧾 Omzetten naar Factuur"**
 2. Klik op deze knop
 3. Systeem:
@@ -1640,12 +1794,14 @@ Wanneer een werkorder wordt voltooid, wordt **automatisch** een factuur aangemaa
 5. Je wordt automatisch doorgestuurd naar Facturen tab
 
 **Stap 3: Factuur Verzenden**
+
 1. In Facturen tab, zoek de nieuwe factuur (status: Draft)
 2. Klik "Verzenden" knop
 3. Status wordt "Verzonden"
 4. Factuur is nu uitstaand
 
 **Stap 4: Betaling Registreren**
+
 1. Wanneer klant betaalt, klik "✓ Markeer als Betaald"
 2. Systeem vult automatisch betaaldatum in
 3. Status wordt "Betaald"
@@ -1659,26 +1815,30 @@ Wanneer een werkorder wordt voltooid, wordt **automatisch** een factuur aangemaa
 1. Ga naar Facturen tab
 2. Klik "+ Nieuwe Factuur" knop rechtsboven
 3. **Vul basis informatie in:**
+
    - Selecteer klant uit dropdown
    - Kies factuurdatum (issue date)
    - Kies vervaldatum (due date)
    - Betalingstermijn (bijv. "14 dagen" of "30 dagen")
 
 4. **Voeg items toe:**
-   
-   *Optie A - Uit Voorraad:*
+
+   _Optie A - Uit Voorraad:_
+
    - Klik "+ Uit Voorraad" (blauw)
    - Selecteer item: "Staal plaat (STL-001) - €45.50"
    - Voer aantal in
    - Prijs en totaal automatisch berekend
-   
-   *Optie B - Custom Item:*
+
+   _Optie B - Custom Item:_
+
    - Klik "+ Custom Item" (grijs)
    - Vul beschrijving in
    - Voer aantal en prijs per stuk in
    - Totaal wordt berekend
 
 5. **Werkuren toevoegen (optioneel):**
+
    - Klik "+ Werkuren Toevoegen" (groen)
    - Beschrijving: "Montage en installatie"
    - Uren: 8
@@ -1686,13 +1846,16 @@ Wanneer een werkorder wordt voltooid, wordt **automatisch** een factuur aangemaa
    - Totaal: €520.00 (automatisch)
 
 6. **BTW instellen:**
+
    - Standaard 21%, aanpasbaar per factuur
    - BTW wordt automatisch berekend
 
 7. **Notities toevoegen (optioneel):**
+
    - Voeg opmerkingen toe in tekstveld
 
 8. **Controleer totalen:**
+
    - Subtotaal (excl. BTW): €X.XXX,XX
    - BTW (21%): €XXX,XX
    - **Totaal (incl. BTW): €X.XXX,XX**
@@ -1705,20 +1868,18 @@ Wanneer een werkorder wordt voltooid, wordt **automatisch** een factuur aangemaa
 #### Facturen Dashboard Lezen
 
 **4 Statistiek Cards:**
+
 1. **Totaal Gefactureerd** (🧾)
    - Som van alle facturen
    - Inclusief betaald en uitstaand
-   
 2. **Betaald** (✅)
    - Totaal bedrag betaald
    - Aantal betaalde facturen
    - Groen = positief
-   
 3. **Uitstaand** (⏳)
    - Facturen verzonden maar nog niet betaald
    - Aantal facturen + bedrag
    - Geel = wacht op betaling
-   
 4. **Verlopen** (⚠️)
    - Facturen voorbij vervaldatum
    - Aantal + bedrag
@@ -1727,6 +1888,7 @@ Wanneer een werkorder wordt voltooid, wordt **automatisch** een factuur aangemaa
 #### Factuur Status Begrijpen
 
 **Status Workflow:**
+
 ```
 Draft (Concept)
   ↓ Verzenden
@@ -1738,6 +1900,7 @@ Paid (Betaald) ✅         Overdue (Verlopen) ⚠️
 ```
 
 **Status Kleuren:**
+
 - 🟡 **Draft**: Geel - Concept, nog niet verzonden
 - 🔵 **Sent**: Blauw - Verzonden, wacht op betaling
 - 🟢 **Paid**: Groen - Betaald, afgerond
@@ -1747,12 +1910,14 @@ Paid (Betaald) ✅         Overdue (Verlopen) ⚠️
 #### Verlopen Facturen Afhandelen
 
 **Wat gebeurt er:**
+
 - Systeem detecteert automatisch als vervaldatum voorbij is
 - Status wordt "Overdue"
 - Rode border verschijnt rond factuur card
 - Telt mee in "Verlopen" statistiek
 
 **Actie ondernemen:**
+
 1. Herinner klant (handmatig, nog geen auto-herinneringen)
 2. Bij betaling: Klik "✓ Markeer als Betaald"
 3. Of annuleer: Klik "Annuleren" knop
@@ -1761,6 +1926,7 @@ Paid (Betaald) ✅         Overdue (Verlopen) ⚠️
 #### Tips & Best Practices
 
 **Voor Admins:**
+
 - ✅ Gebruik altijd offerte → factuur conversie workflow (voorkomt fouten)
 - ✅ Controleer facturen wekelijks op verlopen status
 - ✅ Noteer altijd betalingsvoorwaarden duidelijk
@@ -1772,6 +1938,7 @@ Paid (Betaald) ✅         Overdue (Verlopen) ⚠️
 - ⚠️ Let op uitstaand bedrag - te hoog = liquiditeitsprobleem
 
 **Voor Werkorder Integratie:**
+
 - ✅ Accepteer offerte → Maak werkorder → Start uitvoering → Voltooi → Factureer
 - ✅ Gebruik real-time status badges om voortgang te volgen
 - ✅ Bij tussentijdse wijzigingen altijd "✏️ Bewerk & Update Werkorder" gebruiken
@@ -1780,18 +1947,21 @@ Paid (Betaald) ✅         Overdue (Verlopen) ⚠️
 - ⚠️ Blokkeer aanpassingen aan voltooide werkorders (behalve notities)
 
 **Factuurnummers:**
+
 - Formaat: JAAR-NNN (bijv. 2025-001, 2025-002)
 - Automatisch oplopend per jaar
 - Reset bij nieuw jaar (2026-001, etc.)
 - Uniek en niet aanpasbaar (voor audit trail)
 
 **BTW:**
+
 - Standaard 21% (Nederlands tarief)
 - Aanpasbaar per factuur indien nodig
 - 9% voor verlaagd tarief (niet standaard)
 - 0% voor export (handmatig instellen)
 
 **Betalingstermijn:**
+
 - Standaard: "14 dagen"
 - Alternatief: "30 dagen" voor vaste klanten
 - Maatwerk: "Direct betalen" of "Bij oplevering"
@@ -1835,6 +2005,7 @@ Met het werkorder indexering systeem kun je werkorders een nummer geven om de vo
 **Praktische Voorbeelden:**
 
 **Scenario 1: Urgente Taak Bovenaan (MET AUTOMATISCHE SWAP)**
+
 ```
 Situatie: Je hebt 5 werkorders (#1, #2, #3, #4, #5)
 Nieuw: Urgente reparatie voor belangrijke klant
@@ -1852,10 +2023,11 @@ Wat gebeurt er automatisch:
 ```
 
 **Scenario 2: Herschikken na Wijziging (MET AUTOMATISCHE SWAP)**
+
 ```
 Situatie: Taak #5 wordt ineens urgenter dan #2
 
-Actie: 
+Actie:
 1. Bewerk werkorder #5
 2. Wijzig indexnummer van 5 naar 2
 3. Opslaan
@@ -1873,6 +2045,7 @@ Resultaat: Geen dubbele #2, alles netjes herschikt!
 ```
 
 **Scenario 3: Automatische Nummering**
+
 ```
 Situatie: Je wilt geen handmatige nummers beheren
 
@@ -1887,6 +2060,7 @@ Resultaat:
 ```
 
 **Scenario 4: Kettingreactie Swap (NIEUW IN V4.4)**
+
 ```
 Situatie: Je hebt werkorders #1, #2, #3
 Je wilt #3 naar #1 verplaatsen
@@ -1901,18 +2075,19 @@ Kettingreactie:
   ➡️ Oude #1 zoekt eerste vrije nummer → wordt #4
   ❌ Oude #2 blijft #2 (geen conflict)
   ❌ Oude #3 is nu #1
-  
+
   EINDRESULTAAT:
   ✅ #1 - Was #3 (omhoog verplaatst) ⬆️
   ✅ #2 - Blijft #2 (ongewijzigd)
   ✅ #4 - Was #1 (automatisch opgeschoven) ⬇️
-  
+
 Voordeel: Systeem regelt automatisch, geen handmatig genummer!
 ```
 
 **Scenario 5: Meerdere Medewerkers - Geen Interferentie**
+
 ```
-Situatie: 
+Situatie:
   Jan heeft: #1, #2, #3
   Maria heeft: #1, #2, #3
 
@@ -1925,12 +2100,12 @@ Wat gebeurt er:
     ✅ #2 - Blijft #2
     ✅ #3 - Blijft #3
     🆕 #4 - Was #1
-    
+
   MARIA (GEEN WIJZIGING):
     ✅ #1 - Blijft #1 ✨
     ✅ #2 - Blijft #2 ✨
     ✅ #3 - Blijft #3 ✨
-    
+
 Resultaat: Swap werkt per medewerker, geen interferentie!
 ```
 
@@ -1952,22 +2127,27 @@ Elke werkorder card toont het indexnummer als badge linksboven:
 **Best Practices:**
 
 ✅ **Voor Urgente Taken:**
+
 - Gebruik lage nummers (1, 2, 3)
 - Zo staan ze altijd bovenaan
 
 ✅ **Voor Normale Taken:**
+
 - Laat systeem automatisch nummeren
 - Of gebruik hogere nummers (10+)
 
 ✅ **Voor Planning:**
+
 - Geef taken nummers in gewenste volgorde
 - Bijv. #1 = eerst, #2 = daarna, #3 = als laatste
 
 ✅ **Per Medewerker:**
+
 - Elke medewerker heeft eigen nummering
 - #1 van Jan is los van #1 van Maria
 
 ⚠️ **Vermijd:**
+
 - Dezelfde nummers hergebruiken (kan verwarring geven)
 - Te grote sprongen (bijv. 1, 100, 200)
 - Handmatig nummers toewijzen als automatisch voldoet
@@ -2000,6 +2180,7 @@ Wanneer je als admin "Alle medewerkers" selecteert in het werkorders overzicht, 
    - Duidelijke scheiding tussen medewerkers
 
 **Voordelen:**
+
 - ✅ **Overzichtelijk** - Direct zien wie hoeveel werk heeft
 - ✅ **Werklastverdeling** - Eenvoudig balans checken tussen medewerkers
 - ✅ **Planning** - Snel zien wie beschikbaar is voor nieuwe taken
@@ -2008,6 +2189,7 @@ Wanneer je als admin "Alle medewerkers" selecteert in het werkorders overzicht, 
 **Individuele Medewerker Bekijken:**
 
 Wil je alleen één specifieke medewerker bekijken?
+
 - Selecteer de naam van de medewerker in de dropdown
 - Zie alleen taken van die persoon
 - Ideaal voor one-on-one besprekingen
@@ -2026,6 +2208,7 @@ Wil je alleen één specifieke medewerker bekijken?
 ```
 
 Zo zie je in één oogopslag:
+
 - Jan heeft 1 taak in wacht (mogelijk materiaal probleem)
 - Maria heeft de meeste openstaande taken (3 To Do + 2 In Progress)
 - Peter heeft weinig werk, kan nieuwe taken aan
@@ -2033,6 +2216,7 @@ Zo zie je in één oogopslag:
 ### Materiaalbeheer in Werkorders (Bestaand)
 
 **Voor Admins - Materialen Toewijzen:**
+
 1. Bij nieuwe werkorder: Scroll naar "Benodigde Materialen" sectie (blauwe achtergrond)
 2. Selecteer materiaal uit dropdown (toont huidige voorraad)
 3. Voer aantal in
@@ -2043,6 +2227,7 @@ Zo zie je in één oogopslag:
 8. Bij voltooien werkorder wordt voorraad automatisch afgetrokken
 
 **Wachtstatus Instellen (Optioneel):**
+
 1. Vink checkbox aan: "Werkorder in wacht zetten (optioneel)"
 2. Gele sectie verschijnt met reden invoerveld
 3. Voer reden in waarom werkorder in wacht staat
@@ -2050,17 +2235,20 @@ Zo zie je in één oogopslag:
 5. Reden is alleen zichtbaar/verplicht als checkbox aangevinkt is
 
 **Bij Bewerken Werkorder:**
+
 1. Klik op bewerk-icoon (blauw potlood)
 2. Scroll naar "Benodigde Materialen" sectie
 3. Voeg materialen toe of verwijder bestaande
 4. Voorraad wordt real-time gecontroleerd
 
 **Voorraad Integratie:**
+
 - ✅ Bij toewijzen: Systeem controleert of genoeg voorraad beschikbaar is
 - ✅ Bij voltooien: Voorraad wordt automatisch afgetrokken
 - ❌ Bij tekort: Werkorder kan niet worden voltooid (rode waarschuwing)
 
 **Visuele Indicatoren:**
+
 - **Groen/Grijs tekst**: Voldoende voorraad beschikbaar
 - **Rode tekst**: Niet genoeg voorraad (toont beschikbare hoeveelheid)
 - **Blauwe sectie**: Materiaalbeheer gebied in cards en formulieren
@@ -2070,6 +2258,7 @@ Zo zie je in één oogopslag:
 - **Groene kolom**: Completed status (afgeronde taken)
 
 ### Eerste Keer Inloggen
+
 1. Open `http://localhost:5173`
 2. Kies een demo account of voer handmatig in:
    - **Admin**: sophie@bedrijf.nl / 1234
@@ -2078,6 +2267,7 @@ Zo zie je in één oogopslag:
 4. Je wordt doorgestuurd naar het Dashboard
 
 ### Als Admin
+
 1. **Dashboard**: Zie volledig overzicht met alle statistieken
 2. **Werkorders**: Klik op dropdown → selecteer "Alle medewerkers"
 3. 🆕 **Werkorders per medewerker**: Bij "Alle medewerkers" zie je elke medewerker in een eigen sectie met hun taken
@@ -2088,6 +2278,7 @@ Zo zie je in één oogopslag:
 8. 🆕 **Werkorder Integratie**: Converteer offertes/facturen naar werkorders
 
 **Voor Medewerkers:**
+
 ```
 1. Login → Zie workboard met 4 kolommen
 2. "To Do" kolom bevat nieuwe toegewezen taken
@@ -2098,9 +2289,10 @@ Zo zie je in één oogopslag:
 ```
 
 ### Als Medewerker
+
 1. **Dashboard**: Zie persoonlijke statistieken
 2. **Werkorders (Mijn Workboard)**: Zie alleen eigen taken in 4 kolommen
-3. **Taken Starten**: 
+3. **Taken Starten**:
    - "To Do" kolom: Klik "▶ Start Werkorder" om te beginnen
    - Of klik "⏸ In Wacht Zetten" als je moet wachten
 4. **Taken Beheren**: Gebruik knoppen voor status updates
@@ -2111,6 +2303,7 @@ Zo zie je in één oogopslag:
 9. ❌ Geen toegang tot Facturen module
 
 ### Uitloggen
+
 1. Klik op je naam/avatar rechtsboven
 2. Klik "Uitloggen"
 3. Je wordt teruggestuurd naar het login scherm
@@ -2135,6 +2328,7 @@ Onderaan elke werkorder zie je een grijze sectie met timestamps:
 ```
 
 **Tijdstippen die kunnen verschijnen:**
+
 - 🆕 **Aangemaakt** - Altijd aanwezig bij elke werkorder
 - 🔄 **Geconverteerd** - Alleen als werkorder vanuit offerte/factuur komt
 - 👤 **Toegewezen** - Wanneer aan medewerker toegewezen (update bij hertoewijzing)
@@ -2146,6 +2340,7 @@ Onderaan elke werkorder zie je een grijze sectie met timestamps:
 #### Relatieve Tijd Interpreteren
 
 **Tijd weergave formaten:**
+
 - `Zojuist` = Minder dan 1 minuut geleden
 - `5 min geleden` = Recente wijziging (binnen het uur)
 - `3 uur geleden` = Vandaag gebeurd
@@ -2156,12 +2351,14 @@ Onderaan elke werkorder zie je een grijze sectie met timestamps:
 #### Volledige Geschiedenis Bekijken
 
 **Stap 1: Uitklappen**
+
 1. Scroll naar onder in werkorder card
 2. Zoek de grijze knop: **"Volledige Geschiedenis (X)"**
 3. Klik op de knop
 4. Geschiedenis klapt uit met animatie
 
 **Stap 2: History Entries Lezen**
+
 ```
 ┌──────────────────────────────────────┐
 │ 🆕  Werkorder aangemaakt door Sophie   │
@@ -2178,17 +2375,20 @@ Onderaan elke werkorder zie je een grijze sectie met timestamps:
 ```
 
 **Elke entry bevat:**
+
 - 🎨 **Icoon** - Visuele indicator van actie type
 - 📝 **Details** - Beschrijving van wat er gebeurde
 - 👤 **Wie** - Naam van medewerker die actie uitvoerde
 - ⏰ **Wanneer** - Exacte datum en tijd
 
 **Stap 3: Scrollen door Lange Histories**
+
 - Bij meer dan 8-10 entries verschijnt een scrollbar
 - Scroll omhoog/omlaag om alle entries te zien
 - Maximum hoogte: 260px
 
 **Stap 4: Inklappen**
+
 - Klik nogmaals op "Volledige Geschiedenis (X)"
 - Geschiedenis klapt in met animatie
 
@@ -2219,6 +2419,7 @@ Onderaan elke werkorder zie je een grijze sectie met timestamps:
 #### Praktische Gebruiksscenario's
 
 **Scenario 1: Medewerker Controleert Toewijzing**
+
 ```
 Jan (medewerker) vraagt zich af:
 "Wanneer is deze taak aan mij toegewezen?"
@@ -2233,6 +2434,7 @@ Actie:
 ```
 
 **Scenario 2: Admin Analyseert Doorlooptijd**
+
 ```
 Sophie (admin) wil weten:
 "Hoelang duurde deze werkorder?"
@@ -2251,6 +2453,7 @@ Actie:
 ```
 
 **Scenario 3: Klant Vraagt Om Update**
+
 ```
 Klant belt: "Wat is de status van mijn opdracht?"
 
@@ -2265,6 +2468,7 @@ Admin bekijkt history:
 ```
 
 **Scenario 4: Hertoewijzing Traceren**
+
 ```
 Werkorder is meerdere keren hertoegewezen.
 Admin wil weten waarom:
@@ -2281,6 +2485,7 @@ Admin wil weten waarom:
 #### Tips & Best Practices
 
 **Voor Medewerkers:**
+
 - ✅ Check timestamps bij nieuwe taken om prioriteit te bepalen
 - ✅ Gebruik relatieve tijd voor quick glance ("5 uur geleden")
 - ✅ Hover voor exacte tijd als je precies wil weten
@@ -2288,6 +2493,7 @@ Admin wil weten waarom:
 - ⚠️ Rapporteer onverwachte timestamps aan admin
 
 **Voor Admins:**
+
 - ✅ Gebruik geschiedenis voor performance analyse
 - ✅ Identificeer bottlenecks in werkorder flow
 - ✅ Documenteer patronen voor proces verbetering
@@ -2296,6 +2502,7 @@ Admin wil weten waarom:
 - ⚠️ Let op: Geschiedenis is permanent (kan niet worden aangepast)
 
 **Voor Analyse:**
+
 - ✅ Vergelijk "Aangemaakt" en "Gestart" voor wachttijd
 - ✅ Vergelijk "Gestart" en "Voltooid" voor werktijd
 - ✅ Check aantal hertoewijzingen als kwaliteitsindicator
@@ -2303,29 +2510,92 @@ Admin wil weten waarom:
 
 **Veel Voorkomende Vragen:**
 
-Q: *Kan ik geschiedenis bewerken of verwijderen?*
+Q: _Kan ik geschiedenis bewerken of verwijderen?_
 A: Nee, geschiedenis is permanent voor audit trail doeleinden.
 
-Q: *Waarom zie ik geen "Gestart" timestamp?*
+Q: _Waarom zie ik geen "Gestart" timestamp?_
 A: Werkorder is nog niet gestart (status nog To Do of Pending).
 
-Q: *Kan ik geschiedenis exporteren?*
+Q: _Kan ik geschiedenis exporteren?_
 A: Momenteel niet, maar staat op planning voor toekomstige update.
 
-Q: *Wie kan geschiedenis zien?*
+Q: _Wie kan geschiedenis zien?_
 A: Alle gebruikers (medewerkers en admins) kunnen geschiedenis zien van werkorders waar ze toegang toe hebben.
 
-Q: *Hoe weet ik of geschiedenis nieuw is?*
+Q: _Hoe weet ik of geschiedenis nieuw is?_
 A: Check relatieve tijd - "5 min geleden" is zeer recent!
 
 ---
 
 ## 🏆 Changelog
 
+### Versie 5.5.0 🆕 **FINANCIEEL OVERZICHT VOOR FACTUUR ARCHIEF + KASSA VERKOPEN**
+
+**Nieuwe Features:**
+
+**1. Financieel Overzicht voor Factuur Archief**
+
+- 🆕 **Twee weergaven toggle** - Schakel tussen "Facturen Lijst" en "Financieel Overzicht"
+- 🆕 **Periode filter** - Filter op: Vandaag, Deze Week, Dit Kwartaal, Dit Jaar, Alle Facturen, Aangepaste Periode
+- 🆕 **Klantnaam filter** - Zoek op (deel van) klantnaam voor gerichte filtering
+- 🆕 **Summary cards (2 rijen):**
+  - **Eerste rij:** Totaal Items, Totaal Aantal, Omzet (incl. BTW), BTW Totaal
+  - **Tweede rij:** Betaald Omzet, Openstaand Omzet, Vervallen Omzet, Draft Omzet
+- 🆕 **Excel-achtige tabel** met gedetailleerde item breakdown:
+  - Kolommen: Datum, Factuur, Klant, Status, Product, Aantal, Prijs per stuk, BTW %, BTW bedrag, Totaal (incl. BTW)
+  - Elke factuurregel wordt uitgebreid naar individuele items
+  - Totaalrij onderaan met samenvatting
+  - Automatisch gesorteerd op datum (nieuwste eerst)
+- 🆕 **CSV export** - Exporteer gefilterde data inclusief totalen naar CSV
+- 🆕 **Extra statistieken** - Unieke Facturen, Unieke Producten, Unieke Klanten
+- 🆕 **Automatische filtering** - Exclusief POS facturen (die staan in Kassa Verkopen tab)
+
+**2. Financieel Overzicht voor Kassa Verkopen**
+
+- 🆕 **Twee weergaven toggle** - Schakel tussen "Facturen Lijst" en "Financieel Overzicht"
+- 🆕 **Periode filter** - Zelfde filters als Factuur Archief
+- 🆕 **Summary cards (2 rijen):**
+  - **Eerste rij:** Totaal Items, Totaal Aantal, Omzet (incl. BTW), BTW Totaal
+  - **Tweede rij:** PIN Omzet, Contant Omzet, iDEAL Omzet, Creditcard Omzet
+- 🆕 **Excel-achtige tabel** met alle kassa transactie items:
+  - Kolommen: Datum, Factuur, Klant, Betaalmethode, Product, Aantal, Prijs per stuk, BTW %, BTW bedrag, Totaal (incl. BTW)
+  - Betaalmethode weergave met iconen (💵 Contant, 💳 PIN, 🏦 iDEAL, 💳 Creditcard)
+  - Totaalrij onderaan
+- 🆕 **CSV export** - Exporteer gefilterde kassa data naar CSV
+- 🆕 **Extra statistieken** - Unieke Facturen, Unieke Producten, Omzet (excl. BTW)
+
+**3. Verbeteringen & Fixes**
+
+- 🆕 **Datum correctie** - Periode filter gebruikt nu lokale tijdzone (geen UTC conversie)
+- 🆕 **"Alle Facturen" optie** - Standaard filter toont nu alle facturen (niet alleen vandaag)
+- 🆕 **Lege facturen overslaan** - Facturen zonder items worden automatisch overgeslagen
+- 🆕 **POS filtering** - Kassa verkopen worden correct gescheiden van reguliere facturen
+
+**Voordelen:**
+
+- ✅ **Gedetailleerd inzicht** - Zie elk individueel item per factuur in één overzicht
+- ✅ **Flexibele filtering** - Filter op periode en klantnaam voor gerichte analyses
+- ✅ **Betaalmethode tracking** - Zie direct hoeveel omzet per betaalmethode (kassa)
+- ✅ **Status breakdown** - Zie omzet per factuurstatus (betaald/openstaand/verlopen)
+- ✅ **Export ready** - CSV export voor verdere analyse in Excel
+- ✅ **Overzichtelijk** - Twee weergaven voor verschillende use cases
+
+**Technische Updates:**
+
+- 🆕 `FactuurItemRow` interface voor factuur item data structuur
+- 🆕 `facturenItemRows` useMemo voor filtering en item extractie
+- 🆕 `facturenOverviewTotals` useMemo voor berekening van totalen per status
+- 🆕 `facturenView`, `facturenPeriodFilter`, `facturenCustomerFilter` state management
+- 🆕 `getDateRange` functie uitgebreid met "all" optie
+- 🆕 CSV export functionaliteit voor beide overzichten
+- 🆕 Automatische BTW berekening per item (proportioneel)
+
 ### Versie 5.4.0 🆕 **KASSA VERKOPEN TAB & KLIKBARE FACTUREN MET CLONE**
+
 **Nieuwe Features:**
 
 **1. Kassa Verkopen Tab**
+
 - 🆕 **Nieuwe tab** - "🛒 Kassa Verkopen" in Boekhouding & Dossier module
 - 🆕 **Automatische filtering** - Toont alle facturen aangemaakt via kassasysteem
 - 🆕 **Direct betaalde facturen** - Alle kassa verkopen hebben status 'paid'
@@ -2334,6 +2604,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 - 🆕 **Klikbaar** - Elke kassa verkoop is klikbaar voor details
 
 **2. Klikbare Facturen (Factuur Archief & Kassa Verkopen)**
+
 - 🆕 **Klikbare items** - Alle facturen in Factuur Archief zijn nu klikbaar
 - 🆕 **Detail modal** - Volledige factuurdetails in read-only modal:
   - Header info (factuurnummer, status, klant, datums)
@@ -2345,6 +2616,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 - 🆕 **Visuele feedback** - Cursor pointer en hover-effecten
 
 **3. Clone Functionaliteit**
+
 - 🆕 **Klonen naar Factuur** - Maak nieuwe factuur met status 'draft':
   - Automatisch nieuw factuurnummer
   - Factuurdatum = vandaag
@@ -2361,11 +2633,13 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 - 🆕 **Succesmelding** - Duidelijke feedback na clonen
 
 **4. Extra Functionaliteit**
+
 - 🆕 **Betaal-knop in archief** - Openstaande facturen kunnen direct als betaald worden gemarkeerd
 - 🆕 **Props toegevoegd** - `setInvoices` en `setQuotes` aan Bookkeeping component
 - 🆕 **App.tsx bijgewerkt** - Nieuwe props doorgegeven aan Bookkeeping
 
 **Voordelen:**
+
 - ✅ **Overzichtelijk** - Kassa verkopen apart van andere facturen
 - ✅ **Volledige details** - Zie alle factuurinformatie zonder te bewerken
 - ✅ **Clone workflow** - Eenvoudig facturen/offertes dupliceren
@@ -2373,6 +2647,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 - ✅ **Snelle acties** - Direct betaal markeren vanuit archief
 
 **Technische Updates:**
+
 - 🆕 `posInvoices` useMemo voor filtering kassa verkopen
 - 🆕 `openInvoiceDetail` functie voor modal openen
 - 🆕 `handleCloneToInvoice` en `handleCloneToQuote` functies
@@ -2381,9 +2656,11 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 - 🆕 Props uitgebreid in Bookkeeping component
 
 ### Versie 5.3.0 🆕 **COMPACTE WERKORDER WEERGAVE**
+
 **Nieuwe Features:**
 
 **1. Compacte/Uitgebreide Weergave Toggle**
+
 - 🆕 **Toggle switch** boven werkorders - Schakel tussen compacte en uitgebreide weergave
 - 🆕 **Compacte weergave:**
   - Alleen indexnummer (#) en omschrijving
@@ -2401,21 +2678,25 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
   - Smooth transition tussen views
 
 **Voordelen:**
+
 - ✅ **Meer werkorders in één overzicht** - Zie meer taken tegelijk
 - ✅ **Sneller scannen** - Compacte view voor snel overzicht
 - ✅ **Flexibel gebruik** - Schakel tussen views wanneer nodig
 - ✅ **Details altijd beschikbaar** - Dubbelklik voor volledige informatie
 
 **Technische Updates:**
+
 - 🆕 `compactView` state toegevoegd aan WorkOrders component
 - 🆕 `compactView` prop toegevoegd aan WorkOrderCard component
 - 🆕 Conditionele rendering voor compacte vs uitgebreide weergave
 - 🆕 Toggle UI met visuele feedback
 
 ### Versie 5.2.0 🆕 **BOEKHOUDING & DOSSIER MODULE - MKB-READY, NL-COMPLIANT**
+
 **Nieuwe Module:**
 
 **1. Boekhouding & Dossier (Volledig Geïmplementeerd)**
+
 - 🆕 **Nieuwe module toegevoegd** - Volledig digitaal boekhouddossier systeem
 - 🆕 **5 Kernfuncties:**
   1. Grootboekrekeningen (Standaard MKB-Set)
@@ -2425,17 +2706,20 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
   5. Transactieregistratie (Journaal)
 
 **2. Grootboekrekeningen**
+
 - 🆕 **10 Standaard MKB-rekeningen** ingesteld (1300, 1400, 4000, 4400, 8000, 8010, 8020, 1600, 2200, 2210)
 - 🆕 **CSV export** - Exporteer grootboek naar CSV voor Exact, Twinfield, etc.
 - 🆕 **Tabel overzicht** - Alle rekeningen met type, categorie en omschrijving
 
 **3. Factuur & Pakbon Archief**
+
 - 🆕 **Automatisch archief** - Elke factuur wordt automatisch toegevoegd
 - 🆕 **Zoeken & filteren** - Op nummer, klant, datum, status
 - 🆕 **Acties per factuur** - PDF download, herinnering sturen, markeer als betaald
 - 🆕 **Visuele status indicatoren** - Rode/groene/gele badges
 
 **4. BTW-Overzicht**
+
 - 🆕 **Automatische berekening** per maand/kwartaal
 - 🆕 **Periode rapport** - Omzet per BTW-tarief (21%, 9%, 0%)
 - 🆕 **Te betalen berekening** - Totaal af te dragen minus voorbelasting
@@ -2443,6 +2727,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 - 🆕 **Dynamische data** - Automatisch berekend uit facturen
 
 **5. Klant- & Leveranciersdossiers**
+
 - 🆕 **Alles op één plek** - Volledig dossier per klant/leverancier
 - 🆕 **Financiële informatie** - Openstaand saldo, credit-limiet
 - 🆕 **Documenten koppeling** - Facturen, pakbonnen, offertes, werkorders
@@ -2450,6 +2735,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 - 🆕 **Tabbladen structuur** - Facturen, Pakbonnen, Offertes, Notities
 
 **6. Transactieregistratie (Journaal)**
+
 - 🆕 **Volledig automatisch** - Elke factuur genereert journaalpost
 - 🆕 **Journaalregels** - Debet/Credit met correcte grootboek toewijzing
 - 🆕 **Automatische BTW splitsing** - BTW 21% → 2200, BTW 9% → 2210
@@ -2458,11 +2744,13 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 - 🆕 **Handmatig toevoegen** - Knop voor handmatige journaalposten (placeholder)
 
 **7. Permissions Systeem**
+
 - 🆕 **Admin/Boekhouder** - Volledige toegang (grootboek, facturen, BTW, journaal, dossiers)
 - 🆕 **Verkoper/Inkoop** - Alleen dossiers tab
 - 🆕 **Monteur** - Geen toegang
 
 **8. Integratie met Bestaande Modules**
+
 - 🆕 **POS/Kassa** → Automatische factuur + journaalpost
 - 🆕 **Pakbon (B2B)** → Wordt factuur bij "Markeer als gefactureerd"
 - 🆕 **Voorraad** → Inkoopfactuur → voorraad + crediteuren
@@ -2470,6 +2758,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 - 🆕 **Accounting Module** → Facturen automatisch in archief
 
 **Technische Updates:**
+
 - 🆕 `ModuleKey.BOOKKEEPING` toegevoegd
 - 🆕 `LedgerAccount`, `JournalEntry`, `JournalEntryLine`, `VATReport` types
 - 🆕 `CustomerDossier`, `SupplierDossier`, `InvoiceArchiveItem`, `DossierNote` types
@@ -2481,6 +2770,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 - 🆕 Routing geconfigureerd in App.tsx
 
 **Voordelen:**
+
 - ✅ **MKB-Ready** - Standaard MKB grootboekset ingebouwd
 - ✅ **NL-Compliant** - BTW per tarief (21%, 9%, 0%) gesplitst
 - ✅ **Aangifte-Ready** - BTW-rapport klaar voor accountant/belastingdienst
@@ -2494,6 +2784,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 **Nieuwe Features:**
 
 **1. Systeem Analytics & Optimalisatie Dashboard (Lean Six Sigma)**
+
 - 🆕 **Analytics Tab in Admin Instellingen** - Volledig analytics dashboard voor data-driven optimalisatie
 - 🆕 **Key Metrics Cards** - Totale events, actieve gebruikers, gebruikstijd, efficiency verandering
 - 🆕 **Module Gebruik Statistieken:**
@@ -2524,6 +2815,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
   - LocalStorage voor data persistentie
 
 **2. Database Diagnostics Dashboard**
+
 - 🆕 **Database Diagnostics Tab in Admin Instellingen** - Baseline diagnostics voor managed databases
 - 🆕 **20+ Voorgedefinieerde Issues:**
   - Connection issues (timeouts, pool exhaustion, latency)
@@ -2562,6 +2854,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
   - Adaptive grid layouts
 
 **Technische Updates:**
+
 - 🆕 `AnalyticsEvent`, `ModuleUsageStats`, `UserActivityStats`, `ProcessMetrics`, `OptimizationRecommendation`, `AnalyticsDashboard` types
 - 🆕 `utils/analytics.ts` - Analytics tracking en dashboard building functionaliteit
 - 🆕 `components/AnalyticsTracker.tsx` - Automatische navigation en session tracking
@@ -2572,6 +2865,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 - 🆕 Recommendation engine met regels voor automatische aanbevelingen
 
 **Voordelen:**
+
 - ✅ **Data-Driven Optimalisatie** - Beslissingen gebaseerd op echte gebruikspatronen
 - ✅ **Proactieve Probleem Detectie** - Identificeer bottlenecks voordat ze kritiek worden
 - ✅ **Database Health Monitoring** - Preventief database issues detecteren
@@ -2585,6 +2879,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 **Nieuwe Module:**
 
 **1. Webshop Beheer Systeem**
+
 - 🆕 **Nieuwe module toegevoegd** - Volledig e-commerce beheer systeem
 - 🆕 **3 Main Tabs:**
   - 📦 Producten - Volledig product beheer
@@ -2592,6 +2887,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
   - 📋 Bestellingen - Order beheer en tracking
 
 **2. Product Beheer (Volledig CRUD)**
+
 - 🆕 **Uitgebreid Product Formulier** met georganiseerde secties:
   - Basis informatie (naam, slug, SKU, beschrijvingen)
   - Prijs & voorraad (verkoop/was/inkoopprijs, voorraad tracking)
@@ -2616,6 +2912,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
   - Visibility settings (public, private, hidden)
 
 **3. Categorieën Beheer**
+
 - 🆕 **Volledig Categorie CRUD**
 - 🆕 **Hiërarchische Structuur** - Parent/child categorieën met visuele indicatie
 - 🆕 **Multi-categorie Support** - Producten in meerdere categorieën
@@ -2626,6 +2923,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 - 🆕 **Actief/Inactief Toggle**
 
 **4. Bestellingen Beheer**
+
 - 🆕 **Order Overzicht** - Volledige lijst met filters
 - 🆕 **Zoeken & Filteren** - Ordernummer, klantnaam, email, status
 - 🆕 **Order Detail Modal:**
@@ -2646,6 +2944,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
   - Annuleer bestelling
 
 **5. UX/UI Design Principes**
+
 - 🆕 **Progressive Disclosure** - Georganiseerde secties met headers
 - 🆕 **Color Coding** - Verschillende kleuren per functie
 - 🆕 **Error Prevention** - Automatische generatie, validatie
@@ -2654,6 +2953,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 - 🆕 **Intuïtieve Navigatie** - Duidelijke tabs en buttons
 
 **6. Frontend Voorbereiding**
+
 - 🆕 **SEO-Ready Structure** - Slugs, meta titles, descriptions
 - 🆕 **Image Arrays** - Voorbereid voor product galleries
 - 🆕 **Variant System** - Structuur voor kleuren, maten
@@ -2664,6 +2964,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 - 🆕 **Statistics Ready** - View count, purchase count, wishlist count
 
 **Technische Updates:**
+
 - 🆕 `WebshopProduct`, `ProductCategory`, `ProductVariant`, `ProductImage` types
 - 🆕 `Order`, `OrderItem`, `Address` types
 - 🆕 `ShoppingCart`, `WebshopCartItem`, `Coupon` types
@@ -2673,6 +2974,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 - 🆕 Routing geconfigureerd in App.tsx
 
 **Voordelen:**
+
 - ✅ **Gebruiksvriendelijk Admin Interface** - Makkelijk producten beheren
 - ✅ **Voorbereid voor Frontend** - Alle data structuren aanwezig
 - ✅ **SEO Optimalisatie** - Slugs, meta tags, descriptions
@@ -2685,6 +2987,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 **Nieuwe Features:**
 
 **1. Automatische Factuur Generatie**
+
 - 🆕 **Automatische conversie** - Wanneer een werkorder wordt voltooid, wordt automatisch een factuur aangemaakt
 - 🆕 **Slimme logica:**
   - Als er al een factuur bestaat → wordt bijgewerkt met werkelijke gewerkte uren
@@ -2710,18 +3013,21 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
   - Bidirectionele relatie voor tracking
 
 **2. Smart Update Logic**
+
 - 🆕 **Bestaande facturen bijwerken** - Voorkomt dubbele facturen
 - 🆕 **Werkelijke uren gebruiken** - Facturen bevatten daadwerkelijk gewerkte uren, niet geschat
 - 🆕 **Offerte integratie** - Gebruikt items en prijzen uit offerte indien beschikbaar
 - 🆕 **Voorraad items** - Converteert benodigde materialen naar factuur items met prijzen
 
 **3. UX Verbeteringen**
+
 - 🆕 **Bevestigingsmelding** - Duidelijke melding wanneer factuur is aangemaakt
 - 🆕 **Direct zichtbaar** - Factuur verschijnt direct in Boekhouding module
 - 🆕 **Volledig traceerbaar** - Alle links en geschiedenis behouden
 - 🆕 **Geen handmatige actie nodig** - Volledig automatisch proces
 
 **Technische Updates:**
+
 - 🆕 `setInvoices` prop toegevoegd aan WorkOrders component
 - 🆕 `convertCompletedWorkOrderToInvoice()` functie geïmplementeerd
 - 🆕 Helper functies voor factuurnummer generatie
@@ -2729,6 +3035,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 - 🆕 Automatische trigger in `updateStatus()` bij status 'Completed'
 
 **Workflow:**
+
 ```
 Werkorder Voltooid
   ↓
@@ -2742,6 +3049,7 @@ Verzenden en Betaling Registreren
 ```
 
 **Voordelen:**
+
 - ✅ **Tijd besparen** - Geen handmatige factuur aanmaak meer nodig
 - ✅ **Minder fouten** - Automatische berekeningen en koppelingen
 - ✅ **Volledige traceerbaarheid** - Alle links behouden
@@ -2753,6 +3061,7 @@ Verzenden en Betaling Registreren
 **Nieuwe Features:**
 
 **1. CRM - Facturen in Klantoverzicht**
+
 - 🆕 **Financiën modal** - Klik op klant → Financiën → Zie alle facturen en offertes
 - 🆕 **Filter op betaalde en openstaande facturen** - Alleen relevante facturen getoond
 - 🆕 **Factuur acties in tabel:**
@@ -2764,6 +3073,7 @@ Verzenden en Betaling Registreren
 - 🆕 **User selectie modal** - Kies medewerker voor werkorder toewijzing
 
 **2. HRM - Gebruikersbeheer Uitbreidingen**
+
 - 🆕 **Wachtwoord veld** - Stel wachtwoord in bij nieuwe medewerker
 - 🆕 **Admin checkbox** - Vink aan voor admin rechten bij nieuwe medewerker
 - 🆕 **Bewerk functionaliteit** - Volledig medewerker bewerken (naam, functie, email, telefoon, wachtwoord, admin)
@@ -2783,6 +3093,7 @@ Verzenden en Betaling Registreren
 - 🆕 **Admin badge** - 👑 badge bij medewerkers met admin rechten
 
 **Technische Updates:**
+
 - 🆕 `EmployeeNote` en `EmployeeNoteType` types toegevoegd
 - 🆕 `Employee.notes` array voor persoonlijk dossier
 - 🆕 `Employee.isAdmin` veld toegevoegd
@@ -2791,6 +3102,7 @@ Verzenden en Betaling Registreren
 - 🆕 Clone/edit modals met volledige items/labor beheer
 
 **UX Verbeteringen:**
+
 - ✅ Direct toegang tot facturen vanuit klantoverzicht
 - ✅ Filter op relevante facturen (betaald/openstaand)
 - ✅ Snelle acties (bewerken, clonen, werkorder) bij elke factuur
@@ -2803,6 +3115,7 @@ Verzenden en Betaling Registreren
 **Nieuwe Features:**
 
 **1. Offerte Clonen**
+
 - 🆕 **"Clonen" knop** bij elke offerte
 - 🆕 **Automatisch nieuw ID** - Krijgt uniek Q-nummer (Q1234 wordt Q5678)
 - 🆕 **Automatische datum** - Aanmaakdatum wordt op vandaag gezet
@@ -2816,6 +3129,7 @@ Verzenden en Betaling Registreren
 - 🆕 **Geen werkorder koppeling** - Werkorder link wordt niet meegekopieerd
 
 **2. Factuur Clonen**
+
 - 🆕 **"Clonen" knop** bij elke factuur
 - 🆕 **Automatisch nieuw factuurnummer** - Krijgt volgend beschikbaar nummer (2025-001, 2025-002, etc.)
 - 🆕 **Datum aanpassing** - Factuurdatum wordt vandaag, vervaldatum +14 dagen
@@ -2831,12 +3145,14 @@ Verzenden en Betaling Registreren
 - 🆕 **Betalingsdatum wissen** - Geclonede factuur heeft geen betaaldatum
 
 **UI Implementatie:**
+
 - 🆕 **Clone knop in card** - Groene 📋 knop bij elke offerte/factuur
 - 🆕 **Clone formulier** - Identiek aan aanmaak formulier maar vooraf ingevuld
 - 🆕 **Visuele feedback** - Succesbericht na clonen met nieuw nummer
 - 🆕 **Scroll naar nieuw item** - Automatisch scrollen naar geclonede offerte/factuur
 
 **Gebruik Cases:**
+
 - ✅ **Terugkerende klanten** - Clone vorige offerte voor nieuwe opdracht
 - ✅ **Standaard offertes** - Maak template offerte en clone voor elke klant
 - ✅ **Factuur correcties** - Clone en pas aan in plaats van origineel wijzigen
@@ -2844,6 +3160,7 @@ Verzenden en Betaling Registreren
 - ✅ **Snelle duplicatie** - Bespaar tijd bij vergelijkbare opdrachten
 
 **Backend Wijzigingen:**
+
 - 🆕 `cloneQuote()` functie in AccountingNew.tsx
 - 🆕 `cloneInvoice()` functie in AccountingNew.tsx
 - 🆕 Automatische ID generatie logica
@@ -2851,6 +3168,7 @@ Verzenden en Betaling Registreren
 - 🆕 Link stripping (werkorder/offerte koppelingen)
 
 **UX Verbeteringen:**
+
 - 🆕 **Eenvoudige workflow** - Één klik op Clone, bewerk indien nodig, opslaan
 - 🆕 **Geen fouten** - Automatische validatie zoals bij nieuwe offerte/factuur
 - 🆕 **Volledig aanpasbaar** - Alle velden zijn bewerkbaar
@@ -2861,6 +3179,7 @@ Verzenden en Betaling Registreren
 **Mobile-First Features:**
 
 **1. Hamburger Menu & Sidebar**
+
 - 🆕 **Responsive hamburger menu** op schermen < 1024px
 - 🆕 **Slide-in sidebar animatie** vanaf links met overlay
 - 🆕 **Auto-close functionaliteit** - sidebar sluit bij navigatie en bij click buiten
@@ -2868,6 +3187,7 @@ Verzenden en Betaling Registreren
 - 🆕 **Z-index layering** - overlay (z-40), sidebar (z-50)
 
 **2. Responsive Header**
+
 - 🆕 **Compact design** op mobile met flexibele layout
 - 🆕 **Hamburger icoon** links voor sidebar toggle
 - 🆕 **Responsive notificatie dropdown** - full-width op mobile
@@ -2875,12 +3195,14 @@ Verzenden en Betaling Registreren
 - 🆕 **Touch-friendly buttons** met 44x44px minimum size
 
 **3. Login Scherm Verbeteringen**
+
 - 🆕 **Responsive layout** met aangepaste padding en font sizes
 - 🆕 **Touch-optimized inputs** met 16px font (voorkomt iOS zoom)
 - 🆕 **Active states** voor directe tap feedback
 - 🆕 **Compacte demo knoppen** op kleine schermen
 
 **4. Mobile-First CSS**
+
 - 🆕 **index.css met mobile optimalisaties:**
   - Tap highlight color disabled
   - Smooth scrolling op iOS
@@ -2893,12 +3215,14 @@ Verzenden en Betaling Registreren
   - Print styles
 
 **5. Responsive Breakpoints**
+
 - 🆕 **sm**: 640px (smartphones landscape)
 - 🆕 **md**: 768px (tablets portrait)
 - 🆕 **lg**: 1024px (tablets landscape/laptops)
 - 🆕 **xl**: 1280px (desktops)
 
 **UX Verbeteringen:**
+
 - ✅ **Één hand bediening** mogelijk op smartphones
 - ✅ **Touch gestures** voor natuurlijke navigatie
 - ✅ **No zoom inputs** - voorkomt iOS zoom bij focus
@@ -2907,6 +3231,7 @@ Verzenden en Betaling Registreren
 - ✅ **Accessible** met focus states en reduced motion
 
 **Developer Experience:**
+
 - ✅ **Tailwind responsive utilities** overal consistent
 - ✅ **Mobile-first approach** - start met mobile, schaal op
 - ✅ **Component-level responsive props** voor betere controle
@@ -2914,6 +3239,7 @@ Verzenden en Betaling Registreren
 - ✅ **Performance optimized** met lighter shadows op mobile
 
 **Testing & Compatibility:**
+
 - ✅ Getest op iPhone (portrait + landscape)
 - ✅ Getest op Android (verschillende schermgroottes)
 - ✅ Getest op iPad (portrait + landscape)
@@ -2922,6 +3248,7 @@ Verzenden en Betaling Registreren
 - ✅ Tabellen met horizontale scroll
 
 **Technische Details:**
+
 - State management voor sidebar toggle in App.tsx
 - Props `isMobileOpen` en `onMobileClose` voor Sidebar
 - Prop `onMobileMenuToggle` voor Header
@@ -2934,6 +3261,7 @@ Verzenden en Betaling Registreren
 **Nieuwe Features:**
 
 **1. Intelligente Werkorder Herschikking**
+
 - 🆕 **Automatische swap bij indexering** - Wanneer je indexnummer wijzigt, worden andere werkorders automatisch opgeschoven
 - 🆕 **Conflictresolutie** - Als je indexnummer 2 naar 1 wijzigt, wordt de oude #1 automatisch #2
 - 🆕 **Kettingreactie** - Bij meerdere conflicten worden alle getroffen werkorders netjes opgeschoven
@@ -2942,6 +3270,7 @@ Verzenden en Betaling Registreren
 - 🆕 **Behoud uniekheid** - Geen dubbele indexnummers meer binnen één medewerker
 
 **2. Verbeterde Gebruikerservaring**
+
 - 🆕 **Realtime updates** - Zie direct de nieuwe volgorde na wijziging
 - 🆕 **Geen handmatig herschikken** - Systeem regelt alles automatisch
 - 🆕 **Voorkom fouten** - Onmogelijk om dubbele nummers te hebben
@@ -2952,6 +3281,7 @@ Verzenden en Betaling Registreren
 **Nieuwe Features:**
 
 **1. Werkorder Indexering & Sortering**
+
 - 🆕 **Indexnummer veld** - Elk werkorder kan een indexnummer krijgen
 - 🆕 **Handmatige nummering** - Kies zelf welk nummer je aan een werkorder wilt geven (1-999)
 - 🆕 **Automatische nummering** - Laat veld leeg voor automatisch volgnummer
@@ -2961,6 +3291,7 @@ Verzenden en Betaling Registreren
 - 🆕 **Prioritering systeem** - Geef belangrijke taken lage nummers (1, 2, 3) voor bovenaan
 
 **2. UI Verbeteringen**
+
 - 🆕 **Index badge** - Compacte #-nummer weergave linksboven elke card
 - 🆕 **Optioneel veld** - Indexnummer niet verplicht, systeem wijst automatisch toe
 - 🆕 **Smart defaults** - Nieuw nummer is altijd hoogste + 1
@@ -2968,6 +3299,7 @@ Verzenden en Betaling Registreren
 - 🆕 **Tooltip hints** - Helptekst bij indexnummer veld
 
 **Gebruik Cases:**
+
 - ✅ **Prioriteit bepalen** - Taak #1 = hoogste prioriteit, komt bovenaan
 - ✅ **Volgorde plannen** - Bepaal in welke volgorde taken uitgevoerd worden
 - ✅ **Herschikken** - Pas nummers aan om volgorde te wijzigen
@@ -2975,6 +3307,7 @@ Verzenden en Betaling Registreren
 - ✅ **Flexibiliteit** - Mix van handmatig en automatisch nummeren
 
 **Technische Details:**
+
 - 🆕 `sortIndex` veld toegevoegd aan WorkOrder type
 - 🆕 Automatische berekening van volgend nummer
 - 🆕 Sortering in useMemo hooks voor performance
@@ -2985,6 +3318,7 @@ Verzenden en Betaling Registreren
 **Nieuwe Features:**
 
 **1. Werkorders Groepering per Medewerker (Admin)**
+
 - 🆕 **Gegroepeerd overzicht** - Bij "Alle medewerkers" krijgt elke medewerker een eigen sectie
 - 🆕 **Employee Section Header** - Duidelijke header met naam, rol en avatar per medewerker
 - 🆕 **Statistieken per medewerker** - Zie direct aantal taken per status per persoon
@@ -2992,12 +3326,14 @@ Verzenden en Betaling Registreren
 - 🆕 **Visuele scheiding** - Duidelijk onderscheid tussen verschillende medewerkers
 
 **UX Verbeteringen:**
+
 - 🆕 **Voor Admins:** Direct overzicht van werklastverdeling
 - 🆕 **Werklastverdeling** - Eenvoudig zien wie veel/weinig werk heeft
 - 🆕 **Planning optimalisatie** - Snel identificeren wie beschikbaar is
 - 🆕 **Monitoring per persoon** - Gedetailleerd volgen van voortgang per medewerker
 
 **Voordelen:**
+
 - ✅ **Overzichtelijk** - Geen lange lijst meer, maar gestructureerd per persoon
 - ✅ **Efficiënt** - Sneller beslissingen nemen over taakverdeling
 - ✅ **Transparant** - Iedereen ziet wie wat doet
@@ -3008,6 +3344,7 @@ Verzenden en Betaling Registreren
 **Nieuwe Features:**
 
 **1. History Viewer Component**
+
 - 🆕 **HistoryViewer component** voor volledige transparantie
 - 🆕 **Timestamp summary sectie** met belangrijkste tijdstippen
 - 🆕 **Relatieve tijd weergave** ("2 dagen geleden", "5 uur geleden")
@@ -3016,6 +3353,7 @@ Verzenden en Betaling Registreren
 - 🆕 **Iconen per actie** (🆕 created, 👤 assigned, 📊 status_changed, etc.)
 
 **2. Timestamp Tracking**
+
 - 🆕 **Created timestamp** - wanneer werkorder is aangemaakt
 - 🆕 **Converted timestamp** - wanneer vanuit offerte/factuur geconverteerd
 - 🆕 **Assigned timestamp** - wanneer toegewezen (en hertoewijzingen)
@@ -3023,6 +3361,7 @@ Verzenden en Betaling Registreren
 - 🆕 **Completed timestamp** - wanneer werkorder is afgerond
 
 **3. History Entries (Audit Trail)**
+
 - 🆕 **Created entry** - wie heeft werkorder aangemaakt
 - 🆕 **Converted entry** - conversie van offerte/factuur met details
 - 🆕 **Assigned entry** - toewijzing met van/naar informatie
@@ -3030,6 +3369,7 @@ Verzenden en Betaling Registreren
 - 🆕 **Reassignment tracking** - hertoewijzingen volledig gelogd
 
 **4. UI Implementaties**
+
 - 🆕 **History Viewer in WorkOrderCard** - onderaan elke card
 - 🆕 **History Viewer in Edit Modal** - volledige geschiedenis bij bewerken
 - 🆕 **Compacte timestamp grid** - 2-kolommen layout
@@ -3037,6 +3377,7 @@ Verzenden en Betaling Registreren
 - 🆕 **Scroll functionaliteit** - max height 260px voor lange histories
 
 **5. Smart Time Formatting**
+
 - 🆕 **Zojuist** - <1 minuut geleden
 - 🆕 **X min geleden** - recente wijzigingen (<60 min)
 - 🆕 **X uur geleden** - vandaag (<24 uur)
@@ -3045,6 +3386,7 @@ Verzenden en Betaling Registreren
 - 🆕 **Volledige datum** - oudere wijzigingen (22 okt 2024, 14:30)
 
 **Backend Wijzigingen:**
+
 - 🆕 `timestamps` object in WorkOrder type
 - 🆕 `history` array in WorkOrder type
 - 🆕 `WorkOrderHistoryEntry` interface
@@ -3053,12 +3395,14 @@ Verzenden en Betaling Registreren
 - 🆕 Timestamp updates bij status wijzigingen
 
 **UX Verbeteringen:**
+
 - 🆕 **Voor Medewerkers:** Zie direct wanneer taken zijn toegewezen en gestart
 - 🆕 **Voor Admins:** Volledige audit trail van alle wijzigingen
 - 🆕 **Voor het Bedrijf:** Compliance en traceerbaarheid gegarandeerd
 - 🆕 **Visuele feedback:** Duidelijke iconen en kleuren per actie type
 
 **Voordelen:**
+
 - ✅ **Transparantie** - Iedereen ziet de volledige tijdlijn
 - ✅ **Verantwoordelijkheid** - Wie heeft wat wanneer gedaan is altijd duidelijk
 - ✅ **Analyse** - Identificeer bottlenecks in werkorder doorlooptijd
@@ -3070,6 +3414,7 @@ Verzenden en Betaling Registreren
 **Nieuwe Features:**
 
 **1. Offerte/Factuur → Werkorder Conversie**
+
 - 🆕 **"📋 Maak Werkorder" knop** bij geaccepteerde offertes
 - 🆕 **"📋 Maak Werkorder" knop** bij verzonden facturen
 - 🆕 **Automatische werkorder generatie:**
@@ -3081,6 +3426,7 @@ Verzenden en Betaling Registreren
   - Referentie naar bron behouden
 
 **2. Real-time Status Tracking**
+
 - 🆕 **Live status badges** in offertes en facturen:
   - 🔵 "Werkorder: To Do"
   - 🟡 "Werkorder: In Wacht"
@@ -3093,6 +3439,7 @@ Verzenden en Betaling Registreren
   - Status icon in header
 
 **3. Bidirectionele Synchronisatie**
+
 - 🆕 **"✏️ Bewerk & Update Werkorder" knop**
 - 🆕 **Live sync functies:**
   - Items toevoegen/verwijderen → Materialen bijgewerkt
@@ -3104,6 +3451,7 @@ Verzenden en Betaling Registreren
   - Blokkade bij voltooide werkorder
 
 **4. Voltooiings Workflow**
+
 - 🆕 **Voltooiings badge** met groene checkmark
 - 🆕 **Uren vergelijking:**
   - Geschatte uren vs Gewerkte uren
@@ -3115,6 +3463,7 @@ Verzenden en Betaling Registreren
   - Voorraad automatisch bijgewerkt
 
 **5. Nieuwe UI Componenten**
+
 - 🆕 Status badge component met kleuren
 - 🆕 Werkorder info sectie in offertes/facturen
 - 🆕 Synchronisatie knoppen en iconen
@@ -3122,6 +3471,7 @@ Verzenden en Betaling Registreren
 - 🆕 Tijdlijn weergave (offerte → werkorder → voltooiing)
 
 **Backend Wijzigingen:**
+
 - 🆕 Nieuwe relatie: `Quote.workOrderId` en `Invoice.workOrderId`
 - 🆕 Nieuwe relatie: `WorkOrder.quoteId` en `WorkOrder.invoiceId`
 - 🆕 Sync functionaliteit in state management
@@ -3129,6 +3479,7 @@ Verzenden en Betaling Registreren
 - 🆕 Voorraad validatie bij conversie
 
 **UX Verbeteringen:**
+
 - 🆕 Één-klik conversie workflow
 - 🆕 Real-time visuele feedback
 - 🆕 Intuïtieve status badges
@@ -3136,13 +3487,16 @@ Verzenden en Betaling Registreren
 - 🆕 Duidelijke waarschuwingen en blokkades
 
 **Technische Updates:**
+
 - 🆕 TypeScript types uitgebreid met koppelingen
 - 🆕 Nieuwe helper functies voor synchronisatie
 - 🆕 Event listeners voor status updates
 - 🆕 Validation logic voor conflicten
 
 ### Versie 3.2.0 🆕 **FACTUREN MODULE**
+
 **Nieuwe Features:**
+
 - ✅ **Volledig factuurbeheer systeem**
 - ✅ **Automatische factuurnummer generatie** (2025-001, 2025-002, etc.)
 - ✅ **Offerte naar factuur conversie** met één klik
@@ -3155,12 +3509,14 @@ Verzenden en Betaling Registreren
 - ✅ **Betalingsvoorwaarden** per factuur (14/30 dagen)
 
 **Factuur Dashboard:**
+
 - Totaal Gefactureerd (€ en aantal)
 - Betaald (€ en aantal)
 - Uitstaand (€ en aantal)
 - Verlopen (€ en aantal)
 
 **Factuur Status Flow:**
+
 ```
 Draft → Sent → Paid
          ↓
@@ -3170,16 +3526,19 @@ Draft → Sent → Paid
 ```
 
 **Nieuwe Types & Interfaces:**
+
 - `Invoice` interface met alle velden
 - `InvoiceStatus` type (draft/sent/paid/overdue/cancelled)
 - Mock facturen data (3 voorbeelden)
 
 **State Management:**
+
 - `invoices` state in App.tsx
 - `setInvoices` voor updates
 - Props doorgifte naar Accounting component
 
 **Accounting Module Updates:**
+
 - Nieuwe tab "🧾 Facturen"
 - Factuur formulier (vergelijkbaar met offertes)
 - Conversie knop bij geaccepteerde offertes
@@ -3187,7 +3546,9 @@ Draft → Sent → Paid
 - Delete functionaliteit
 
 ### Versie 3.1.0
+
 **Offerte Module Volledig Uitgebreid:**
+
 - ✅ **Items uit voorraad selecteren** - Dropdown met alle voorraad items inclusief SKU en prijzen
 - ✅ **Custom items toevoegen** - Voor items die niet in voorraad staan
 - ✅ **Werkuren toevoegen (optioneel)** - Uren, uurtarief en automatische berekening
@@ -3199,13 +3560,16 @@ Draft → Sent → Paid
 - ✅ **Verbeterde offerte weergave** - Duidelijk onderscheid tussen items en werkuren
 
 **Voorraad Verbeteringen:**
+
 - ✅ **Prijzen per voorraad item** - Verkoopprijs per eenheid toegevoegd
 - ✅ **Eenheid selectie** - 6 standaard eenheden beschikbaar
 - ✅ **Prijs weergave in tabel** - €XX.XX per eenheid
 - ✅ **Offertes koppeling** - Voorraad items direct selecteerbaar bij offerte maken
 
 ### Versie 3.0.0
+
 **CRM Module Volledig Vernieuwd:**
+
 - ✅ Dashboard met KPIs en real-time statistieken
 - ✅ Lead Management met 7-fase pipeline systeem
 - ✅ Interactie Tracking met volledige communicatie geschiedenis
@@ -3216,7 +3580,9 @@ Draft → Sent → Paid
 - ✅ Activiteiten Timeline
 
 ### Versie 2.2.0
+
 **Nieuwe Features:**
+
 - ✅ "To Do" Status voor werkorders
 - ✅ 4-kolommen Kanban Board
 - ✅ Verbeterde Workflow
@@ -3224,7 +3590,9 @@ Draft → Sent → Paid
 - ✅ Dubbele Actie Knoppen (Start/Wacht)
 
 ### Versie 2.1.0
+
 **Nieuwe Features:**
+
 - ✅ Materiaalbeheer in Werkorders
 - ✅ Materialen toewijzen bij werkorders
 - ✅ Automatische voorraad controle
@@ -3232,7 +3600,9 @@ Draft → Sent → Paid
 - ✅ Visuele voorraad indicatoren
 
 ### Versie 2.0.0
+
 **Nieuwe Features:**
+
 - ✅ Login systeem met authenticatie
 - ✅ Gebruikersrollen (admin/user)
 - ✅ Persoonlijk workboard per gebruiker
@@ -3246,7 +3616,9 @@ Draft → Sent → Paid
 - ✅ Uitgebreide rapportages (4 types)
 
 ### Versie 5.1.0 🆕 **BATCH OPERATIONS & UX VERBETERINGEN**
+
 **Nieuwe Features:**
+
 - ✅ **Batch Operations voor Offertes** - Selecteer meerdere offertes en voer bulk acties uit:
   - Meerdere offertes omzetten naar werkorders
   - Meerdere concept offertes verzenden
@@ -3269,6 +3641,7 @@ Draft → Sent → Paid
 - ✅ **Header Fix** - JSX structuur gecorrigeerd voor betere compatibiliteit
 
 **UX Verbeteringen:**
+
 - ✅ Visuele hiërarchie met cards en subtiele schaduwen
 - ✅ Contextuele iconen (📋, 👤, 🏢, 🗓️, 📍, ⏱️, 💰, 📝, ⚠️, 🧱, 🕒, 📄, 📎)
 - ✅ Emotionele beleving met zachte achtergrondtinten en afgeronde hoeken
@@ -3276,6 +3649,7 @@ Draft → Sent → Paid
 - ✅ Batch selectie modus met duidelijke visuele feedback
 
 **Technische Updates:**
+
 - ✅ Nieuwe `ContextualRelatedItems` component voor gerelateerde items
 - ✅ Nieuwe `UnifiedSearch` component voor globale zoekfunctionaliteit
 - ✅ Nieuwe `smartNotifications` utility voor contextuele notificaties
@@ -3284,6 +3658,7 @@ Draft → Sent → Paid
 - ✅ Verbeterde event handling met stopPropagation voor betere UX
 
 ### Versie 1.0.0
+
 - Basis modules (Dashboard, Inventory, POS, etc.)
 - Admin instellingen
 - CRUD operaties
@@ -3296,11 +3671,13 @@ Draft → Sent → Paid
 ### Snel aan de slag in 3 stappen:
 
 1. **Installeer en start**:
+
    ```bash
    npm install && npm run dev
    ```
 
 2. **Login als Admin**:
+
    - Email: sophie@bedrijf.nl
    - Wachtwoord: 1234
 
@@ -3363,6 +3740,7 @@ Draft → Sent → Paid
 8. **Bekijk statistieken** bovenaan pagina
 
 **Of maak handmatig factuur:**
+
 1. Klik "+ Nieuwe Factuur"
 2. Selecteer klant en datums
 3. Voeg items/werkuren toe
@@ -3373,6 +3751,7 @@ Draft → Sent → Paid
 ## 📞 Support & Contact
 
 Voor vragen, bugs of feature requests:
+
 - Open een issue in het project repository
 - Contacteer het development team
 - Raadpleeg de documentatie
@@ -3386,13 +3765,18 @@ Dit project is ontwikkeld voor intern gebruik. Alle rechten voorbehouden.
 ---
 
 **Laatste update**: December 2024  
-**Versie**: 5.4.0 (Kassa Verkopen Tab & Klikbare Facturen met Clone)
-**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering, **volledig responsive mobile-first design**, **factuurbeheer vanuit CRM**, **persoonlijk dossier systeem**, **automatische factuur generatie bij voltooide werkorders**, **Lean Six Sigma analytics dashboard**, **database diagnostics systeem**, **volledig webshop beheer systeem met producten, categorieën en bestellingen**, **batch operations voor offertes en facturen**, **verbeterde UX/UI met moderne modal design**, **volledig boekhouding & dossier systeem (MKB-ready, NL-compliant)**, **compacte/uitgebreide werkorder weergave toggle**, en **kassa verkopen tab met klikbare facturen en clone functionaliteit**
+**Versie**: 5.5.0 (Financieel Overzicht voor Factuur Archief & Kassa Verkopen)
+**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering, **volledig responsive mobile-first design**, **factuurbeheer vanuit CRM**, **persoonlijk dossier systeem**, **automatische factuur generatie bij voltooide werkorders**, **Lean Six Sigma analytics dashboard**, **database diagnostics systeem**, **volledig webshop beheer systeem met producten, categorieën en bestellingen**, **batch operations voor offertes en facturen**, **verbeterde UX/UI met moderne modal design**, **volledig boekhouding & dossier systeem (MKB-ready, NL-compliant)**, **compacte/uitgebreide werkorder weergave toggle**, **kassa verkopen tab met klikbare facturen en clone functionaliteit**, en **financieel overzicht met Excel-achtige tabellen en geavanceerde filtering**
 
 ---
 
 **Veel succes met het Bedrijfsbeheer Dashboard! 🚀**
 
+**✨ Nieuw in V5.5: Financieel Overzicht voor Factuur Archief & Kassa Verkopen - Excel-achtige tabellen met gedetailleerde item breakdown! 📊 ✨**
+**✨ Periode & klantnaam filtering - filter op elke gewenste periode en klant! ✨**
+**✨ Summary cards met status breakdown - zie omzet per status (betaald/openstaand/verlopen)! ✨**
+**✨ Betaalmethode tracking - zie omzet per betaalmethode (PIN, Contant, iDEAL, Creditcard)! ✨**
+**✨ CSV export - exporteer gefilterde data voor verdere analyse! ✨**
 **✨ Nieuw in V5.4: Kassa Verkopen Tab & Klikbare Facturen - zie alle kassa transacties apart en clone facturen/offertes! 🛒 ✨**
 **✨ Kassa Verkopen tab - apart overzicht van alle direct betaalde verkopen! ✨**
 **✨ Klikbare facturen - zie volledige details zonder te bewerken! ✨**
