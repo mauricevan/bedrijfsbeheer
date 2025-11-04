@@ -349,7 +349,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🆕 **Progress indicator** - % voltooid in werkorder sectie
 - 🆕 **Tijdlijn weergave** - Van offerte → werkorder → voltooiing
 
-### 5.5. **Boekhouding & Dossier** 🆕 **NIEUWE MODULE - MKB-READY, NL-COMPLIANT**
+### 5.5. **Boekhouding & Dossier** 🆕 **NIEUWE MODULE - MKB-READY, NL-COMPLIANT** 🆕 **V5.4: KASSA VERKOPEN TAB & KLIKBARE FACTUREN**
 **Volledig Digitaal Boekhouddossier - Alles wat een boekhouder nodig heeft**
 
 **Doel:**
@@ -358,7 +358,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ Direct klaar voor controle (Belastingdienst, accountant)
 - ✅ Geen handmatig overtypen uit facturen/pakbonnen
 
-**5 Kernfuncties:**
+**6 Kernfuncties:**
 
 **1. Grootboekrekeningen (Standaard MKB-Set)**
 - ✅ **10 Standaard rekeningen** ingesteld (niet aanpasbaar):
@@ -375,7 +375,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ **Export functionaliteit** - Exporteer grootboek naar CSV (voor Exact, Twinfield, etc.)
 - ✅ **Tabel overzicht** - Alle rekeningen met type, categorie en omschrijving
 
-**2. Factuur & Pakbon Archief (Digitaal Dossier)**
+**2. Factuur & Pakbon Archief (Digitaal Dossier)** 🆕 **V5.4: KLIKBARE FACTUREN MET DETAIL MODAL**
 - ✅ **Automatisch archief** - Elke factuur wordt automatisch toegevoegd aan archief
 - ✅ **Per document informatie:**
   - Factuurnummer (auto: 2025-001)
@@ -387,16 +387,41 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ **Zoeken & Filteren:**
   - Zoek op nummer, klant, datum
   - Filter op status (Openstaand / Betaald / Vervallen)
+- ✅ **Klikbare facturen** 🆕 - Klik op elke factuur om volledige details te zien
+- ✅ **Detail modal (read-only)** 🆕 - Volledige factuurdetails in overzichtelijke modal:
+  - Factuurnummer, status, klant, datums
+  - Items tabel (omschrijving, aantal, prijs, totaal)
+  - Werkuren tabel (indien aanwezig)
+  - Totaaloverzicht (subtotaal, BTW, totaal)
+  - Notities (indien aanwezig)
+- ✅ **Clone functionaliteit** 🆕 - Vanuit detail modal:
+  - 📋 Klonen naar Factuur - Maak nieuwe factuur met status 'draft'
+  - 📄 Klonen naar Offerte - Maak nieuwe offerte met status 'draft'
+  - Automatische nummering voor nieuwe facturen/offertes
+  - Notitie: "Gekloond van factuur XXX"
 - ✅ **Acties per factuur:**
   - 📄 PDF download (placeholder)
   - 📧 Herinnering sturen (placeholder)
-  - ✓ Markeer als betaald
+  - ✓ Markeer als betaald (direct in archief)
 - ✅ **Visuele status indicatoren:**
   - Rode border voor verlopen facturen
   - Groene badge voor betaalde facturen
   - Gele badge voor openstaande facturen
+  - Cursor pointer en hover-effecten voor duidelijkheid
 
-**3. BTW-Overzicht (Aangifte-Ready)**
+**3. Kassa Verkopen** 🆕 **V5.4: NIEUWE TAB VOOR KASSA TRANSACTIES**
+- 🆕 **Aparte tab** - "🛒 Kassa Verkopen" in Boekhouding & Dossier module
+- 🆕 **Automatische filtering** - Toont alle facturen via kassasysteem:
+  - Herkend aan "Kassa verkoop" in notes
+  - Of customerName "Particulier (Kassa)"
+- 🆕 **Direct betaalde facturen** - Alle kassa verkopen hebben status 'paid'
+- 🆕 **Betaalmethode weergave** - Toont betaalmethode (Contant, PIN, iDEAL, Creditcard)
+- 🆕 **Groene styling** - Visuele indicatie dat deze direct betaald zijn
+- 🆕 **Klikbaar** - Klik op elke kassa verkoop om details te zien
+- 🆕 **Zelfde detail modal** - Gebruikt dezelfde read-only modal als Factuur Archief
+- 🆕 **Clone functionaliteit** - Kan ook gekloond worden naar factuur of offerte
+
+**4. BTW-Overzicht (Aangifte-Ready)**
 - ✅ **Automatische berekening** per maand/kwartaal
 - ✅ **Periode rapport met:**
   - Omzet 21% → BTW af te dragen
@@ -411,7 +436,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ **Dynamische data** - Automatisch berekend uit facturen
 - ✅ **Periode selectie** - Kies maand/kwartaal voor rapport
 
-**4. Klant- & Leveranciersdossiers**
+**5. Klant- & Leveranciersdossiers**
 - ✅ **Alles op één plek** - Zoals een fysiek dossierkast
 - ✅ **Per relatie informatie:**
   - Naam, adres, KvK, BTW-nummer
@@ -428,7 +453,7 @@ Realtime weergave van bedrijfsactiviteiten:
   - Notities (placeholder)
 - ✅ **Zoekfunctionaliteit** - Zoek klant of leverancier
 
-**5. Transactieregistratie (Journaal)**
+**6. Transactieregistratie (Journaal)**
 - ✅ **Volledig automatisch** - Elke factuur genereert journaalpost
 - ✅ **Journaalstructuur:**
   - Journaalnummer (JRN-2025-001, etc.)
@@ -455,11 +480,12 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ **Monteur** - Geen toegang
 
 **Integratie met Bestaande Modules:**
-- ✅ **POS / Kassa** → Automatische factuur + journaalpost
+- ✅ **POS / Kassa** → Automatische factuur + journaalpost + kassa verkopen tab
 - ✅ **Pakbon (B2B)** → Wordt factuur bij "Markeer als gefactureerd"
 - ✅ **Voorraad** → Inkoopfactuur → voorraad + crediteuren
 - ✅ **CRM** → Klantgegevens automatisch in dossier
 - ✅ **Accounting Module** → Facturen automatisch in archief
+- 🆕 **Kassa Verkopen** → Direct zichtbaar in aparte tab met betaalmethode
 
 **Technische Details:**
 - ✅ Nieuwe types: `LedgerAccount`, `JournalEntry`, `JournalEntryLine`, `VATReport`, `CustomerDossier`, `SupplierDossier`, `InvoiceArchiveItem`, `DossierNote`
@@ -2296,6 +2322,96 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 
 ## 🏆 Changelog
 
+### Versie 5.4.0 🆕 **KASSA VERKOPEN TAB & KLIKBARE FACTUREN MET CLONE**
+**Nieuwe Features:**
+
+**1. Kassa Verkopen Tab**
+- 🆕 **Nieuwe tab** - "🛒 Kassa Verkopen" in Boekhouding & Dossier module
+- 🆕 **Automatische filtering** - Toont alle facturen aangemaakt via kassasysteem
+- 🆕 **Direct betaalde facturen** - Alle kassa verkopen hebben status 'paid'
+- 🆕 **Betaalmethode weergave** - Toont betaalmethode (💵 Contant, 💳 PIN, 🏦 iDEAL, 💳 Creditcard)
+- 🆕 **Groene styling** - Visuele indicatie voor direct betaalde transacties
+- 🆕 **Klikbaar** - Elke kassa verkoop is klikbaar voor details
+
+**2. Klikbare Facturen (Factuur Archief & Kassa Verkopen)**
+- 🆕 **Klikbare items** - Alle facturen in Factuur Archief zijn nu klikbaar
+- 🆕 **Detail modal** - Volledige factuurdetails in read-only modal:
+  - Header info (factuurnummer, status, klant, datums)
+  - Items tabel (omschrijving, aantal, prijs per eenheid, totaal)
+  - Werkuren tabel (indien aanwezig)
+  - Totaaloverzicht (subtotaal excl. BTW, BTW bedrag, totaal incl. BTW)
+  - Notities (indien aanwezig)
+- 🆕 **Read-only** - Alle velden zijn alleen-lezen (niet aanpasbaar)
+- 🆕 **Visuele feedback** - Cursor pointer en hover-effecten
+
+**3. Clone Functionaliteit**
+- 🆕 **Klonen naar Factuur** - Maak nieuwe factuur met status 'draft':
+  - Automatisch nieuw factuurnummer
+  - Factuurdatum = vandaag
+  - Vervaldatum = +14 dagen
+  - Notitie: "Gekloond van factuur XXX"
+  - Status: Draft (klaar om te bewerken)
+- 🆕 **Klonen naar Offerte** - Maak nieuwe offerte met status 'draft':
+  - Automatisch nieuw offertenummer
+  - Aanmaakdatum = vandaag
+  - Geldigheidsdatum = +30 dagen
+  - Notitie: "Gekloond van factuur XXX"
+  - Status: Draft
+- 🆕 **Bevestigingsmodal** - Vraagt bevestiging voordat gekloond wordt
+- 🆕 **Succesmelding** - Duidelijke feedback na clonen
+
+**4. Extra Functionaliteit**
+- 🆕 **Betaal-knop in archief** - Openstaande facturen kunnen direct als betaald worden gemarkeerd
+- 🆕 **Props toegevoegd** - `setInvoices` en `setQuotes` aan Bookkeeping component
+- 🆕 **App.tsx bijgewerkt** - Nieuwe props doorgegeven aan Bookkeeping
+
+**Voordelen:**
+- ✅ **Overzichtelijk** - Kassa verkopen apart van andere facturen
+- ✅ **Volledige details** - Zie alle factuurinformatie zonder te bewerken
+- ✅ **Clone workflow** - Eenvoudig facturen/offertes dupliceren
+- ✅ **Terugkerende klanten** - Clone vorige facturen voor nieuwe opdrachten
+- ✅ **Snelle acties** - Direct betaal markeren vanuit archief
+
+**Technische Updates:**
+- 🆕 `posInvoices` useMemo voor filtering kassa verkopen
+- 🆕 `openInvoiceDetail` functie voor modal openen
+- 🆕 `handleCloneToInvoice` en `handleCloneToQuote` functies
+- 🆕 Detail modal component met read-only weergave
+- 🆕 Clone confirmation modal
+- 🆕 Props uitgebreid in Bookkeeping component
+
+### Versie 5.3.0 🆕 **COMPACTE WERKORDER WEERGAVE**
+**Nieuwe Features:**
+
+**1. Compacte/Uitgebreide Weergave Toggle**
+- 🆕 **Toggle switch** boven werkorders - Schakel tussen compacte en uitgebreide weergave
+- 🆕 **Compacte weergave:**
+  - Alleen indexnummer (#) en omschrijving
+  - Kleinere cards met minimale padding
+  - Beperkte hoogte (max 2 regels tekst)
+  - Visuele hint (👆) dat klikbaar is
+  - Perfect voor snel overzicht van veel werkorders
+- 🆕 **Uitgebreide weergave:**
+  - Volledige card met alle details (zoals nu)
+  - Titel, beschrijving, materialen, uren, status, etc.
+  - Alle functionaliteit behouden
+- 🆕 **Beide versies interactief:**
+  - Klikbaar en dubbelklikbaar voor detail modal
+  - Details altijd toegankelijk
+  - Smooth transition tussen views
+
+**Voordelen:**
+- ✅ **Meer werkorders in één overzicht** - Zie meer taken tegelijk
+- ✅ **Sneller scannen** - Compacte view voor snel overzicht
+- ✅ **Flexibel gebruik** - Schakel tussen views wanneer nodig
+- ✅ **Details altijd beschikbaar** - Dubbelklik voor volledige informatie
+
+**Technische Updates:**
+- 🆕 `compactView` state toegevoegd aan WorkOrders component
+- 🆕 `compactView` prop toegevoegd aan WorkOrderCard component
+- 🆕 Conditionele rendering voor compacte vs uitgebreide weergave
+- 🆕 Toggle UI met visuele feedback
+
 ### Versie 5.2.0 🆕 **BOEKHOUDING & DOSSIER MODULE - MKB-READY, NL-COMPLIANT**
 **Nieuwe Module:**
 
@@ -3270,13 +3386,17 @@ Dit project is ontwikkeld voor intern gebruik. Alle rechten voorbehouden.
 ---
 
 **Laatste update**: December 2024  
-**Versie**: 5.3.0 (Compacte Werkorder Weergave)
-**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering, **volledig responsive mobile-first design**, **factuurbeheer vanuit CRM**, **persoonlijk dossier systeem**, **automatische factuur generatie bij voltooide werkorders**, **Lean Six Sigma analytics dashboard**, **database diagnostics systeem**, **volledig webshop beheer systeem met producten, categorieën en bestellingen**, **batch operations voor offertes en facturen**, **verbeterde UX/UI met moderne modal design**, **volledig boekhouding & dossier systeem (MKB-ready, NL-compliant)**, en **compacte/uitgebreide werkorder weergave toggle**
+**Versie**: 5.4.0 (Kassa Verkopen Tab & Klikbare Facturen met Clone)
+**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering, **volledig responsive mobile-first design**, **factuurbeheer vanuit CRM**, **persoonlijk dossier systeem**, **automatische factuur generatie bij voltooide werkorders**, **Lean Six Sigma analytics dashboard**, **database diagnostics systeem**, **volledig webshop beheer systeem met producten, categorieën en bestellingen**, **batch operations voor offertes en facturen**, **verbeterde UX/UI met moderne modal design**, **volledig boekhouding & dossier systeem (MKB-ready, NL-compliant)**, **compacte/uitgebreide werkorder weergave toggle**, en **kassa verkopen tab met klikbare facturen en clone functionaliteit**
 
 ---
 
 **Veel succes met het Bedrijfsbeheer Dashboard! 🚀**
 
+**✨ Nieuw in V5.4: Kassa Verkopen Tab & Klikbare Facturen - zie alle kassa transacties apart en clone facturen/offertes! 🛒 ✨**
+**✨ Kassa Verkopen tab - apart overzicht van alle direct betaalde verkopen! ✨**
+**✨ Klikbare facturen - zie volledige details zonder te bewerken! ✨**
+**✨ Clone functionaliteit - dupliceer facturen/offertes voor terugkerende klanten! ✨**
 **✨ Nieuw in V5.3: Compacte Werkorder Weergave - schakel tussen compact en uitgebreid voor optimaal overzicht! 📋 ✨**
 **✨ Compacte view: alleen omschrijving - zie meer werkorders tegelijk! ✨**
 **✨ Uitgebreide view: alle details - volledige informatie wanneer nodig! ✨**
