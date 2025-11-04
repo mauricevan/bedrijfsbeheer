@@ -37,6 +37,7 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
   const [editingOrder, setEditingOrder] = useState<WorkOrder | null>(null);
   const [viewingUserId, setViewingUserId] = useState<string>(currentUser.employeeId);
   const [statusFilter, setStatusFilter] = useState<WorkOrderStatus | null>(null);
+  const [compactView, setCompactView] = useState<boolean>(false);
   
   // Detail modal states voor factuur/offerte
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -1425,6 +1426,35 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
             )}
           </div>
           
+          {/* View Toggle - Compact/Normal */}
+          <div className="flex items-center gap-3 mt-4 md:mt-0 md:ml-auto">
+            <span className="text-sm text-gray-600 whitespace-nowrap">Weergave:</span>
+            <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setCompactView(false)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  !compactView
+                    ? 'bg-white text-primary shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+                title="Normale weergave met alle details"
+              >
+                📋 Uitgebreid
+              </button>
+              <button
+                onClick={() => setCompactView(true)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  compactView
+                    ? 'bg-white text-primary shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+                title="Compacte weergave - alleen omschrijving"
+              >
+                📝 Compact
+              </button>
+            </div>
+          </div>
+          
           {/* Quick Stats - Hide on small mobile, grid on tablet+ */}
           <div className="hidden md:flex items-center gap-4 lg:gap-6">
             <button
@@ -2157,6 +2187,7 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
                             onOpenDetail={openDetailModal}
                             getEmployeeName={getEmployeeName}
                             getCustomerName={getCustomerName}
+                            compactView={compactView}
                           />
                         ))}
                       {empStats.todo === 0 && (
@@ -2195,6 +2226,7 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
                             onOpenDetail={openDetailModal}
                             getEmployeeName={getEmployeeName}
                             getCustomerName={getCustomerName}
+                            compactView={compactView}
                           />
                         ))}
                       {empStats.pending === 0 && (
@@ -2233,6 +2265,7 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
                             onOpenDetail={openDetailModal}
                             getEmployeeName={getEmployeeName}
                             getCustomerName={getCustomerName}
+                            compactView={compactView}
                           />
                         ))}
                       {empStats.inProgress === 0 && (
@@ -2271,6 +2304,7 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
                             onOpenDetail={openDetailModal}
                             getEmployeeName={getEmployeeName}
                             getCustomerName={getCustomerName}
+                            compactView={compactView}
                           />
                         ))}
                       {empStats.completed === 0 && (
@@ -2351,8 +2385,10 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
                   onUpdateHours={updateHours}
                   onDelete={deleteOrder}
                   onEdit={handleEditOrder}
+                  onOpenDetail={openDetailModal}
                   getEmployeeName={getEmployeeName}
                   getCustomerName={getCustomerName}
+                  compactView={compactView}
                 />
               ))}
             {filteredWorkOrders.filter(wo => wo.status === 'Pending').length === 0 && (
@@ -2388,8 +2424,10 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
                   onUpdateHours={updateHours}
                   onDelete={deleteOrder}
                   onEdit={handleEditOrder}
+                  onOpenDetail={openDetailModal}
                   getEmployeeName={getEmployeeName}
                   getCustomerName={getCustomerName}
+                  compactView={compactView}
                 />
               ))}
             {filteredWorkOrders.filter(wo => wo.status === 'In Progress').length === 0 && (
@@ -3975,6 +4013,7 @@ interface WorkOrderCardProps {
   onOpenDetail?: (order: WorkOrder) => void;
   getEmployeeName: (id: string) => string;
   getCustomerName: (id?: string) => string | null;
+  compactView?: boolean;
 }
 
 const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
@@ -3989,6 +4028,7 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
   onOpenDetail,
   getEmployeeName,
   getCustomerName,
+  compactView = false,
 }) => {
   const [editingHours, setEditingHours] = useState(false);
   const [hours, setHours] = useState(order.hoursSpent || 0);
@@ -4045,6 +4085,38 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
 
   const indexPriority = getIndexPriority(order.sortIndex);
 
+  // Compact view - only show description
+  if (compactView) {
+    return (
+      <div 
+        className={`bg-white rounded-lg shadow-sm p-2 border-l-2 ${indexPriority.borderColor} hover:shadow-md transition-shadow cursor-pointer`}
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenDetail && onOpenDetail(order);
+        }}
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          onOpenDetail && onOpenDetail(order);
+        }}
+        title="Klik of dubbelklik om details te zien"
+      >
+        <div className="flex items-start gap-2">
+          {order.sortIndex !== undefined && (
+            <span 
+              className={`inline-block px-1.5 py-0.5 text-xs font-bold ${indexPriority.textColor} ${indexPriority.bgColor} rounded flex-shrink-0`}
+              title={indexPriority.tooltip}
+            >
+              #{order.sortIndex}
+            </span>
+          )}
+          <p className="text-xs text-gray-700 flex-1 line-clamp-2">{order.description || order.title}</p>
+          <span className="text-xs text-gray-400 flex-shrink-0">👆</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Normal view - full card
   return (
     <div 
       className={`bg-white rounded-lg shadow-md p-3 sm:p-4 border-l-4 ${indexPriority.borderColor} hover:shadow-lg transition-shadow cursor-pointer`}

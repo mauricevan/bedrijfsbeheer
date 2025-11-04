@@ -144,6 +144,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🆕 **Timestamp Tracking** - zie wanneer taken zijn aangemaakt, toegewezen, gestart en voltooid
 - 🆕 **Relatieve tijd weergave** - "2 dagen geleden", "5 uur geleden"
 - 🆕 **Sorteerbare werkorders** - werkorders worden automatisch gesorteerd op indexnummer
+- 🆕 **Compacte/Uitgebreide weergave toggle** - Schakel tussen compacte (alleen omschrijving) en uitgebreide (volledige details) weergave
 
 **Voor Admin:**
 - ✅ **Volledig overzicht** van alle werkorders (dropdown "Alle medewerkers")
@@ -167,6 +168,10 @@ Realtime weergave van bedrijfsactiviteiten:
   - **Visuele weergave** - zie nummer in card (bijv. "#3")
   - **Sortering** - werkorders gesorteerd op indexnummer (laagste eerst)
   - **Flexibele prioritering** - geef belangrijke taken een laag nummer voor bovenaan
+- 🆕 **Compacte/Uitgebreide weergave toggle** - Toggle boven werkorders om tussen compacte en uitgebreide weergave te schakelen:
+  - **Compacte weergave**: Alleen indexnummer en omschrijving (ideaal voor snel overzicht)
+  - **Uitgebreide weergave**: Volledige card met alle details (titel, beschrijving, materialen, uren, status, etc.)
+  - **Beide klikbaar** - Compacte en uitgebreide cards zijn dubbelklikbaar voor details
 - 🔄 Digitaal aftekenen door monteur
 - 🔄 Fotobewijs bij werkzaamheden
 - ✅ Tijd registreren per werkbon
@@ -3265,13 +3270,17 @@ Dit project is ontwikkeld voor intern gebruik. Alle rechten voorbehouden.
 ---
 
 **Laatste update**: December 2024  
-**Versie**: 5.2.0 (Boekhouding & Dossier Module)
-**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering, **volledig responsive mobile-first design**, **factuurbeheer vanuit CRM**, **persoonlijk dossier systeem**, **automatische factuur generatie bij voltooide werkorders**, **Lean Six Sigma analytics dashboard**, **database diagnostics systeem**, **volledig webshop beheer systeem met producten, categorieën en bestellingen**, **batch operations voor offertes en facturen**, **verbeterde UX/UI met moderne modal design**, en **volledig boekhouding & dossier systeem (MKB-ready, NL-compliant)**
+**Versie**: 5.3.0 (Compacte Werkorder Weergave)
+**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering, **volledig responsive mobile-first design**, **factuurbeheer vanuit CRM**, **persoonlijk dossier systeem**, **automatische factuur generatie bij voltooide werkorders**, **Lean Six Sigma analytics dashboard**, **database diagnostics systeem**, **volledig webshop beheer systeem met producten, categorieën en bestellingen**, **batch operations voor offertes en facturen**, **verbeterde UX/UI met moderne modal design**, **volledig boekhouding & dossier systeem (MKB-ready, NL-compliant)**, en **compacte/uitgebreide werkorder weergave toggle**
 
 ---
 
 **Veel succes met het Bedrijfsbeheer Dashboard! 🚀**
 
+**✨ Nieuw in V5.3: Compacte Werkorder Weergave - schakel tussen compact en uitgebreid voor optimaal overzicht! 📋 ✨**
+**✨ Compacte view: alleen omschrijving - zie meer werkorders tegelijk! ✨**
+**✨ Uitgebreide view: alle details - volledige informatie wanneer nodig! ✨**
+**✨ Beide klikbaar - details altijd toegankelijk via dubbelklik! ✨**
 **✨ Nieuw in V5.2: Boekhouding & Dossier Module - volledig digitaal boekhouddossier, grootboek, BTW-aangifte en journaal! 📊 ✨**
 **✨ MKB-Ready grootboekrekeningen met automatische journaalposten! ✨**
 **✨ BTW-overzicht aangifte-ready met automatische berekening per periode! ✨**
