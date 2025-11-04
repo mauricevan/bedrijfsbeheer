@@ -23,6 +23,11 @@ export const Inventory: React.FC<InventoryProps> = ({
   const [showReports, setShowReports] = useState(false);
   const [activeTab, setActiveTab] = useState<'items' | 'suppliers' | 'reports' | 'categories'>('items');
   
+  // 🆕 V5.7: Category filter state
+  const [categoryFilter, setCategoryFilter] = useState<string>(''); // Selected category ID
+  const [categorySearchTerm, setCategorySearchTerm] = useState(''); // Search term for category dropdown
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  
   // 🆕 V5.6: Categories state
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
   const [showCategoryForm, setShowCategoryForm] = useState(false);
@@ -104,44 +109,64 @@ export const Inventory: React.FC<InventoryProps> = ({
     return `INV-${nextNum.toString().padStart(4, '0')}`;
   };
 
-  // 🆕 V5.6: Uitgebreide filtering - zoek in alle velden
+  // 🆕 V5.6: Uitgebreide filtering - zoek in alle velden + categorie filter
   const filteredInventory = useMemo(() => {
-    if (!searchTerm) return inventory;
+    let filtered = inventory;
     
-    const searchLower = searchTerm.toLowerCase();
-    return inventory.filter(item => {
-      // Zoek in naam
-      if (item.name.toLowerCase().includes(searchLower)) return true;
-      
-      // Zoek in alle SKU types
-      if (item.sku?.toLowerCase().includes(searchLower)) return true;
-      if (item.supplierSku?.toLowerCase().includes(searchLower)) return true;
-      if (item.autoSku?.toLowerCase().includes(searchLower)) return true;
-      if (item.customSku?.toLowerCase().includes(searchLower)) return true;
-      
-      // Zoek in locatie
-      if (item.location?.toLowerCase().includes(searchLower)) return true;
-      
-      // Zoek in unit
-      if (item.unit?.toLowerCase().includes(searchLower)) return true;
-      
-      // Zoek in supplier naam
-      if (item.supplier?.toLowerCase().includes(searchLower)) return true;
-      if (item.supplierId && suppliers.find(s => s.id === item.supplierId)?.name.toLowerCase().includes(searchLower)) return true;
-      
-      // Zoek in categorie naam
-      if (item.categoryId && categories.find(c => c.id === item.categoryId)?.name.toLowerCase().includes(searchLower)) return true;
-      
-      // Zoek in prijzen (als getal)
-      if (item.purchasePrice?.toString().includes(searchLower)) return true;
-      if (item.salePrice?.toString().includes(searchLower)) return true;
-      
-      // Zoek in POS alert note
-      if (item.posAlertNote?.toLowerCase().includes(searchLower)) return true;
-      
-      return false;
-    });
-  }, [inventory, searchTerm, suppliers, categories]);
+    // 🆕 V5.7: Filter op categorie eerst
+    if (categoryFilter) {
+      filtered = filtered.filter(item => item.categoryId === categoryFilter);
+    }
+    
+    // Filter op zoekterm
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(item => {
+        // Zoek in naam
+        if (item.name.toLowerCase().includes(searchLower)) return true;
+        
+        // Zoek in alle SKU types
+        if (item.sku?.toLowerCase().includes(searchLower)) return true;
+        if (item.supplierSku?.toLowerCase().includes(searchLower)) return true;
+        if (item.autoSku?.toLowerCase().includes(searchLower)) return true;
+        if (item.customSku?.toLowerCase().includes(searchLower)) return true;
+        
+        // Zoek in locatie
+        if (item.location?.toLowerCase().includes(searchLower)) return true;
+        
+        // Zoek in unit
+        if (item.unit?.toLowerCase().includes(searchLower)) return true;
+        
+        // Zoek in supplier naam
+        if (item.supplier?.toLowerCase().includes(searchLower)) return true;
+        if (item.supplierId && suppliers.find(s => s.id === item.supplierId)?.name.toLowerCase().includes(searchLower)) return true;
+        
+        // Zoek in categorie naam
+        if (item.categoryId && categories.find(c => c.id === item.categoryId)?.name.toLowerCase().includes(searchLower)) return true;
+        
+        // Zoek in prijzen (als getal)
+        if (item.purchasePrice?.toString().includes(searchLower)) return true;
+        if (item.salePrice?.toString().includes(searchLower)) return true;
+        
+        // Zoek in POS alert note
+        if (item.posAlertNote?.toLowerCase().includes(searchLower)) return true;
+        
+        return false;
+      });
+    }
+    
+    return filtered;
+  }, [inventory, searchTerm, categoryFilter, suppliers, categories]);
+  
+  // 🆕 V5.7: Filtered categories for dropdown search
+  const filteredCategories = useMemo(() => {
+    if (!categorySearchTerm) return categories;
+    const searchLower = categorySearchTerm.toLowerCase();
+    return categories.filter(cat => 
+      cat.name.toLowerCase().includes(searchLower) ||
+      cat.description?.toLowerCase().includes(searchLower)
+    );
+  }, [categories, categorySearchTerm]);
 
   // BTW berekeningen voor rapportages
   const vatReport = useMemo(() => {
@@ -693,16 +718,132 @@ export const Inventory: React.FC<InventoryProps> = ({
       {/* Items Tab */}
       {activeTab === 'items' && (
         <>
+          {/* 🆕 V5.7: Category Filter Dropdown + Search */}
+          <div className="mb-4 flex flex-col sm:flex-row gap-3">
+            {/* Category Filter Dropdown */}
+            <div className="relative flex-shrink-0" style={{ minWidth: '200px', maxWidth: '300px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCategoryDropdown(!showCategoryDropdown);
+                  setCategorySearchTerm('');
+                }}
+                className={`w-full px-4 py-2 text-left border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-colors ${
+                  categoryFilter 
+                    ? 'bg-primary text-white border-primary' 
+                    : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">
+                    {categoryFilter 
+                      ? categories.find(c => c.id === categoryFilter)?.name || 'Categorie'
+                      : '🏷️ Filter op categorie...'}
+                  </span>
+                  <span className="text-xs">▼</span>
+                </div>
+              </button>
+              
+              {showCategoryDropdown && (
+                <>
+                  {/* Overlay om dropdown te sluiten */}
+                  <div 
+                    className="fixed inset-0 z-10" 
+                    onClick={() => setShowCategoryDropdown(false)}
+                  />
+                  {/* Dropdown */}
+                  <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
+                    {/* Search input in dropdown */}
+                    <div className="p-2 border-b border-gray-200">
+                      <input
+                        type="text"
+                        placeholder="Zoek categorie..."
+                        value={categorySearchTerm}
+                        onChange={(e) => setCategorySearchTerm(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                        autoFocus
+                      />
+                    </div>
+                    
+                    {/* Category list */}
+                    <div className="overflow-y-auto max-h-48">
+                      {/* "Alle categorieën" option */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCategoryFilter('');
+                          setShowCategoryDropdown(false);
+                          setCategorySearchTerm('');
+                        }}
+                        className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors ${
+                          !categoryFilter ? 'bg-blue-50 font-semibold' : ''
+                        }`}
+                      >
+                        <span className="text-gray-600">Alle categorieën</span>
+                      </button>
+                      
+                      {/* Filtered categories */}
+                      {filteredCategories.length === 0 ? (
+                        <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                          Geen categorieën gevonden
+                        </div>
+                      ) : (
+                        filteredCategories.map(category => (
+                          <button
+                            key={category.id}
+                            type="button"
+                            onClick={() => {
+                              setCategoryFilter(category.id);
+                              setShowCategoryDropdown(false);
+                              setCategorySearchTerm('');
+                            }}
+                            className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors flex items-center gap-2 ${
+                              categoryFilter === category.id ? 'bg-blue-50 font-semibold' : ''
+                            }`}
+                          >
+                            <div 
+                              className="w-4 h-4 rounded-full border border-gray-300 flex-shrink-0"
+                              style={{ backgroundColor: category.color || '#3B82F6' }}
+                            />
+                            <span>{category.name}</span>
+                            <span className="ml-auto text-xs text-gray-500">
+                              ({inventory.filter(i => i.categoryId === category.id).length})
+                            </span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            
+            {/* Clear filter button */}
+            {categoryFilter && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCategoryFilter('');
+                  setCategorySearchTerm('');
+                }}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                ✕ Wis filter
+              </button>
+            )}
+          </div>
+          
           {/* Search & Filters */}
-      <div className="mb-6">
-          <input
-          type="text"
-          placeholder="Zoek op naam, SKU, locatie, leverancier, categorie, prijs, etc..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-      </div>
+          <div className="mb-6">
+            <input
+              type="text"
+              placeholder="Zoek op naam, SKU, locatie, leverancier, categorie, prijs, etc..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
 
           {/* Low Stock Alert */}
           {lowStockItems.length > 0 && (

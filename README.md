@@ -133,6 +133,12 @@ Realtime weergave van bedrijfsactiviteiten:
   - Categorieën beheren in aparte tab (bewerken, verwijderen)
   - Categorie kleur badges in tabel
   - Automatische selectie van nieuwe categorie bij aanmaken vanuit item formulier
+- 🆕 **Zoekbare categoriefilter dropdown** (V5.7) - Dropdown filter met zoekfunctionaliteit:
+  - Type om categorieën te filteren in dropdown
+  - Real-time filtering van items op geselecteerde categorie
+  - Combinatie met zoekbalk mogelijk
+  - Visuele feedback met kleur badges en item count
+  - "Wis filter" knop voor snel resetten
 - 🔄 Automatisch aanmaken van inkooporders bij drempel
 - 🔄 Picklijsten genereren voor assemblage/montage
 - 🔄 Retouren verwerken
@@ -2604,7 +2610,28 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
   - Kleur badges met categorienaam
   - Visuele identificatie per item
 
-**4. Dubbelklik om te Bewerken**
+**4. Zoekbare Categoriefilter Dropdown** 🆕
+
+- 🆕 **Dropdown filter** - Filter items op categorie met een handige dropdown
+- 🆕 **Zoekbare dropdown** - Type in dropdown om snel categorieën te vinden:
+  - Zoek op categorienaam
+  - Zoek op beschrijving
+  - Real-time filtering in dropdown
+- 🆕 **Visuele feedback:**
+  - Kleur badges per categorie in dropdown
+  - Item count per categorie (bijv. "Metaal (5)")
+  - Highlight van geselecteerde categorie
+  - "Alle categorieën" optie voor reset
+- 🆕 **Combinatie filtering** - Categoriefilter werkt samen met zoekbalk:
+  - Filter eerst op categorie
+  - Zoek daarna binnen gefilterde categorie
+  - Beide filters werken naadloos samen
+- 🆕 **"Wis filter" knop** - Verschijnt wanneer categorie is geselecteerd voor snel resetten
+- 🆕 **Auto-focus** - Bij openen dropdown wordt direct in zoekveld getypt
+- 🆕 **Overlay sluiten** - Klik buiten dropdown sluit automatisch
+- ✅ **Responsive design** - Werkt perfect op mobile en desktop
+
+**5. Dubbelklik om te Bewerken**
 
 - 🆕 **Dubbelklik functionaliteit** - Dubbelklik op item rij om direct te bewerken
 - 🆕 **Visuele feedback** - Cursor pointer op rijen (alleen voor admins)
@@ -2618,8 +2645,10 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 - 🆕 `categoryId` veld toegevoegd aan `InventoryItem`
 - 🆕 `generateAutoSku()` functie voor automatische SKU generatie
 - 🆕 `handleAddCategory()`, `handleEditCategory()`, `handleDeleteCategory()` functies
-- 🆕 Uitgebreide `filteredInventory` useMemo met zoeken in alle velden
+- 🆕 Uitgebreide `filteredInventory` useMemo met categorie filter + zoeken in alle velden
+- 🆕 `filteredCategories` useMemo voor zoekbare dropdown
 - 🆕 Categorieën state management en CRUD operaties
+- 🆕 `categoryFilter`, `categorySearchTerm`, `showCategoryDropdown` state management
 - 🆕 `onDoubleClick` handler toegevoegd aan tabel rijen
 
 **Voordelen:**
@@ -2628,6 +2657,8 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 - ✅ **Automatische nummering** - Geen handmatige SKU beheer nodig
 - ✅ **Betere organisatie** - Categorieën maken voorraad overzichtelijker
 - ✅ **Sneller zoeken** - Zoek in alle relevante velden tegelijk
+- ✅ **Snel filteren** - Categoriefilter voor direct overzicht per categorie
+- ✅ **Zoekbare dropdown** - Type om snel de juiste categorie te vinden
 - ✅ **Efficiënter werken** - Dubbelklik voor snel bewerken
 - ✅ **Visuele identificatie** - Kleur badges voor snelle categorie herkenning
 
@@ -3962,6 +3993,7 @@ Dit project is ontwikkeld voor intern gebruik. Alle rechten voorbehouden.
 **✨ Nieuw in V5.7: Voorraadbeheer Uitbreiding - 3 SKU types, categorieën & uitgebreide zoeken! 📦 ✨**
 **✨ 3 SKU types per item - SKU Leverancier, Automatische SKU (INV-XXXX), Aangepaste SKU! ✨**
 **✨ Categorieën systeem - organiseer voorraad met kleur badges en categorie beheer! ✨**
+**✨ Zoekbare categoriefilter dropdown - filter snel op categorie met type-om-te-zoeken functionaliteit! ✨**
 **✨ Uitgebreide zoeken - zoek in alle velden: naam, SKU's, locatie, leverancier, categorie, prijzen! ✨**
 **✨ Dubbelklik om te bewerken - snel items bewerken met dubbelklik op rij! ✨**
 **✨ Nieuwe categorie vanuit item - maak categorie aan tijdens item toevoegen! ✨**
