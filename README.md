@@ -258,6 +258,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🆕 **Voltooiing indicator** - Visueel zien wanneer werkorder voltooid is
 - 🆕 **Offerte clonen** - Dupliceer bestaande offerte met automatisch nieuw ID en datum 🔄 **V4.6**
 - 🆕 **Aanpasbaar tijdens clonen** - Wijzig klant, items, prijzen tijdens het clonen 🔄 **V4.6**
+- 🆕 **Automatische kloon bij acceptatie** (V5.6) - Checkbox in acceptatie modal om offerte automatisch te klonen voor volgende periode (+30 dagen)
 - 🆕 **Offerte statistieken** - Totaal geoffreerd, geaccepteerd, verzonden, verlopen (klikbaar)
 - 🆕 **Overzicht Modals** - Bij klikken op statistiek badges:
   - Filter op klantnaam, datum, bedrag
