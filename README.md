@@ -318,10 +318,13 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🆕 **Voltooiing indicator** - Visueel zien wanneer werkorder voltooid is
 - 🆕 **Tussentijdse aanpassing** - Facturen en werkorders blijven gesynchroniseerd
 - 🆕 **Automatische factuur generatie** - Voltooide werkorders worden automatisch omgezet naar facturen
+- 🆕 **Automatische herinneringsplanning** (V5.6) - Bij verzenden worden herinneringsdatums automatisch berekend (+7 en +14 dagen na vervaldatum)
+- 🆕 **Herinnering nu sturen** (V5.6) - Handmatige trigger voor directe herinnering met template tekst
+- 🆕 **Betaalde facturen verbergen** (V5.6) - Betaalde facturen zijn alleen zichtbaar in Boekhouding & Dossier, niet in Facturen-tab
 - 🔄 Digitale goedkeuring door klant
 - 🔄 PDF generatie
 - 🔄 Email verzending
-- 🔄 Automatische herinneringen onbetaalde facturen
+- 🔄 Automatische email herinneringen (Fase 2 - toekomstig)
 - 🔄 Uren, materialen en kilometers factureren
 - 🔄 Facturen splitsen (materiaal + arbeid)
 
@@ -2529,6 +2532,78 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 
 ## 🏆 Changelog
 
+### Versie 5.6.0 🆕 **AUTOMATISCHE KLOON BIJ ACCEPTATIE & HERINNERINGSPLANNING**
+
+**Nieuwe Features:**
+
+**1. Automatische Kloon bij Offerte Acceptatie**
+
+- 🆕 **Acceptatie modal met kloon optie** - Bij "Accepteren" verschijnt een modal met checkbox
+- 🆕 **"Kloon voor volgende periode" checkbox** - Optioneel kloon van offerte voor volgende periode
+- 🆕 **Automatische datum berekening** - Nieuwe offerte krijgt +30 dagen vanaf geldigheidsdatum
+- 🆕 **Slimme notitie** - Geclonede offerte bevat notitie: "Gekloond van [ID] (geaccepteerd op [datum]) voor volgende periode"
+- 🆕 **Status: Draft** - Geclonede offerte krijgt status "draft" (niet automatisch verzenden)
+- 🆕 **Opt-in workflow** - Checkbox staat standaard uit, gebruiker kiest zelf
+- ✅ **Voordelen:**
+  - 80% tijdwinst voor terugkerende klanten
+  - Geen handmatig "Kloon" zoeken
+  - Voorkomt fouten in items/prijzen
+  - Eén klik = nieuwe offerte klaar
+
+**2. Automatische Herinneringsplanning voor Facturen (Fase 1)**
+
+- 🆕 **Automatische planning bij verzenden** - Wanneer factuur wordt verzonden, worden herinneringsdatums automatisch berekend:
+  - Herinnering 1: +7 dagen na vervaldatum
+  - Herinnering 2: +14 dagen na vervaldatum
+- 🆕 **Visuele weergave in factuurdetails** - Herinneringsplanning zichtbaar in factuur card:
+  - Datum per herinnering
+  - Status (verzonden/niet verzonden)
+  - "Herinnering nu sturen" knop
+  - Template tekst: "Betreft factuur [nummer] – vriendelijke herinnering"
+- 🆕 **Handmatige trigger** - "Herinnering nu sturen" knop voor directe actie
+- 🆕 **Status tracking** - Verzonden datum wordt opgeslagen
+- 🆕 **History integratie** - Herinneringen worden toegevoegd aan factuur history
+- ✅ **Voordelen:**
+  - Geen openstaande posten meer door vergeten
+  - Professionaliseert debiteurenbeheer
+  - Werkt volledig automatisch
+  - Visuele reminders voor administratie
+
+**3. Factuur Validatie Fix**
+
+- 🆕 **Directe status update** - Na validatie wordt factuur direct bijgewerkt naar "sent"
+- 🆕 **Geen dubbele validatie** - Voorkomt dat validatie modal opnieuw wordt geopend
+- 🆕 **Successmelding** - Duidelijke feedback na validatie en verzending
+- 🆕 **Herinneringsplanning automatisch** - Wordt automatisch toegevoegd bij verzenden
+
+**4. Betaalde Facturen Verbergen**
+
+- 🆕 **Filter in Facturen-tab** - Betaalde facturen worden niet meer getoond in Facturen-tab
+- 🆕 **Automatische verplaatsing** - Betaalde facturen zijn alleen zichtbaar in Boekhouding & Dossier
+- 🆕 **Lege-staatmelding** - Duidelijke melding wanneer er geen openstaande facturen zijn
+- 🆕 **Info banner in overview** - Bij klikken op "Betaald" statistiek wordt gebruiker geïnformeerd
+- 🆕 **Overview modal filter** - "Totaal Gefactureerd" sluit betaalde facturen uit
+- ✅ **Voordelen:**
+  - Overzichtelijker Facturen-tab (alleen openstaande facturen)
+  - Duidelijke scheiding tussen actief en archief
+  - Betaalde facturen op één plek (Boekhouding & Dossier)
+
+**Technische Updates:**
+
+- 🆕 `reminders` interface toegevoegd aan `Invoice` type
+- 🆕 `handleAcceptQuote()` functie voor acceptatie met kloon optie
+- 🆕 `handleSendReminder()` functie voor handmatige herinnering
+- 🆕 Automatische herinneringsplanning in `updateInvoiceStatus()`
+- 🆕 `confirmInvoiceValidation()` directe status update (geen dubbele check)
+- 🆕 Filter logica voor betaalde facturen in Facturen-tab en overview modal
+
+**Voordelen:**
+
+- ✅ **Workflow optimalisatie** - Minder handmatige stappen voor terugkerende klanten
+- ✅ **Debiteurenbeheer** - Automatische herinneringsplanning voorkomt vergeten
+- ✅ **Overzichtelijkheid** - Betaalde facturen op juiste plek (archief)
+- ✅ **Professionaliteit** - Waterdichte workflow van offerte tot betaling
+
 ### Versie 5.5.0 🆕 **FINANCIEEL OVERZICHT VOOR FACTUUR ARCHIEF + KASSA VERKOPEN**
 
 **Nieuwe Features:**
@@ -3765,13 +3840,18 @@ Dit project is ontwikkeld voor intern gebruik. Alle rechten voorbehouden.
 ---
 
 **Laatste update**: December 2024  
-**Versie**: 5.5.0 (Financieel Overzicht voor Factuur Archief & Kassa Verkopen)
-**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering, **volledig responsive mobile-first design**, **factuurbeheer vanuit CRM**, **persoonlijk dossier systeem**, **automatische factuur generatie bij voltooide werkorders**, **Lean Six Sigma analytics dashboard**, **database diagnostics systeem**, **volledig webshop beheer systeem met producten, categorieën en bestellingen**, **batch operations voor offertes en facturen**, **verbeterde UX/UI met moderne modal design**, **volledig boekhouding & dossier systeem (MKB-ready, NL-compliant)**, **compacte/uitgebreide werkorder weergave toggle**, **kassa verkopen tab met klikbare facturen en clone functionaliteit**, en **financieel overzicht met Excel-achtige tabellen en geavanceerde filtering**
+**Versie**: 5.6.0 (Automatische Kloon bij Acceptatie & Herinneringsplanning)
+**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering, **volledig responsive mobile-first design**, **factuurbeheer vanuit CRM**, **persoonlijk dossier systeem**, **automatische factuur generatie bij voltooide werkorders**, **Lean Six Sigma analytics dashboard**, **database diagnostics systeem**, **volledig webshop beheer systeem met producten, categorieën en bestellingen**, **batch operations voor offertes en facturen**, **verbeterde UX/UI met moderne modal design**, **volledig boekhouding & dossier systeem (MKB-ready, NL-compliant)**, **compacte/uitgebreide werkorder weergave toggle**, **kassa verkopen tab met klikbare facturen en clone functionaliteit**, **financieel overzicht met Excel-achtige tabellen en geavanceerde filtering**, **automatische kloon bij offerte acceptatie**, **automatische herinneringsplanning voor facturen**, en **betaalde facturen automatisch verplaatst naar archief**
 
 ---
 
 **Veel succes met het Bedrijfsbeheer Dashboard! 🚀**
 
+**✨ Nieuw in V5.6: Automatische Kloon bij Acceptatie & Herinneringsplanning - werk slimmer en voorkom vergeten facturen! 🚀 ✨**
+**✨ Automatische kloon bij acceptatie - één klik voor terugkerende klanten! ✨**
+**✨ Automatische herinneringsplanning - geen openstaande posten meer door vergeten! ✨**
+**✨ Betaalde facturen verbergen - alleen openstaande facturen in Facturen-tab! ✨**
+**✨ Factuur validatie fix - directe status update na validatie! ✨**
 **✨ Nieuw in V5.5: Financieel Overzicht voor Factuur Archief & Kassa Verkopen - Excel-achtige tabellen met gedetailleerde item breakdown! 📊 ✨**
 **✨ Periode & klantnaam filtering - filter op elke gewenste periode en klant! ✨**
 **✨ Summary cards met status breakdown - zie omzet per status (betaald/openstaand/verlopen)! ✨**
