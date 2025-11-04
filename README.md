@@ -107,19 +107,32 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ Lage voorraad alerts
 - ✅ Recente werkorders overzicht
 
-### 2. **Voorraadbeheer (Inventory Management)**
+### 2. **Voorraadbeheer (Inventory Management)** 🆕 **UITGEBREID MET 3 SKU TYPES & CATEGORIEËN V5.7**
 
 - ✅ Beheer van grondstoffen, halffabricaten en eindproducten
+- 🆕 **3 SKU Types per item** (V5.7):
+  - SKU Leverancier - SKU zoals leverancier deze gebruikt
+  - Automatische SKU - Automatisch gegenereerd (INV-0001, INV-0002, etc.)
+  - Aangepaste SKU - Vrij invulbare SKU voor eigen gebruik
 - ✅ SKU-nummers en locatie tracking
 - ✅ Eén magazijn/opslaglocatie
 - ✅ **Automatische meldingen** bij lage voorraad
 - ✅ Add/Edit/Delete functionaliteit (admin only)
+- 🆕 **Dubbelklik om te bewerken** (V5.7) - Dubbelklik op item rij om direct te bewerken
 - ✅ Quick adjust knoppen (+10/-10)
 - ✅ Status indicators (OK/Laag/Niet op voorraad)
 - ✅ **Prijzen per voorraad item** - Verkoopprijs per eenheid
 - ✅ **Eenheden beheer** - Stuk, meter, kg, liter, m², doos
 - ✅ **Prijs weergave in tabel** - €XX.XX per eenheid
 - ✅ **Koppeling met offertes en facturen** - Items kunnen direct geselecteerd worden
+- 🆕 **Uitgebreide zoeken/filteren** (V5.7) - Zoek in alle velden: naam, alle SKU types, locatie, eenheid, leverancier, categorie, prijzen, POS alert notitie
+- 🆕 **Categorieën systeem** (V5.7):
+  - Handmatig categorieën aanmaken (naam, beschrijving, kleur)
+  - Categorie dropdown bij item toevoegen/bewerken
+  - Nieuwe categorie aanmaken vanuit item formulier
+  - Categorieën beheren in aparte tab (bewerken, verwijderen)
+  - Categorie kleur badges in tabel
+  - Automatische selectie van nieuwe categorie bij aanmaken vanuit item formulier
 - 🔄 Automatisch aanmaken van inkooporders bij drempel
 - 🔄 Picklijsten genereren voor assemblage/montage
 - 🔄 Retouren verwerken
@@ -2534,6 +2547,90 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 
 ## 🏆 Changelog
 
+### Versie 5.7.0 🆕 **VOORRAADBEHEER UITBREIDING: 3 SKU TYPES & CATEGORIEËN SYSTEEM**
+
+**Nieuwe Features:**
+
+**1. 3 SKU Types per Item**
+
+- 🆕 **SKU Leverancier** - SKU zoals leverancier deze gebruikt (optioneel)
+- 🆕 **Automatische SKU** - Automatisch gegenereerd (INV-0001, INV-0002, etc.)
+  - Format: INV-XXXX (4-cijferig met leading zeros)
+  - Automatisch gegenereerd bij nieuwe items
+  - Kan handmatig worden aangepast bij bewerken
+- 🆕 **Aangepaste SKU** - Vrij invulbare SKU voor eigen gebruik (optioneel)
+- ✅ **Tabel uitgebreid** - 3 SKU kolommen naast elkaar in voorraadtabel
+- ✅ **Primaire SKU** - Automatische SKU wordt getoond als primaire SKU in tabel
+- ✅ **Legacy support** - Oude `sku` veld blijft werken voor backward compatibility
+
+**2. Uitgebreide Zoeken/Filteren**
+
+- 🆕 **Zoeken in alle velden** - Zoekbalk zoekt nu in:
+  - Item naam
+  - Alle 3 SKU types (leverancier, auto, aangepast)
+  - Locatie
+  - Eenheid
+  - Leverancier naam
+  - Categorie naam
+  - Aankoopprijs en verkoopprijs (als getal)
+  - POS alert notitie
+- 🆕 **Verbeterde placeholder** - Duidelijke hint: "Zoek op naam, SKU, locatie, leverancier, categorie, prijs, etc..."
+- ✅ **Real-time filtering** - Resultaten worden direct bijgewerkt tijdens typen
+
+**3. Categorieën Systeem**
+
+- 🆕 **InventoryCategory interface** - Nieuwe type voor categorieën met:
+  - Naam (verplicht)
+  - Beschrijving (optioneel)
+  - Kleur (voor visuele weergave)
+- 🆕 **Categorieën Tab** - Nieuwe tab "🏷️ Categorieën" in voorraadbeheer
+- 🆕 **Categorieën beheer:**
+  - Handmatig categorieën aanmaken met naam, beschrijving en kleur
+  - Categorieën bewerken
+  - Categorieën verwijderen (met waarschuwing als items gekoppeld zijn)
+  - Tabel overzicht met aantal items per categorie
+  - Kleur badges voor visuele herkenning
+- 🆕 **Categorie dropdown** - Bij item toevoegen/bewerken:
+  - Dropdown met alle bestaande categorieën
+  - "Geen categorie" optie
+  - "+ Nieuwe Categorie" knop
+- 🆕 **Nieuwe categorie vanuit item formulier:**
+  - Inline formulier voor nieuwe categorie
+  - Kleur picker
+  - Automatische selectie na aanmaken
+  - Direct beschikbaar in dropdown
+- 🆕 **Categorie weergave in tabel:**
+  - Categorie kolom toegevoegd
+  - Kleur badges met categorienaam
+  - Visuele identificatie per item
+
+**4. Dubbelklik om te Bewerken**
+
+- 🆕 **Dubbelklik functionaliteit** - Dubbelklik op item rij om direct te bewerken
+- 🆕 **Visuele feedback** - Cursor pointer op rijen (alleen voor admins)
+- 🆕 **Tooltip hint** - "Dubbelklik om te bewerken" bij hover
+- ✅ **Alleen voor admins** - Non-admin gebruikers kunnen niet dubbelklikken
+
+**Technische Updates:**
+
+- 🆕 `InventoryCategory` interface toegevoegd aan `types.ts`
+- 🆕 `supplierSku`, `autoSku`, `customSku` velden toegevoegd aan `InventoryItem`
+- 🆕 `categoryId` veld toegevoegd aan `InventoryItem`
+- 🆕 `generateAutoSku()` functie voor automatische SKU generatie
+- 🆕 `handleAddCategory()`, `handleEditCategory()`, `handleDeleteCategory()` functies
+- 🆕 Uitgebreide `filteredInventory` useMemo met zoeken in alle velden
+- 🆕 Categorieën state management en CRUD operaties
+- 🆕 `onDoubleClick` handler toegevoegd aan tabel rijen
+
+**Voordelen:**
+
+- ✅ **Flexibele SKU tracking** - 3 verschillende SKU types voor verschillende use cases
+- ✅ **Automatische nummering** - Geen handmatige SKU beheer nodig
+- ✅ **Betere organisatie** - Categorieën maken voorraad overzichtelijker
+- ✅ **Sneller zoeken** - Zoek in alle relevante velden tegelijk
+- ✅ **Efficiënter werken** - Dubbelklik voor snel bewerken
+- ✅ **Visuele identificatie** - Kleur badges voor snelle categorie herkenning
+
 ### Versie 5.6.0 🆕 **AUTOMATISCHE KLOON BIJ ACCEPTATIE & HERINNERINGSPLANNING + WERKORDER FILTERING**
 
 **Nieuwe Features:**
@@ -3855,13 +3952,19 @@ Dit project is ontwikkeld voor intern gebruik. Alle rechten voorbehouden.
 ---
 
 **Laatste update**: December 2024  
-**Versie**: 5.6.0 (Automatische Kloon bij Acceptatie & Herinneringsplanning)
-**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering, **volledig responsive mobile-first design**, **factuurbeheer vanuit CRM**, **persoonlijk dossier systeem**, **automatische factuur generatie bij voltooide werkorders**, **Lean Six Sigma analytics dashboard**, **database diagnostics systeem**, **volledig webshop beheer systeem met producten, categorieën en bestellingen**, **batch operations voor offertes en facturen**, **verbeterde UX/UI met moderne modal design**, **volledig boekhouding & dossier systeem (MKB-ready, NL-compliant)**, **compacte/uitgebreide werkorder weergave toggle**, **kassa verkopen tab met klikbare facturen en clone functionaliteit**, **financieel overzicht met Excel-achtige tabellen en geavanceerde filtering**, **automatische kloon bij offerte acceptatie**, **automatische herinneringsplanning voor facturen**, en **betaalde facturen automatisch verplaatst naar archief**
+**Versie**: 5.7.0 (Voorraadbeheer Uitbreiding: 3 SKU Types & Categorieën Systeem)
+**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering, **volledig responsive mobile-first design**, **factuurbeheer vanuit CRM**, **persoonlijk dossier systeem**, **automatische factuur generatie bij voltooide werkorders**, **Lean Six Sigma analytics dashboard**, **database diagnostics systeem**, **volledig webshop beheer systeem met producten, categorieën en bestellingen**, **batch operations voor offertes en facturen**, **verbeterde UX/UI met moderne modal design**, **volledig boekhouding & dossier systeem (MKB-ready, NL-compliant)**, **compacte/uitgebreide werkorder weergave toggle**, **kassa verkopen tab met klikbare facturen en clone functionaliteit**, **financieel overzicht met Excel-achtige tabellen en geavanceerde filtering**, **automatische kloon bij offerte acceptatie**, **automatische herinneringsplanning voor facturen**, **betaalde facturen automatisch verplaatst naar archief**, **3 SKU types per voorraad item**, **categorieën systeem voor voorraad organisatie**, **uitgebreide zoeken/filteren in alle velden**, en **dubbelklik om items te bewerken**
 
 ---
 
 **Veel succes met het Bedrijfsbeheer Dashboard! 🚀**
 
+**✨ Nieuw in V5.7: Voorraadbeheer Uitbreiding - 3 SKU types, categorieën & uitgebreide zoeken! 📦 ✨**
+**✨ 3 SKU types per item - SKU Leverancier, Automatische SKU (INV-XXXX), Aangepaste SKU! ✨**
+**✨ Categorieën systeem - organiseer voorraad met kleur badges en categorie beheer! ✨**
+**✨ Uitgebreide zoeken - zoek in alle velden: naam, SKU's, locatie, leverancier, categorie, prijzen! ✨**
+**✨ Dubbelklik om te bewerken - snel items bewerken met dubbelklik op rij! ✨**
+**✨ Nieuwe categorie vanuit item - maak categorie aan tijdens item toevoegen! ✨**
 **✨ Nieuw in V5.6: Automatische Kloon bij Acceptatie & Herinneringsplanning - werk slimmer en voorkom vergeten facturen! 🚀 ✨**
 **✨ Automatische kloon bij acceptatie - één klik voor terugkerende klanten! ✨**
 **✨ Automatische herinneringsplanning - geen openstaande posten meer door vergeten! ✨**

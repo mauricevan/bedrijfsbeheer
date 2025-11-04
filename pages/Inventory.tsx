@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { InventoryItem, Supplier, WebshopProduct } from '../types';
+import { InventoryItem, InventoryCategory, Supplier, WebshopProduct } from '../types';
 
 interface InventoryProps {
   inventory: InventoryItem[];
@@ -21,7 +21,18 @@ export const Inventory: React.FC<InventoryProps> = ({
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [showSuppliers, setShowSuppliers] = useState(false);
   const [showReports, setShowReports] = useState(false);
-  const [activeTab, setActiveTab] = useState<'items' | 'suppliers' | 'reports'>('items');
+  const [activeTab, setActiveTab] = useState<'items' | 'suppliers' | 'reports' | 'categories'>('items');
+  
+  // 🆕 V5.6: Categories state
+  const [categories, setCategories] = useState<InventoryCategory[]>([]);
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<InventoryCategory | null>(null);
+  const [newCategory, setNewCategory] = useState<Partial<InventoryCategory>>({
+    name: '',
+    description: '',
+    color: '#3B82F6',
+  });
+  const [showNewCategoryForm, setShowNewCategoryForm] = useState(false); // Voor nieuwe categorie tijdens item toevoegen
   
   // Suppliers state
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -40,7 +51,7 @@ export const Inventory: React.FC<InventoryProps> = ({
   // New item state met alle nieuwe velden
   const [newItem, setNewItem] = useState<Partial<InventoryItem>>({
     name: '',
-    sku: '',
+    sku: '', // Legacy
     quantity: 0,
     reorderLevel: 0,
     supplierId: undefined,
@@ -56,6 +67,11 @@ export const Inventory: React.FC<InventoryProps> = ({
     unit: 'stuk',
     price: 0, // Legacy
     posAlertNote: undefined,
+    // 🆕 V5.6: 3 SKU types
+    supplierSku: '',
+    autoSku: '', // Wordt automatisch gegenereerd
+    customSku: '',
+    categoryId: undefined,
   });
 
   // Helper functies
@@ -74,13 +90,58 @@ export const Inventory: React.FC<InventoryProps> = ({
     return parseFloat(item.vatRate);
   };
 
-  // Filter inventory
+  // 🆕 V5.6: Automatische SKU generatie (INV-0001, INV-0002, etc.)
+  const generateAutoSku = (): string => {
+    const maxSku = inventory.reduce((max, item) => {
+      const sku = item.autoSku || item.sku;
+      if (sku && sku.startsWith('INV-')) {
+        const num = parseInt(sku.replace('INV-', '')) || 0;
+        return Math.max(max, num);
+      }
+      return max;
+    }, 0);
+    const nextNum = maxSku + 1;
+    return `INV-${nextNum.toString().padStart(4, '0')}`;
+  };
+
+  // 🆕 V5.6: Uitgebreide filtering - zoek in alle velden
   const filteredInventory = useMemo(() => {
-    return inventory.filter(item =>
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.sku.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [inventory, searchTerm]);
+    if (!searchTerm) return inventory;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return inventory.filter(item => {
+      // Zoek in naam
+      if (item.name.toLowerCase().includes(searchLower)) return true;
+      
+      // Zoek in alle SKU types
+      if (item.sku?.toLowerCase().includes(searchLower)) return true;
+      if (item.supplierSku?.toLowerCase().includes(searchLower)) return true;
+      if (item.autoSku?.toLowerCase().includes(searchLower)) return true;
+      if (item.customSku?.toLowerCase().includes(searchLower)) return true;
+      
+      // Zoek in locatie
+      if (item.location?.toLowerCase().includes(searchLower)) return true;
+      
+      // Zoek in unit
+      if (item.unit?.toLowerCase().includes(searchLower)) return true;
+      
+      // Zoek in supplier naam
+      if (item.supplier?.toLowerCase().includes(searchLower)) return true;
+      if (item.supplierId && suppliers.find(s => s.id === item.supplierId)?.name.toLowerCase().includes(searchLower)) return true;
+      
+      // Zoek in categorie naam
+      if (item.categoryId && categories.find(c => c.id === item.categoryId)?.name.toLowerCase().includes(searchLower)) return true;
+      
+      // Zoek in prijzen (als getal)
+      if (item.purchasePrice?.toString().includes(searchLower)) return true;
+      if (item.salePrice?.toString().includes(searchLower)) return true;
+      
+      // Zoek in POS alert note
+      if (item.posAlertNote?.toLowerCase().includes(searchLower)) return true;
+      
+      return false;
+    });
+  }, [inventory, searchTerm, suppliers, categories]);
 
   // BTW berekeningen voor rapportages
   const vatReport = useMemo(() => {
@@ -216,12 +277,87 @@ export const Inventory: React.FC<InventoryProps> = ({
     });
   }, [inventory.filter(item => item.syncEnabled).map(i => i.quantity).join(',')]);
 
-  // Handlers
-  const handleAddItem = () => {
-    if (!newItem.name || !newItem.sku || !newItem.salePrice) {
-      alert('⚠️ Vul ten minste naam, SKU en verkoopprijs in.');
+  // 🆕 V5.6: Category handlers
+  const handleAddCategory = () => {
+    if (!newCategory.name) {
+      alert('⚠️ Vul ten minste een categorienaam in.');
       return;
     }
+
+    const category: InventoryCategory = {
+      id: Date.now().toString(),
+      name: newCategory.name,
+      description: newCategory.description,
+      color: newCategory.color || '#3B82F6',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const wasFromItemForm = showNewCategoryForm;
+    
+    setCategories([...categories, category]);
+    
+    // 🆕 V5.6: Als categorie wordt aangemaakt vanuit item formulier, selecteer deze direct
+    if (wasFromItemForm) {
+      setNewItem({ ...newItem, categoryId: category.id });
+    }
+    
+    setNewCategory({ name: '', description: '', color: '#3B82F6' });
+    setShowCategoryForm(false);
+    setShowNewCategoryForm(false);
+    alert(`✅ Categorie "${category.name}" toegevoegd!${wasFromItemForm ? ' Categorie is automatisch geselecteerd voor dit item.' : ''}`);
+  };
+
+  const handleEditCategory = () => {
+    if (!editingCategory || !editingCategory.name) {
+      alert('⚠️ Vul ten minste een categorienaam in.');
+      return;
+    }
+
+    setCategories(categories.map(c => 
+      c.id === editingCategory.id 
+        ? { ...editingCategory, updatedAt: new Date().toISOString() }
+        : c
+    ));
+    setEditingCategory(null);
+    setShowCategoryForm(false);
+    alert(`✅ Categorie bijgewerkt!`);
+  };
+
+  const handleDeleteCategory = (categoryId: string) => {
+    const category = categories.find(c => c.id === categoryId);
+    if (!category) return;
+
+    // Check of er items zijn die deze categorie gebruiken
+    const itemsWithCategory = inventory.filter(item => item.categoryId === categoryId);
+    if (itemsWithCategory.length > 0) {
+      const confirm = window.confirm(
+        `⚠️ Deze categorie wordt gebruikt door ${itemsWithCategory.length} item(s). ` +
+        `Wil je de categorie toch verwijderen? De items verliezen hun categorie koppeling.`
+      );
+      if (!confirm) return;
+
+      // Remove category from items
+      setInventory(inventory.map(item => 
+        item.categoryId === categoryId 
+          ? { ...item, categoryId: undefined }
+          : item
+      ));
+    }
+
+    setCategories(categories.filter(c => c.id !== categoryId));
+    alert(`✅ Categorie "${category.name}" verwijderd!`);
+  };
+
+  // Handlers
+  const handleAddItem = () => {
+    if (!newItem.name || !newItem.salePrice) {
+      alert('⚠️ Vul ten minste naam en verkoopprijs in.');
+      return;
+    }
+
+    // 🆕 V5.6: Genereer automatische SKU als deze nog niet bestaat
+    const autoSku = newItem.autoSku || generateAutoSku();
 
     // Bereken marge
     const margin = newItem.purchasePrice && newItem.purchasePrice > 0
@@ -231,6 +367,8 @@ export const Inventory: React.FC<InventoryProps> = ({
     const item: InventoryItem = {
       ...newItem,
       id: Date.now().toString(),
+      sku: autoSku, // Legacy support - gebruik autoSku
+      autoSku, // 🆕 V5.6: Automatisch gegenereerde SKU
       salePrice: newItem.salePrice || 0,
       margin,
       vatRate: (newItem.vatRate || '21') as '21' | '9' | '0' | 'custom',
@@ -248,7 +386,7 @@ export const Inventory: React.FC<InventoryProps> = ({
     setInventory([...inventory, item]);
     setNewItem({
       name: '',
-      sku: '',
+      sku: '', // Legacy
       quantity: 0,
       reorderLevel: 0,
       salePrice: 0,
@@ -257,8 +395,14 @@ export const Inventory: React.FC<InventoryProps> = ({
       syncEnabled: false,
       unit: 'stuk',
       posAlertNote: undefined,
+      // 🆕 V5.6: Reset nieuwe velden
+      supplierSku: '',
+      autoSku: '', // Wordt automatisch gegenereerd bij volgende item
+      customSku: '',
+      categoryId: undefined,
     });
     setShowAddForm(false);
+    setShowNewCategoryForm(false);
     alert(`✅ Item "${item.name}" succesvol toegevoegd!`);
   };
 
@@ -268,13 +412,18 @@ export const Inventory: React.FC<InventoryProps> = ({
       ...item,
       purchasePrice: item.purchasePrice || 0,
       salePrice: item.salePrice || item.price || 0,
+      // 🆕 V5.6: Zorg dat nieuwe velden ook worden ingevuld
+      supplierSku: item.supplierSku || '',
+      autoSku: item.autoSku || item.sku || generateAutoSku(),
+      customSku: item.customSku || '',
+      categoryId: item.categoryId || undefined,
     });
     setShowAddForm(true);
   };
 
   const handleUpdateItem = () => {
-    if (!editingItem || !newItem.name || !newItem.sku || !newItem.salePrice) {
-      alert('⚠️ Vul ten minste naam, SKU en verkoopprijs in.');
+    if (!editingItem || !newItem.name || !newItem.salePrice) {
+      alert('⚠️ Vul ten minste naam en verkoopprijs in.');
       return;
     }
 
@@ -296,7 +445,7 @@ export const Inventory: React.FC<InventoryProps> = ({
     setShowAddForm(false);
     setNewItem({
       name: '',
-      sku: '',
+      sku: '', // Legacy
       quantity: 0,
       reorderLevel: 0,
       salePrice: 0,
@@ -305,6 +454,11 @@ export const Inventory: React.FC<InventoryProps> = ({
       syncEnabled: false,
       unit: 'stuk',
       posAlertNote: undefined,
+      // 🆕 V5.6: Reset nieuwe velden
+      supplierSku: '',
+      autoSku: '',
+      customSku: '',
+      categoryId: undefined,
     });
     alert(`✅ Item "${updatedItem.name}" succesvol bijgewerkt!`);
   };
@@ -318,7 +472,7 @@ export const Inventory: React.FC<InventoryProps> = ({
   const handleDeleteItem = (id: string) => {
     const item = inventory.find(i => i.id === id);
     if (item && confirm(`Weet u zeker dat u "${item.name}" wilt verwijderen?`)) {
-      setInventory(inventory.filter(item => item.id !== id));
+    setInventory(inventory.filter(item => item.id !== id));
       alert('✅ Item verwijderd.');
     }
   };
@@ -436,7 +590,7 @@ export const Inventory: React.FC<InventoryProps> = ({
               setEditingItem(null);
               setNewItem({
                 name: '',
-                sku: '',
+                sku: '', // Legacy
                 quantity: 0,
                 reorderLevel: 0,
                 salePrice: 0,
@@ -444,8 +598,15 @@ export const Inventory: React.FC<InventoryProps> = ({
                 vatRate: '21',
                 syncEnabled: false,
                 unit: 'stuk',
+                posAlertNote: undefined,
+                // 🆕 V5.6: Reset nieuwe velden
+                supplierSku: '',
+                autoSku: '', // Wordt automatisch gegenereerd
+                customSku: '',
+                categoryId: undefined,
               });
               setShowAddForm(!showAddForm);
+              setShowNewCategoryForm(false);
             }}
             className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors whitespace-nowrap"
           >
@@ -516,21 +677,32 @@ export const Inventory: React.FC<InventoryProps> = ({
         >
           📊 Rapportages
         </button>
+        {/* 🆕 V5.6: Categorieën Tab */}
+        <button
+          onClick={() => setActiveTab('categories')}
+          className={`px-4 py-2 font-medium transition-colors whitespace-nowrap ${
+            activeTab === 'categories'
+              ? 'text-primary border-b-2 border-primary'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          🏷️ Categorieën ({categories.length})
+        </button>
       </div>
 
       {/* Items Tab */}
       {activeTab === 'items' && (
         <>
           {/* Search & Filters */}
-          <div className="mb-6">
-            <input
-              type="text"
-              placeholder="Zoek op naam of SKU..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
+      <div className="mb-6">
+          <input
+          type="text"
+          placeholder="Zoek op naam, SKU, locatie, leverancier, categorie, prijs, etc..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </div>
 
           {/* Low Stock Alert */}
           {lowStockItems.length > 0 && (
@@ -573,7 +745,7 @@ export const Inventory: React.FC<InventoryProps> = ({
 
           {/* Add/Edit Form */}
           {(showAddForm || editingItem) && isAdmin && (
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
               <h2 className="text-xl font-semibold text-neutral mb-4">
                 {editingItem ? '✏️ Item Bewerken' : '➕ Nieuw Item Toevoegen'}
               </h2>
@@ -589,49 +761,185 @@ export const Inventory: React.FC<InventoryProps> = ({
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Naam <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="text"
+            <input
+              type="text"
                         value={newItem.name || ''}
-                        onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+              onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                         placeholder="Bijv. Staal plaat 10mm"
-                      />
+            />
                     </div>
-                    <div>
+                    {/* 🆕 V5.6: 3 SKU Types */}
+                    <div className="sm:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        SKU <span className="text-red-500">*</span>
+                        SKU Leverancier
                       </label>
                       <input
                         type="text"
-                        value={newItem.sku || ''}
-                        onChange={(e) => setNewItem({ ...newItem, sku: e.target.value })}
+                        value={newItem.supplierSku || ''}
+                        onChange={(e) => setNewItem({ ...newItem, supplierSku: e.target.value })}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="STL-001"
+                        placeholder="SKU van leverancier (optioneel)"
                       />
+                      <p className="text-xs text-gray-500 mt-1">SKU zoals leverancier deze gebruikt</p>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Automatische SKU (Project)
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newItem.autoSku || generateAutoSku()}
+                          onChange={(e) => setNewItem({ ...newItem, autoSku: e.target.value })}
+                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-gray-50"
+                          placeholder="INV-0001"
+                          readOnly={!editingItem}
+                        />
+                        {!editingItem && (
+                          <button
+                            type="button"
+                            onClick={() => setNewItem({ ...newItem, autoSku: generateAutoSku() })}
+                            className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 text-sm"
+                          >
+                            🔄 Genereer
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Automatisch gegenereerde SKU (INV-XXXX)</p>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Aangepaste SKU
+                      </label>
+                      <input
+                        type="text"
+                        value={newItem.customSku || ''}
+                        onChange={(e) => setNewItem({ ...newItem, customSku: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="Vrij invulbare SKU (optioneel)"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Extra SKU voor eigen gebruik</p>
+                    </div>
+                    {/* 🆕 V5.6: Categorie */}
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Categorie
+                      </label>
+                      <div className="flex gap-2">
+                        <select
+                          value={newItem.categoryId || ''}
+                          onChange={(e) => setNewItem({ ...newItem, categoryId: e.target.value || undefined })}
+                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                          <option value="">Geen categorie</option>
+                          {categories.map(cat => (
+                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowNewCategoryForm(true);
+                            setNewCategory({ name: '', description: '', color: '#3B82F6' });
+                          }}
+                          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary text-sm whitespace-nowrap"
+                        >
+                          + Nieuwe Categorie
+                        </button>
+                      </div>
+                      {showNewCategoryForm && (
+                        <div className="mt-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <h4 className="font-semibold text-sm mb-3">Nieuwe Categorie Aanmaken</h4>
+                          <div className="space-y-3">
+                            <input
+                              type="text"
+                              placeholder="Categorienaam *"
+                              value={newCategory.name || ''}
+                              onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Beschrijving (optioneel)"
+                              value={newCategory.description || ''}
+                              onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                            />
+                            <div className="flex gap-2">
+                              <input
+                                type="color"
+                                value={newCategory.color || '#3B82F6'}
+                                onChange={(e) => setNewCategory({ ...newCategory, color: e.target.value })}
+                                className="w-16 h-10 border border-gray-300 rounded-lg cursor-pointer"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const categoryName = newCategory.name;
+                                  if (!categoryName) {
+                                    alert('⚠️ Vul een categorienaam in.');
+                                    return;
+                                  }
+
+                                  const category: InventoryCategory = {
+                                    id: Date.now().toString(),
+                                    name: categoryName,
+                                    description: newCategory.description,
+                                    color: newCategory.color || '#3B82F6',
+                                    createdAt: new Date().toISOString(),
+                                    updatedAt: new Date().toISOString(),
+                                  };
+
+                                  setCategories([...categories, category]);
+                                  // Direct selecteren in item formulier
+                                  setNewItem({ ...newItem, categoryId: category.id });
+                                  setNewCategory({ name: '', description: '', color: '#3B82F6' });
+                                  setShowNewCategoryForm(false);
+                                  alert(`✅ Categorie "${category.name}" toegevoegd en geselecteerd!`);
+                                }}
+                                className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm"
+                              >
+                                ✅ Toevoegen
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowNewCategoryForm(false);
+                                  setNewCategory({ name: '', description: '', color: '#3B82F6' });
+                                }}
+                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 text-sm"
+                              >
+                                Annuleren
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Eenheid
                       </label>
-                      <select
+            <select
                         value={newItem.unit || 'stuk'}
-                        onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
+              onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                      >
-                        <option value="stuk">Stuk</option>
-                        <option value="meter">Meter</option>
-                        <option value="kg">Kilogram</option>
-                        <option value="liter">Liter</option>
-                        <option value="m2">Vierkante meter</option>
-                        <option value="doos">Doos</option>
-                      </select>
+            >
+              <option value="stuk">Stuk</option>
+              <option value="meter">Meter</option>
+              <option value="kg">Kilogram</option>
+              <option value="liter">Liter</option>
+              <option value="m2">Vierkante meter</option>
+              <option value="doos">Doos</option>
+            </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Locatie
                       </label>
-                      <input
-                        type="text"
+            <input
+              type="text"
                         value={newItem.location || ''}
                         onChange={(e) => setNewItem({ ...newItem, location: e.target.value })}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
@@ -782,8 +1090,8 @@ export const Inventory: React.FC<InventoryProps> = ({
                         onChange={(e) => setNewItem({ ...newItem, quantity: parseInt(e.target.value) || 0 })}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                         min="0"
-                      />
-                    </div>
+            />
+          </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Herbestel Niveau
@@ -907,14 +1215,14 @@ export const Inventory: React.FC<InventoryProps> = ({
                     💾 Bijwerken
                   </button>
                 ) : (
-                  <button
-                    onClick={handleAddItem}
+            <button
+              onClick={handleAddItem}
                     className="flex-1 px-6 py-3 bg-primary text-white rounded-lg hover:bg-secondary transition-colors font-semibold"
-                  >
+            >
                     ✅ Toevoegen
-                  </button>
+            </button>
                 )}
-                <button
+            <button
                   onClick={() => {
                     setShowAddForm(false);
                     setEditingItem(null);
@@ -931,20 +1239,23 @@ export const Inventory: React.FC<InventoryProps> = ({
                     });
                   }}
                   className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
-                >
-                  Annuleren
-                </button>
-              </div>
-            </div>
-          )}
+            >
+              Annuleren
+            </button>
+          </div>
+        </div>
+      )}
 
-          {/* Inventory Table */}
+      {/* Inventory Table */}
           <div className="bg-white rounded-lg shadow-md overflow-hidden overflow-x-auto">
             <table className="w-full min-w-[800px]">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
+          <thead className="bg-gray-50 border-b border-gray-200">
+            <tr>
                   <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Naam</th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">SKU</th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">SKU (Auto)</th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">SKU (Leverancier)</th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">SKU (Aangepast)</th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Categorie</th>
                   <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Voorraad</th>
                   <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Aankoop €</th>
                   <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Verkoop €</th>
@@ -955,12 +1266,12 @@ export const Inventory: React.FC<InventoryProps> = ({
                   <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
                   <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Sync</th>
                   {isAdmin && <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Acties</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
                 {filteredInventory.length === 0 ? (
                   <tr>
-                    <td colSpan={isAdmin ? 12 : 11} className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan={isAdmin ? 15 : 14} className="px-6 py-12 text-center text-gray-500">
                       Geen items gevonden
                     </td>
                   </tr>
@@ -969,11 +1280,38 @@ export const Inventory: React.FC<InventoryProps> = ({
                     const vatRate = getVatRateValue(item);
                     const priceInclVat = calculateVatInclusive(item.salePrice, item.vatRate, item.customVatRate);
                     const isLowStock = item.quantity <= item.reorderLevel;
+                    const itemCategory = item.categoryId ? categories.find(c => c.id === item.categoryId) : null;
+                    const displaySku = item.autoSku || item.sku; // Toon autoSku als primaire SKU
                     
                     return (
-                      <tr key={item.id} className={`hover:bg-gray-50 ${isLowStock ? 'bg-red-50' : ''}`}>
+                      <tr 
+                        key={item.id} 
+                        className={`hover:bg-gray-50 ${isLowStock ? 'bg-red-50' : ''} ${isAdmin ? 'cursor-pointer' : ''}`}
+                        onDoubleClick={() => {
+                          if (isAdmin) {
+                            handleEditItem(item);
+                          }
+                        }}
+                        title={isAdmin ? 'Dubbelklik om te bewerken' : ''}
+                      >
                         <td className="px-4 sm:px-6 py-4 text-sm font-medium text-neutral">{item.name}</td>
-                        <td className="px-4 sm:px-6 py-4 text-sm text-gray-600">{item.sku}</td>
+                        {/* 🆕 V5.6: 3 SKU Types */}
+                        <td className="px-4 sm:px-6 py-4 text-sm text-gray-600 font-mono">{displaySku || '-'}</td>
+                        <td className="px-4 sm:px-6 py-4 text-sm text-gray-500">{item.supplierSku || '-'}</td>
+                        <td className="px-4 sm:px-6 py-4 text-sm text-gray-500">{item.customSku || '-'}</td>
+                        {/* 🆕 V5.6: Categorie */}
+                        <td className="px-4 sm:px-6 py-4 text-sm">
+                          {itemCategory ? (
+                            <span 
+                              className="px-2 py-1 text-xs font-semibold rounded text-white"
+                              style={{ backgroundColor: itemCategory.color || '#3B82F6' }}
+                            >
+                              {itemCategory.name}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 text-xs">-</span>
+                          )}
+                        </td>
                         <td className="px-4 sm:px-6 py-4 text-sm text-gray-600">
                           {item.quantity} {item.unit}
                         </td>
@@ -1010,18 +1348,18 @@ export const Inventory: React.FC<InventoryProps> = ({
                         </td>
                         <td className="px-4 sm:px-6 py-4 text-sm text-gray-600">
                           {getSupplierName(item.supplierId, item.supplier)}
-                        </td>
+                </td>
                         <td className="px-4 sm:px-6 py-4">
                           {isLowStock ? (
-                            <span className="px-2 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded-full">
+                    <span className="px-2 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded-full">
                               ⚠️ Laag
-                            </span>
-                          ) : (
-                            <span className="px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
+                    </span>
+                  ) : (
+                    <span className="px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
                               ✓ OK
-                            </span>
-                          )}
-                        </td>
+                    </span>
+                  )}
+                </td>
                         <td className="px-4 sm:px-6 py-4">
                           {item.syncEnabled ? (
                             <span className="px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
@@ -1037,9 +1375,9 @@ export const Inventory: React.FC<InventoryProps> = ({
                             </button>
                           )}
                         </td>
-                        {isAdmin && (
+                {isAdmin && (
                           <td className="px-4 sm:px-6 py-4 text-sm">
-                            <div className="flex gap-2">
+                    <div className="flex gap-2">
                               <button
                                 onClick={() => handleEditItem(item)}
                                 className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
@@ -1047,23 +1385,23 @@ export const Inventory: React.FC<InventoryProps> = ({
                               >
                                 ✏️
                               </button>
-                              <button
-                                onClick={() => handleUpdateQuantity(item.id, 10)}
-                                className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-xs"
+                      <button
+                        onClick={() => handleUpdateQuantity(item.id, 10)}
+                        className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-xs"
                                 title="+10"
-                              >
-                                +10
-                              </button>
-                              <button
-                                onClick={() => handleUpdateQuantity(item.id, -10)}
-                                className="px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 text-xs"
+                      >
+                        +10
+                      </button>
+                      <button
+                        onClick={() => handleUpdateQuantity(item.id, -10)}
+                        className="px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 text-xs"
                                 title="-10"
-                              >
-                                -10
-                              </button>
-                              <button
-                                onClick={() => handleDeleteItem(item.id)}
-                                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+                      >
+                        -10
+                      </button>
+                      <button
+                        onClick={() => handleDeleteItem(item.id)}
+                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
                                 title="Verwijderen"
                               >
                                 🗑️
@@ -1288,6 +1626,204 @@ export const Inventory: React.FC<InventoryProps> = ({
                                 className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
                               >
                                 🗑️
+                      </button>
+                    </div>
+                  </td>
+                )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 🆕 V5.6: Categories Tab */}
+      {activeTab === 'categories' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-neutral">Categorieën Beheer</h2>
+            {isAdmin && (
+              <button
+                onClick={() => {
+                  setEditingCategory(null);
+                  setNewCategory({ name: '', description: '', color: '#3B82F6' });
+                  setShowCategoryForm(true);
+                }}
+                className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors"
+              >
+                + Nieuwe Categorie
+              </button>
+            )}
+          </div>
+
+          {/* Category Form */}
+          {(showCategoryForm || editingCategory) && isAdmin && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-xl font-semibold text-neutral mb-4">
+                {editingCategory ? '✏️ Categorie Bewerken' : '➕ Nieuwe Categorie'}
+              </h3>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Naam <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={editingCategory ? editingCategory.name : (newCategory.name || '')}
+                    onChange={(e) => {
+                      if (editingCategory) {
+                        setEditingCategory({ ...editingCategory, name: e.target.value });
+                      } else {
+                        setNewCategory({ ...newCategory, name: e.target.value });
+                      }
+                    }}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="Bijv. Metaal, Hout, Elektronica"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Beschrijving
+                  </label>
+                  <textarea
+                    value={editingCategory ? (editingCategory.description || '') : (newCategory.description || '')}
+                    onChange={(e) => {
+                      if (editingCategory) {
+                        setEditingCategory({ ...editingCategory, description: e.target.value });
+                      } else {
+                        setNewCategory({ ...newCategory, description: e.target.value });
+                      }
+                    }}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    rows={3}
+                    placeholder="Optionele beschrijving van de categorie"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Kleur
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={editingCategory ? (editingCategory.color || '#3B82F6') : (newCategory.color || '#3B82F6')}
+                      onChange={(e) => {
+                        if (editingCategory) {
+                          setEditingCategory({ ...editingCategory, color: e.target.value });
+                        } else {
+                          setNewCategory({ ...newCategory, color: e.target.value });
+                        }
+                      }}
+                      className="w-16 h-10 border border-gray-300 rounded-lg cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={editingCategory ? (editingCategory.color || '#3B82F6') : (newCategory.color || '#3B82F6')}
+                      onChange={(e) => {
+                        if (editingCategory) {
+                          setEditingCategory({ ...editingCategory, color: e.target.value });
+                        } else {
+                          setNewCategory({ ...newCategory, color: e.target.value });
+                        }
+                      }}
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="#3B82F6"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                {editingCategory ? (
+                  <button
+                    onClick={handleEditCategory}
+                    className="flex-1 px-6 py-3 bg-primary text-white rounded-lg hover:bg-secondary transition-colors font-semibold"
+                  >
+                    ✅ Bijwerken
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleAddCategory}
+                    className="flex-1 px-6 py-3 bg-primary text-white rounded-lg hover:bg-secondary transition-colors font-semibold"
+                  >
+                    ✅ Toevoegen
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setShowCategoryForm(false);
+                    setEditingCategory(null);
+                    setNewCategory({ name: '', description: '', color: '#3B82F6' });
+                  }}
+                  className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                >
+                  Annuleren
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Categories List */}
+          {categories.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-md p-12 text-center">
+              <p className="text-gray-500 text-lg mb-4">🏷️ Nog geen categorieën</p>
+              <p className="text-sm text-gray-400 mb-6">
+                Voeg categorieën toe om je voorraad te organiseren en makkelijker te vinden.
+              </p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-md overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Kleur</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Naam</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Beschrijving</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Items</th>
+                    {isAdmin && <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Acties</th>}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {categories.map(category => {
+                    const itemsCount = inventory.filter(i => i.categoryId === category.id).length;
+                    return (
+                      <tr key={category.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4">
+                          <div 
+                            className="w-8 h-8 rounded-full border-2 border-gray-300"
+                            style={{ backgroundColor: category.color || '#3B82F6' }}
+                          />
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium text-neutral">{category.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                          {category.description || <span className="text-gray-400 italic">Geen beschrijving</span>}
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded">
+                            {itemsCount} item{itemsCount !== 1 ? 's' : ''}
+                          </span>
+                        </td>
+                        {isAdmin && (
+                          <td className="px-6 py-4 text-sm">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  setEditingCategory(category);
+                                  setShowCategoryForm(true);
+                                }}
+                                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCategory(category.id)}
+                                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+                              >
+                                🗑️
                               </button>
                             </div>
                           </td>
@@ -1410,11 +1946,11 @@ export const Inventory: React.FC<InventoryProps> = ({
                               {item.margin}%
                             </span>
                           </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
             </div>
           )}
         </div>

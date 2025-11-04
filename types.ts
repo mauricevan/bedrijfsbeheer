@@ -37,16 +37,34 @@ export interface Supplier {
   updatedAt: string;
 }
 
+// 🆕 V5.6: Inventory Category
+export interface InventoryCategory {
+  id: string;
+  name: string;
+  description?: string;
+  color?: string; // Voor visuele weergave (bijv. "#3B82F6")
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface InventoryItem {
   id: string;
   name: string;
-  sku: string;
+  sku: string; // Legacy - wordt gemigreerd naar autoSku
   quantity: number;
   reorderLevel: number;
   supplierId?: string; // Koppeling met Supplier
   supplier?: string; // Legacy support - wordt gemigreerd naar supplierId
   lastRestocked?: string;
   location?: string;
+  
+  // 🆕 V5.6: 3 SKU Types
+  supplierSku?: string; // SKU van leverancier
+  autoSku?: string; // Automatisch gegenereerde SKU (INV-XXXX)
+  customSku?: string; // Vrij invulbare SKU
+  
+  // 🆕 V5.6: Categorie
+  categoryId?: string; // Koppeling met InventoryCategory
   
   // Prijsstructuur (NL-Compliant)
   purchasePrice?: number; // Aankoopprijs (excl. BTW)
@@ -616,6 +634,16 @@ export interface Invoice {
         sent?: string; // Wanneer factuur is verzonden
         paid?: string; // Wanneer factuur is betaald
         convertedToWorkOrder?: string; // Wanneer geconverteerd naar werkorder
+    };
+    
+    // Herinneringen (V5.6+)
+    reminders?: {
+        reminder1Date?: string; // +7 dagen na vervaldatum
+        reminder1Sent?: boolean; // Is herinnering 1 verzonden?
+        reminder1SentDate?: string; // Wanneer verzonden
+        reminder2Date?: string; // +14 dagen na vervaldatum
+        reminder2Sent?: boolean; // Is herinnering 2 verzonden?
+        reminder2SentDate?: string; // Wanneer verzonden
     };
 }
 
