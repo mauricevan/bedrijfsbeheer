@@ -165,6 +165,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ **Volledig overzicht** van alle werkorders (dropdown "Alle medewerkers")
 - 🆕 **Gegroepeerd per medewerker** - bij "Alle medewerkers" krijgt elke medewerker een eigen sectie
 - 🆕 **Overzichtelijke weergave** - zie direct per medewerker wat er nog te doen is
+- 🆕 **Intelligente medewerker filtering** (V5.6) - Bij status filtering worden alleen medewerkers getoond met werkorders in die status
 - ✅ Nieuwe werkorders aanmaken en toewijzen
 - ✅ Werkorders aan specifieke medewerkers toewijzen
 - ✅ Alle werkorders bewerken en verwijderen
@@ -2533,7 +2534,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 
 ## 🏆 Changelog
 
-### Versie 5.6.0 🆕 **AUTOMATISCHE KLOON BIJ ACCEPTATIE & HERINNERINGSPLANNING**
+### Versie 5.6.0 🆕 **AUTOMATISCHE KLOON BIJ ACCEPTATIE & HERINNERINGSPLANNING + WERKORDER FILTERING**
 
 **Nieuwe Features:**
 
@@ -2589,6 +2590,18 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
   - Duidelijke scheiding tussen actief en archief
   - Betaalde facturen op één plek (Boekhouding & Dossier)
 
+**5. Werkorder Filtering per Medewerker (Admin)**
+
+- 🆕 **Intelligente medewerker filtering** - Bij "Alle medewerkers" view worden medewerkers zonder werkorders in de gefilterde status automatisch verborgen
+- 🆕 **Status-gebaseerde filtering** - Filter op "To Do", "In Wacht", "Bezig" of "Afgerond" toont alleen medewerkers met werkorders in die status
+- 🆕 **Geen filter = alle medewerkers** - Zonder actief filter worden alle medewerkers getoond (ook die zonder werkorders)
+- 🆕 **Automatische filtering** - Werkt automatisch in de gegroepeerde weergave per medewerker
+- ✅ **Voordelen:**
+  - Overzichtelijker werkboard bij filtering
+  - Sneller vinden van relevante medewerkers
+  - Geen lege secties meer bij status filtering
+  - Betere focus op actieve werkorders
+
 **Technische Updates:**
 
 - 🆕 `reminders` interface toegevoegd aan `Invoice` type
@@ -2597,6 +2610,7 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 - 🆕 Automatische herinneringsplanning in `updateInvoiceStatus()`
 - 🆕 `confirmInvoiceValidation()` directe status update (geen dubbele check)
 - 🆕 Filter logica voor betaalde facturen in Facturen-tab en overview modal
+- 🆕 Medewerker filtering logica in `WorkOrders.tsx` - verberg medewerkers zonder werkorders in gefilterde status
 
 **Voordelen:**
 
@@ -3853,6 +3867,7 @@ Dit project is ontwikkeld voor intern gebruik. Alle rechten voorbehouden.
 **✨ Automatische herinneringsplanning - geen openstaande posten meer door vergeten! ✨**
 **✨ Betaalde facturen verbergen - alleen openstaande facturen in Facturen-tab! ✨**
 **✨ Factuur validatie fix - directe status update na validatie! ✨**
+**✨ Werkorder filtering per medewerker - alleen relevante medewerkers bij status filtering! ✨**
 **✨ Nieuw in V5.5: Financieel Overzicht voor Factuur Archief & Kassa Verkopen - Excel-achtige tabellen met gedetailleerde item breakdown! 📊 ✨**
 **✨ Periode & klantnaam filtering - filter op elke gewenste periode en klant! ✨**
 **✨ Summary cards met status breakdown - zie omzet per status (betaald/openstaand/verlopen)! ✨**

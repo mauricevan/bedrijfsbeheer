@@ -2110,6 +2110,13 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
         <div className="space-y-8">
           {employees.map(employee => {
             const employeeOrders = groupedWorkOrders[employee.id] || [];
+            
+            // 🆕 V5.6: Verberg medewerkers die geen werkorders hebben in de gefilterde status
+            // Als er een status filter actief is en deze medewerker heeft geen werkorders in die status, skip deze medewerker
+            if (statusFilter && employeeOrders.length === 0) {
+              return null;
+            }
+            
             const empStats = {
               todo: employeeOrders.filter(wo => wo.status === 'To Do').length,
               pending: employeeOrders.filter(wo => wo.status === 'Pending').length,
