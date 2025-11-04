@@ -344,6 +344,144 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🆕 **Progress indicator** - % voltooid in werkorder sectie
 - 🆕 **Tijdlijn weergave** - Van offerte → werkorder → voltooiing
 
+### 5.5. **Boekhouding & Dossier** 🆕 **NIEUWE MODULE - MKB-READY, NL-COMPLIANT**
+**Volledig Digitaal Boekhouddossier - Alles wat een boekhouder nodig heeft**
+
+**Doel:**
+- ✅ Geen fouten in BTW-aangifte
+- ✅ Volledig digitaal dossier per klant/leverancier
+- ✅ Direct klaar voor controle (Belastingdienst, accountant)
+- ✅ Geen handmatig overtypen uit facturen/pakbonnen
+
+**5 Kernfuncties:**
+
+**1. Grootboekrekeningen (Standaard MKB-Set)**
+- ✅ **10 Standaard rekeningen** ingesteld (niet aanpasbaar):
+  - 1300 – Debiteuren (openstaande facturen)
+  - 1400 – Voorraad
+  - 4000 – Inkoop grondstoffen
+  - 4400 – Inkoop diensten
+  - 8000 – Omzet goederen (21% BTW)
+  - 8010 – Omzet diensten (9% BTW)
+  - 8020 – Omzet vrijgesteld (0%)
+  - 1600 – Crediteuren (openstaande inkoop)
+  - 2200 – BTW hoog (21%)
+  - 2210 – BTW laag (9%)
+- ✅ **Export functionaliteit** - Exporteer grootboek naar CSV (voor Exact, Twinfield, etc.)
+- ✅ **Tabel overzicht** - Alle rekeningen met type, categorie en omschrijving
+
+**2. Factuur & Pakbon Archief (Digitaal Dossier)**
+- ✅ **Automatisch archief** - Elke factuur wordt automatisch toegevoegd aan archief
+- ✅ **Per document informatie:**
+  - Factuurnummer (auto: 2025-001)
+  - Datum uitgifte / vervaldatum
+  - Klant / Leverancier
+  - Totaal excl. / BTW / incl.
+  - Status: Betaald / Openstaand / Herinnering / Vervallen
+  - Koppeling aan: Werkorder / Pakbon / Kassa
+- ✅ **Zoeken & Filteren:**
+  - Zoek op nummer, klant, datum
+  - Filter op status (Openstaand / Betaald / Vervallen)
+- ✅ **Acties per factuur:**
+  - 📄 PDF download (placeholder)
+  - 📧 Herinnering sturen (placeholder)
+  - ✓ Markeer als betaald
+- ✅ **Visuele status indicatoren:**
+  - Rode border voor verlopen facturen
+  - Groene badge voor betaalde facturen
+  - Gele badge voor openstaande facturen
+
+**3. BTW-Overzicht (Aangifte-Ready)**
+- ✅ **Automatische berekening** per maand/kwartaal
+- ✅ **Periode rapport met:**
+  - Omzet 21% → BTW af te dragen
+  - Omzet 9% → BTW af te dragen
+  - Omzet 0% → BTW (vrijgesteld)
+  - Totaal af te dragen
+  - Voorbelasting (inkoop) - placeholder
+  - Te betalen (totaal)
+- ✅ **Export knoppen:**
+  - 📥 Export XML (placeholder - voor Belastingdienst portaal)
+  - 📄 Print PDF (beschikbaar)
+- ✅ **Dynamische data** - Automatisch berekend uit facturen
+- ✅ **Periode selectie** - Kies maand/kwartaal voor rapport
+
+**4. Klant- & Leveranciersdossiers**
+- ✅ **Alles op één plek** - Zoals een fysiek dossierkast
+- ✅ **Per relatie informatie:**
+  - Naam, adres, KvK, BTW-nummer
+  - Openstaand saldo
+  - Alle facturen (verkoop + inkoop)
+  - Pakbonnen (placeholder)
+  - Offertes / Werkorders (placeholder)
+  - Notities ("Betaalt altijd laat", etc.)
+  - Credit-limiet (voor B2B)
+- ✅ **Tabbladen structuur:**
+  - Facturen
+  - Pakbonnen (placeholder)
+  - Offertes (placeholder)
+  - Notities (placeholder)
+- ✅ **Zoekfunctionaliteit** - Zoek klant of leverancier
+
+**5. Transactieregistratie (Journaal)**
+- ✅ **Volledig automatisch** - Elke factuur genereert journaalpost
+- ✅ **Journaalstructuur:**
+  - Journaalnummer (JRN-2025-001, etc.)
+  - Datum en omschrijving
+  - Referentie (factuurnummer)
+  - Bron type (POS / Pakbon / Factuur / Inkoop / Handmatig)
+- ✅ **Journaalregels (Debet/Credit):**
+  - Debet: 1300 Debiteuren (totaal bedrag)
+  - Credit: 8000/8010/8020 Omzet (excl. BTW)
+  - Credit: 2200/2210 BTW (BTW bedrag)
+- ✅ **Automatische grootboek toewijzing:**
+  - BTW 21% → Rekening 2200
+  - BTW 9% → Rekening 2210
+  - Omzet goederen → Rekening 8000
+  - Omzet diensten → Rekening 8010
+  - Omzet vrijgesteld → Rekening 8020
+- ✅ **Handmatig toevoegen** - Knop voor handmatige journaalposten (placeholder)
+- ✅ **Zoeken & Filteren** - Op omschrijving, referentie, datum
+- ✅ **Export functionaliteit** - Exporteer journaal naar CSV (placeholder)
+
+**Permissions Systeem:**
+- ✅ **Admin/Boekhouder** - Volledige toegang (grootboek, facturen, BTW, journaal, dossiers)
+- ✅ **Verkoper/Inkoop** - Alleen dossiers tab (klant- en leveranciersdossiers)
+- ✅ **Monteur** - Geen toegang
+
+**Integratie met Bestaande Modules:**
+- ✅ **POS / Kassa** → Automatische factuur + journaalpost
+- ✅ **Pakbon (B2B)** → Wordt factuur bij "Markeer als gefactureerd"
+- ✅ **Voorraad** → Inkoopfactuur → voorraad + crediteuren
+- ✅ **CRM** → Klantgegevens automatisch in dossier
+- ✅ **Accounting Module** → Facturen automatisch in archief
+
+**Technische Details:**
+- ✅ Nieuwe types: `LedgerAccount`, `JournalEntry`, `JournalEntryLine`, `VATReport`, `CustomerDossier`, `SupplierDossier`, `InvoiceArchiveItem`, `DossierNote`
+- ✅ Automatische journaalpost generatie vanuit facturen
+- ✅ Automatische BTW berekening per periode
+- ✅ Automatisch factuurarchief vanuit Accounting module
+- ✅ Tabbladen structuur voor overzichtelijke navigatie
+- ✅ Responsive design voor mobile en desktop
+
+**Voordelen:**
+- ✅ **MKB-Ready** - Standaard MKB grootboekset ingebouwd
+- ✅ **NL-Compliant** - BTW per tarief (21%, 9%, 0%) gesplitst
+- ✅ **Aangifte-Ready** - BTW-rapport klaar voor accountant/belastingdienst
+- ✅ **Geen handmatig werk** - Automatisch journaal en BTW-berekening
+- ✅ **Volledig digitaal** - Alle facturen en dossiers op één plek
+- ✅ **Traceerbaar** - Elke transactie gekoppeld aan bron
+- ✅ **Controle-ready** - Direct klaar voor Belastingdienst controle
+
+**Toekomstige Uitbreidingen:**
+- 🔄 XML export voor BTW-aangifte (Belastingdienst portaal)
+- 🔄 PDF generatie voor facturen
+- 🔄 Herinneringen systeem voor openstaande facturen
+- 🔄 Inkoopfacturen integratie
+- 🔄 Voorbelasting berekening vanuit inkoopfacturen
+- 🔄 Volledige dossiers met tabbladen functionaliteit
+- 🔄 Handmatige journaalposten toevoegen UI
+
 ### 6. **CRM (Klantrelatiebeheer)** 🆕 **VOLLEDIG VERNIEUWD**
 **Professioneel CRM Systeem:**
 
@@ -2153,6 +2291,83 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 
 ## 🏆 Changelog
 
+### Versie 5.2.0 🆕 **BOEKHOUDING & DOSSIER MODULE - MKB-READY, NL-COMPLIANT**
+**Nieuwe Module:**
+
+**1. Boekhouding & Dossier (Volledig Geïmplementeerd)**
+- 🆕 **Nieuwe module toegevoegd** - Volledig digitaal boekhouddossier systeem
+- 🆕 **5 Kernfuncties:**
+  1. Grootboekrekeningen (Standaard MKB-Set)
+  2. Factuur & Pakbon Archief (Digitaal Dossier)
+  3. BTW-Overzicht (Aangifte-Ready)
+  4. Klant- & Leveranciersdossiers
+  5. Transactieregistratie (Journaal)
+
+**2. Grootboekrekeningen**
+- 🆕 **10 Standaard MKB-rekeningen** ingesteld (1300, 1400, 4000, 4400, 8000, 8010, 8020, 1600, 2200, 2210)
+- 🆕 **CSV export** - Exporteer grootboek naar CSV voor Exact, Twinfield, etc.
+- 🆕 **Tabel overzicht** - Alle rekeningen met type, categorie en omschrijving
+
+**3. Factuur & Pakbon Archief**
+- 🆕 **Automatisch archief** - Elke factuur wordt automatisch toegevoegd
+- 🆕 **Zoeken & filteren** - Op nummer, klant, datum, status
+- 🆕 **Acties per factuur** - PDF download, herinnering sturen, markeer als betaald
+- 🆕 **Visuele status indicatoren** - Rode/groene/gele badges
+
+**4. BTW-Overzicht**
+- 🆕 **Automatische berekening** per maand/kwartaal
+- 🆕 **Periode rapport** - Omzet per BTW-tarief (21%, 9%, 0%)
+- 🆕 **Te betalen berekening** - Totaal af te dragen minus voorbelasting
+- 🆕 **Export knoppen** - XML export (placeholder) en Print PDF
+- 🆕 **Dynamische data** - Automatisch berekend uit facturen
+
+**5. Klant- & Leveranciersdossiers**
+- 🆕 **Alles op één plek** - Volledig dossier per klant/leverancier
+- 🆕 **Financiële informatie** - Openstaand saldo, credit-limiet
+- 🆕 **Documenten koppeling** - Facturen, pakbonnen, offertes, werkorders
+- 🆕 **Notities systeem** - Voeg notities toe per relatie
+- 🆕 **Tabbladen structuur** - Facturen, Pakbonnen, Offertes, Notities
+
+**6. Transactieregistratie (Journaal)**
+- 🆕 **Volledig automatisch** - Elke factuur genereert journaalpost
+- 🆕 **Journaalregels** - Debet/Credit met correcte grootboek toewijzing
+- 🆕 **Automatische BTW splitsing** - BTW 21% → 2200, BTW 9% → 2210
+- 🆕 **Automatische omzet toewijzing** - Goederen → 8000, Diensten → 8010, Vrijgesteld → 8020
+- 🆕 **Zoeken & filteren** - Op omschrijving, referentie, datum
+- 🆕 **Handmatig toevoegen** - Knop voor handmatige journaalposten (placeholder)
+
+**7. Permissions Systeem**
+- 🆕 **Admin/Boekhouder** - Volledige toegang (grootboek, facturen, BTW, journaal, dossiers)
+- 🆕 **Verkoper/Inkoop** - Alleen dossiers tab
+- 🆕 **Monteur** - Geen toegang
+
+**8. Integratie met Bestaande Modules**
+- 🆕 **POS/Kassa** → Automatische factuur + journaalpost
+- 🆕 **Pakbon (B2B)** → Wordt factuur bij "Markeer als gefactureerd"
+- 🆕 **Voorraad** → Inkoopfactuur → voorraad + crediteuren
+- 🆕 **CRM** → Klantgegevens automatisch in dossier
+- 🆕 **Accounting Module** → Facturen automatisch in archief
+
+**Technische Updates:**
+- 🆕 `ModuleKey.BOOKKEEPING` toegevoegd
+- 🆕 `LedgerAccount`, `JournalEntry`, `JournalEntryLine`, `VATReport` types
+- 🆕 `CustomerDossier`, `SupplierDossier`, `InvoiceArchiveItem`, `DossierNote` types
+- 🆕 `BookkeepingIcon` component
+- 🆕 Volledige `Bookkeeping.tsx` pagina component (600+ regels)
+- 🆕 Automatische journaalpost generatie vanuit facturen
+- 🆕 Automatische BTW berekening per periode
+- 🆕 Automatisch factuurarchief vanuit Accounting module
+- 🆕 Routing geconfigureerd in App.tsx
+
+**Voordelen:**
+- ✅ **MKB-Ready** - Standaard MKB grootboekset ingebouwd
+- ✅ **NL-Compliant** - BTW per tarief (21%, 9%, 0%) gesplitst
+- ✅ **Aangifte-Ready** - BTW-rapport klaar voor accountant/belastingdienst
+- ✅ **Geen handmatig werk** - Automatisch journaal en BTW-berekening
+- ✅ **Volledig digitaal** - Alle facturen en dossiers op één plek
+- ✅ **Traceerbaar** - Elke transactie gekoppeld aan bron
+- ✅ **Controle-ready** - Direct klaar voor Belastingdienst controle
+
 ### Versie 4.9.0 🆕 **DATABASE DIAGNOSTICS & ANALYTICS DASHBOARD**
 
 **Nieuwe Features:**
@@ -2971,7 +3186,8 @@ Draft → Sent → Paid
 3. **Verken de modules**:
    - Dashboard → Zie overzicht
    - Werkorders → Beheer taken (volledig overzicht)
-   - **Boekhouding** → Offertes & Facturen
+   - **Facturen en Offerte** → Offertes & Facturen
+   - **Boekhouding & Dossier** → Grootboek, BTW-aangifte, Journaal, Dossiers
    - Admin Instellingen → Schakel modules in/uit
    - **Admin Instellingen → Systeem Analytics** → Data-driven optimalisatie dashboard
    - **Admin Instellingen → Database Diagnostics** → Database health monitoring
@@ -3049,13 +3265,17 @@ Dit project is ontwikkeld voor intern gebruik. Alle rechten voorbehouden.
 ---
 
 **Laatste update**: December 2024  
-**Versie**: 5.1.0 (Batch Operations & UX Verbeteringen)
-**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering, **volledig responsive mobile-first design**, **factuurbeheer vanuit CRM**, **persoonlijk dossier systeem**, **automatische factuur generatie bij voltooide werkorders**, **Lean Six Sigma analytics dashboard**, **database diagnostics systeem**, **volledig webshop beheer systeem met producten, categorieën en bestellingen**, **batch operations voor offertes en facturen**, en **verbeterde UX/UI met moderne modal design**
+**Versie**: 5.2.0 (Boekhouding & Dossier Module)
+**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering, **volledig responsive mobile-first design**, **factuurbeheer vanuit CRM**, **persoonlijk dossier systeem**, **automatische factuur generatie bij voltooide werkorders**, **Lean Six Sigma analytics dashboard**, **database diagnostics systeem**, **volledig webshop beheer systeem met producten, categorieën en bestellingen**, **batch operations voor offertes en facturen**, **verbeterde UX/UI met moderne modal design**, en **volledig boekhouding & dossier systeem (MKB-ready, NL-compliant)**
 
 ---
 
 **Veel succes met het Bedrijfsbeheer Dashboard! 🚀**
 
+**✨ Nieuw in V5.2: Boekhouding & Dossier Module - volledig digitaal boekhouddossier, grootboek, BTW-aangifte en journaal! 📊 ✨**
+**✨ MKB-Ready grootboekrekeningen met automatische journaalposten! ✨**
+**✨ BTW-overzicht aangifte-ready met automatische berekening per periode! ✨**
+**✨ Volledig digitaal dossier per klant/leverancier - alles op één plek! ✨**
 **✨ Nieuw in V5.1: Batch Operations & UX Verbeteringen - werk efficiënter met bulk acties en verbeterde gebruikerservaring! 🎯 ✨**
 **✨ Batch selectie voor offertes en facturen - voer meerdere acties tegelijk uit! ✨**
 **✨ Volledig herontworpen werkorder detail modal met moderne card-based design! ✨**

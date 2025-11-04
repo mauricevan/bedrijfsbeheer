@@ -48,6 +48,7 @@ import { Inventory } from './pages/Inventory';
 import { POS } from './pages/POS';
 import { WorkOrders } from './pages/WorkOrders';
 import { Accounting } from './pages/Accounting';
+import Bookkeeping from './pages/Bookkeeping';
 import { CRM } from './pages/CRM';
 import { HRM } from './pages/HRM';
 import { Reports } from './pages/Reports';
@@ -207,6 +208,15 @@ function App() {
         isAdmin={currentUser.isAdmin}
         notifications={notifications}
         setNotifications={setNotifications}
+      />
+    ),
+    [ModuleKey.BOOKKEEPING]: (
+      <Bookkeeping
+        invoices={invoices}
+        customers={customers}
+        employees={employees}
+        currentUser={currentUser}
+        isAdmin={currentUser.isAdmin}
       />
     ),
     [ModuleKey.CRM]: (

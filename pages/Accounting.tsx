@@ -3027,7 +3027,7 @@ export const Accounting: React.FC<AccountingProps> = ({
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <h1 className="text-2xl sm:text-3xl font-bold text-neutral mb-2">
-        Boekhouding, Offertes & Facturen
+        Facturen en Offerte
       </h1>
       <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-8">
         Genereer offertes, facturen en beheer financiële gegevens

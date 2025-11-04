@@ -6,6 +6,7 @@ import {
   POSIcon,
   WorkOrdersIcon,
   AccountingIcon,
+  BookkeepingIcon,
   CRMIcon,
   HRMIcon,
   ReportsIcon,
@@ -41,9 +42,15 @@ export const ALL_MODULES: Module[] = [
   },
   { 
     id: ModuleKey.ACCOUNTING, 
-    name: 'Boekhouding & Offertes', 
+    name: 'Facturen en Offerte', 
     description: 'Genereer offertes, facturen en beheer financiële gegevens.',
     icon: AccountingIcon
+  },
+  { 
+    id: ModuleKey.BOOKKEEPING, 
+    name: 'Boekhouding & Dossier', 
+    description: 'Volledig digitaal boekhouddossier - grootboek, BTW-aangifte, journaal en klantdossiers.',
+    icon: BookkeepingIcon
   },
   { 
     id: ModuleKey.CRM, 

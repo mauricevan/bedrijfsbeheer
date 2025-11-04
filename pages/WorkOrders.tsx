@@ -36,6 +36,7 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingOrder, setEditingOrder] = useState<WorkOrder | null>(null);
   const [viewingUserId, setViewingUserId] = useState<string>(currentUser.employeeId);
+  const [statusFilter, setStatusFilter] = useState<WorkOrderStatus | null>(null);
   
   // Detail modal states voor factuur/offerte
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -91,7 +92,7 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
     return maxIndex + 1;
   };
 
-  // Filter workorders based on viewing user (or all if admin views all)
+  // Filter workorders based on viewing user (or all if admin views all) and status filter
   const filteredWorkOrders = useMemo(() => {
     let filtered;
     if (isAdmin && viewingUserId === 'all') {
@@ -99,6 +100,12 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
     } else {
       filtered = workOrders.filter(order => order.assignedTo === viewingUserId);
     }
+    
+    // Apply status filter if set
+    if (statusFilter) {
+      filtered = filtered.filter(order => order.status === statusFilter);
+    }
+    
     // Sort by sortIndex (lowest first), fallback to creation date
     return filtered.sort((a, b) => {
       const indexA = a.sortIndex ?? 999999;
@@ -109,7 +116,7 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
       // If same index, sort by creation date
       return new Date(a.createdDate).getTime() - new Date(b.createdDate).getTime();
     });
-  }, [workOrders, viewingUserId, isAdmin]);
+  }, [workOrders, viewingUserId, isAdmin, statusFilter]);
 
   // Group workorders by employee when viewing all
   const groupedWorkOrders = useMemo(() => {
@@ -117,10 +124,16 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
       return null;
     }
 
+    // Filter by status if filter is active
+    let filtered = workOrders;
+    if (statusFilter) {
+      filtered = workOrders.filter(order => order.status === statusFilter);
+    }
+
     // Group by employee
     const grouped: { [employeeId: string]: WorkOrder[] } = {};
     
-    workOrders.forEach(order => {
+    filtered.forEach(order => {
       if (!grouped[order.assignedTo]) {
         grouped[order.assignedTo] = [];
       }
@@ -140,18 +153,29 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
     });
 
     return grouped;
+  }, [workOrders, viewingUserId, isAdmin, statusFilter]);
+
+  // Get stats for the current view (without status filter, so stats always show full overview)
+  const statsBase = useMemo(() => {
+    let filtered;
+    if (isAdmin && viewingUserId === 'all') {
+      filtered = workOrders;
+    } else {
+      filtered = workOrders.filter(order => order.assignedTo === viewingUserId);
+    }
+    return filtered;
   }, [workOrders, viewingUserId, isAdmin]);
 
   // Get stats for the current view
   const stats = useMemo(() => {
-    const todo = filteredWorkOrders.filter(wo => wo.status === 'To Do').length;
-    const pending = filteredWorkOrders.filter(wo => wo.status === 'Pending').length;
-    const inProgress = filteredWorkOrders.filter(wo => wo.status === 'In Progress').length;
-    const completed = filteredWorkOrders.filter(wo => wo.status === 'Completed').length;
-    const totalHours = filteredWorkOrders.reduce((sum, wo) => sum + (wo.hoursSpent || 0), 0);
+    const todo = statsBase.filter(wo => wo.status === 'To Do').length;
+    const pending = statsBase.filter(wo => wo.status === 'Pending').length;
+    const inProgress = statsBase.filter(wo => wo.status === 'In Progress').length;
+    const completed = statsBase.filter(wo => wo.status === 'Completed').length;
+    const totalHours = statsBase.reduce((sum, wo) => sum + (wo.hoursSpent || 0), 0);
     
     return { todo, pending, inProgress, completed, totalHours };
-  }, [filteredWorkOrders]);
+  }, [statsBase]);
 
   const handleAddOrder = () => {
     if (!newOrder.title || !newOrder.assignedTo) {
@@ -1372,7 +1396,10 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
             </label>
             <select
               value={viewingUserId}
-              onChange={(e) => setViewingUserId(e.target.value)}
+              onChange={(e) => {
+                setViewingUserId(e.target.value);
+                setStatusFilter(null); // Reset status filter when changing user
+              }}
               className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
             >
               <option value={currentUser.employeeId}>Mijn werkorders</option>
@@ -1386,55 +1413,163 @@ export const WorkOrders: React.FC<WorkOrdersProps> = ({
                 ))
               }
             </select>
+            {statusFilter && (
+              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold flex items-center gap-2">
+                🔍 Filter: {
+                  statusFilter === 'To Do' ? 'To Do' :
+                  statusFilter === 'Pending' ? 'In Wacht' :
+                  statusFilter === 'In Progress' ? 'In Uitvoering' :
+                  'Afgerond'
+                }
+              </span>
+            )}
           </div>
           
           {/* Quick Stats - Hide on small mobile, grid on tablet+ */}
           <div className="hidden md:flex items-center gap-4 lg:gap-6">
-            <div className="text-center">
+            <button
+              onClick={() => setStatusFilter(statusFilter === 'To Do' ? null : 'To Do')}
+              className={`text-center transition-all rounded-lg px-4 py-3 border-2 ${
+                statusFilter === 'To Do'
+                  ? 'bg-gray-200 border-gray-400 shadow-lg transform scale-105'
+                  : 'bg-white border-gray-300 hover:border-gray-400 hover:bg-gray-50 hover:shadow-md cursor-pointer active:scale-95'
+              }`}
+              title="Klik om te filteren op To Do werkorders"
+            >
               <p className="text-xl lg:text-2xl font-bold text-gray-600">{stats.todo}</p>
-              <p className="text-xs text-gray-600">To Do</p>
-            </div>
-            <div className="text-center">
+              <p className="text-xs text-gray-600 flex items-center justify-center gap-1">
+                To Do {statusFilter !== 'To Do' && <span className="text-gray-400">👆</span>}
+              </p>
+            </button>
+            <button
+              onClick={() => setStatusFilter(statusFilter === 'Pending' ? null : 'Pending')}
+              className={`text-center transition-all rounded-lg px-4 py-3 border-2 ${
+                statusFilter === 'Pending'
+                  ? 'bg-yellow-200 border-yellow-400 shadow-lg transform scale-105'
+                  : 'bg-white border-yellow-300 hover:border-yellow-400 hover:bg-yellow-50 hover:shadow-md cursor-pointer active:scale-95'
+              }`}
+              title="Klik om te filteren op In Wacht werkorders"
+            >
               <p className="text-xl lg:text-2xl font-bold text-yellow-600">{stats.pending}</p>
-              <p className="text-xs text-gray-600">In Wacht</p>
-            </div>
-            <div className="text-center">
+              <p className="text-xs text-gray-600 flex items-center justify-center gap-1">
+                In Wacht {statusFilter !== 'Pending' && <span className="text-gray-400">👆</span>}
+              </p>
+            </button>
+            <button
+              onClick={() => setStatusFilter(statusFilter === 'In Progress' ? null : 'In Progress')}
+              className={`text-center transition-all rounded-lg px-4 py-3 border-2 ${
+                statusFilter === 'In Progress'
+                  ? 'bg-blue-200 border-blue-400 shadow-lg transform scale-105'
+                  : 'bg-white border-blue-300 hover:border-blue-400 hover:bg-blue-50 hover:shadow-md cursor-pointer active:scale-95'
+              }`}
+              title="Klik om te filteren op In Uitvoering werkorders"
+            >
               <p className="text-xl lg:text-2xl font-bold text-blue-600">{stats.inProgress}</p>
-              <p className="text-xs text-gray-600">Bezig</p>
-            </div>
-            <div className="text-center">
+              <p className="text-xs text-gray-600 flex items-center justify-center gap-1">
+                Bezig {statusFilter !== 'In Progress' && <span className="text-gray-400">👆</span>}
+              </p>
+            </button>
+            <button
+              onClick={() => setStatusFilter(statusFilter === 'Completed' ? null : 'Completed')}
+              className={`text-center transition-all rounded-lg px-4 py-3 border-2 ${
+                statusFilter === 'Completed'
+                  ? 'bg-green-200 border-green-400 shadow-lg transform scale-105'
+                  : 'bg-white border-green-300 hover:border-green-400 hover:bg-green-50 hover:shadow-md cursor-pointer active:scale-95'
+              }`}
+              title="Klik om te filteren op Afgerond werkorders"
+            >
               <p className="text-xl lg:text-2xl font-bold text-green-600">{stats.completed}</p>
-              <p className="text-xs text-gray-600">Afgerond</p>
-            </div>
-            <div className="text-center">
+              <p className="text-xs text-gray-600 flex items-center justify-center gap-1">
+                Afgerond {statusFilter !== 'Completed' && <span className="text-gray-400">👆</span>}
+              </p>
+            </button>
+            <div className="text-center bg-gray-50 rounded-lg px-4 py-3 border-2 border-transparent">
               <p className="text-xl lg:text-2xl font-bold text-primary">{stats.totalHours}u</p>
               <p className="text-xs text-gray-600">Totaal uren</p>
             </div>
+            {statusFilter && (
+              <button
+                onClick={() => setStatusFilter(null)}
+                className="px-3 py-2 bg-gray-500 text-white text-xs rounded-lg hover:bg-gray-600 transition-colors shadow-md font-semibold"
+                title="Verwijder filter"
+              >
+                ✕ Filter wissen
+              </button>
+            )}
           </div>
         </div>
 
         {/* Mobile Stats - Show only on small screens */}
         <div className="grid grid-cols-3 gap-2 mt-4 md:hidden">
-          <div className="bg-gray-50 rounded-lg p-3 text-center">
+          <button
+            onClick={() => setStatusFilter(statusFilter === 'To Do' ? null : 'To Do')}
+            className={`rounded-lg p-3 text-center transition-all border-2 ${
+              statusFilter === 'To Do'
+                ? 'bg-gray-200 border-gray-400 shadow-lg'
+                : 'bg-white border-gray-300 hover:border-gray-400 hover:bg-gray-50 hover:shadow-md active:scale-95'
+            }`}
+            title="Klik om te filteren op To Do werkorders"
+          >
             <p className="text-lg font-bold text-gray-600">{stats.todo}</p>
-            <p className="text-xs text-gray-600">To Do</p>
-          </div>
-          <div className="bg-yellow-50 rounded-lg p-3 text-center">
+            <p className="text-xs text-gray-600 flex items-center justify-center gap-1">
+              To Do {statusFilter !== 'To Do' && <span className="text-gray-400 text-[10px]">👆</span>}
+            </p>
+          </button>
+          <button
+            onClick={() => setStatusFilter(statusFilter === 'Pending' ? null : 'Pending')}
+            className={`rounded-lg p-3 text-center transition-all border-2 ${
+              statusFilter === 'Pending'
+                ? 'bg-yellow-200 border-yellow-400 shadow-lg'
+                : 'bg-white border-yellow-300 hover:border-yellow-400 hover:bg-yellow-50 hover:shadow-md active:scale-95'
+            }`}
+            title="Klik om te filteren op In Wacht werkorders"
+          >
             <p className="text-lg font-bold text-yellow-600">{stats.pending}</p>
-            <p className="text-xs text-gray-600">Wacht</p>
-          </div>
-          <div className="bg-blue-50 rounded-lg p-3 text-center">
+            <p className="text-xs text-gray-600 flex items-center justify-center gap-1">
+              Wacht {statusFilter !== 'Pending' && <span className="text-gray-400 text-[10px]">👆</span>}
+            </p>
+          </button>
+          <button
+            onClick={() => setStatusFilter(statusFilter === 'In Progress' ? null : 'In Progress')}
+            className={`rounded-lg p-3 text-center transition-all border-2 ${
+              statusFilter === 'In Progress'
+                ? 'bg-blue-200 border-blue-400 shadow-lg'
+                : 'bg-white border-blue-300 hover:border-blue-400 hover:bg-blue-50 hover:shadow-md active:scale-95'
+            }`}
+            title="Klik om te filteren op In Uitvoering werkorders"
+          >
             <p className="text-lg font-bold text-blue-600">{stats.inProgress}</p>
-            <p className="text-xs text-gray-600">Bezig</p>
-          </div>
-          <div className="bg-green-50 rounded-lg p-3 text-center">
+            <p className="text-xs text-gray-600 flex items-center justify-center gap-1">
+              Bezig {statusFilter !== 'In Progress' && <span className="text-gray-400 text-[10px]">👆</span>}
+            </p>
+          </button>
+          <button
+            onClick={() => setStatusFilter(statusFilter === 'Completed' ? null : 'Completed')}
+            className={`rounded-lg p-3 text-center transition-all border-2 ${
+              statusFilter === 'Completed'
+                ? 'bg-green-200 border-green-400 shadow-lg'
+                : 'bg-white border-green-300 hover:border-green-400 hover:bg-green-50 hover:shadow-md active:scale-95'
+            }`}
+            title="Klik om te filteren op Afgerond werkorders"
+          >
             <p className="text-lg font-bold text-green-600">{stats.completed}</p>
-            <p className="text-xs text-gray-600">Klaar</p>
-          </div>
-          <div className="bg-primary bg-opacity-10 rounded-lg p-3 text-center col-span-2">
+            <p className="text-xs text-gray-600 flex items-center justify-center gap-1">
+              Klaar {statusFilter !== 'Completed' && <span className="text-gray-400 text-[10px]">👆</span>}
+            </p>
+          </button>
+          <div className="bg-primary bg-opacity-10 rounded-lg p-3 text-center col-span-2 border-2 border-transparent">
             <p className="text-lg font-bold text-primary">{stats.totalHours}u</p>
             <p className="text-xs text-gray-600">Totaal uren</p>
           </div>
+          {statusFilter && (
+            <button
+              onClick={() => setStatusFilter(null)}
+              className="col-span-3 px-3 py-2 bg-gray-500 text-white text-xs rounded-lg hover:bg-gray-600 transition-colors shadow-md font-semibold"
+              title="Verwijder filter"
+            >
+              ✕ Filter wissen
+            </button>
+          )}
         </div>
       </div>
 

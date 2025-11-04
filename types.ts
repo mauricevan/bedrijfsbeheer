@@ -6,6 +6,7 @@ export enum ModuleKey {
   POS = 'pos',
   WORK_ORDERS = 'work_orders',
   ACCOUNTING = 'accounting',
+  BOOKKEEPING = 'bookkeeping',
   CRM = 'crm',
   HRM = 'hrm',
   REPORTS = 'reports',
@@ -660,6 +661,183 @@ export interface Notification {
     relatedModule?: ModuleKey;
     relatedId?: string;
     actions?: NotificationAction[]; // Smart actions - directe acties vanuit notificatie
+}
+
+// ============================================
+// BOEKHOUDING & DOSSIER TYPES (MKB-Ready, NL-Compliant)
+// ============================================
+
+// Grootboekrekening (Standaard MKB-Set)
+export interface LedgerAccount {
+  id: string;
+  accountNumber: string; // Bijv. "1300", "8000"
+  name: string; // Bijv. "Debiteuren", "Omzet goederen"
+  type: 'asset' | 'liability' | 'revenue' | 'expense' | 'equity'; // Balans / W&V
+  category: 'debiteuren' | 'crediteuren' | 'voorraad' | 'inkoop' | 'omzet' | 'btw' | 'other';
+  description?: string;
+  isStandard: boolean; // Standaard MKB-set (niet aanpasbaar)
+  createdAt: string;
+}
+
+// Journaalpost (Transactieregistratie)
+export interface JournalEntry {
+  id: string;
+  entryNumber: string; // Automatisch: JRN-2025-001
+  date: string; // Transactiedatum
+  description: string; // Omschrijving (bijv. "Verkoop aan particulier (kassa)")
+  reference?: string; // Referentie (bijv. factuurnummer, pakbonnummer)
+  
+  // Bron van transactie
+  sourceType: 'pos' | 'packing_slip' | 'invoice' | 'purchase_invoice' | 'manual';
+  sourceId?: string; // ID van bron (bijv. POS transactie ID)
+  
+  // Journaalregels (Debet/Credit)
+  lines: JournalEntryLine[];
+  
+  // Metadata
+  createdBy: string; // Employee ID
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface JournalEntryLine {
+  id: string;
+  accountId: string; // Grootboekrekening ID
+  accountNumber: string; // Voor weergave
+  accountName: string; // Voor weergave
+  debit: number; // Debet bedrag (0 of positief)
+  credit: number; // Credit bedrag (0 of positief)
+  description?: string; // Extra omschrijving per regel
+}
+
+// BTW Rapport (Aangifte-Ready)
+export interface VATReport {
+  id: string;
+  period: string; // Bijv. "2025-Q1", "2025-03"
+  periodType: 'month' | 'quarter' | 'year';
+  startDate: string;
+  endDate: string;
+  
+  // Omzet per BTW-tarief
+  revenue21: number; // Omzet 21% BTW
+  vat21: number; // BTW af te dragen (21%)
+  revenue9: number; // Omzet 9% BTW
+  vat9: number; // BTW af te dragen (9%)
+  revenue0: number; // Omzet 0% BTW (vrijgesteld)
+  vat0: number; // BTW (altijd 0)
+  
+  // Voorbelasting (inkoop)
+  purchaseVat21: number; // Voorbelasting 21%
+  purchaseVat9: number; // Voorbelasting 9%
+  totalPurchaseVat: number; // Totaal voorbelasting
+  
+  // Totaal
+  totalVatToPay: number; // Totaal af te dragen (omzet BTW - voorbelasting)
+  
+  // Metadata
+  createdAt: string;
+  exportedAt?: string; // Wanneer geëxporteerd naar XML/PDF
+}
+
+// Klant Dossier (Alles op één plek)
+export interface CustomerDossier {
+  id: string;
+  customerId: string; // Koppeling met CRM Customer
+  customerName: string;
+  
+  // Adres & Contact
+  address?: string;
+  kvkNumber?: string;
+  vatNumber?: string;
+  
+  // Financieel
+  outstandingBalance: number; // Openstaand saldo
+  creditLimit?: number; // Credit-limiet (B2B)
+  paymentTerms?: string; // Betalingsvoorwaarden
+  
+  // Documenten (alleen referenties)
+  invoiceIds: string[]; // Factuur IDs
+  packingSlipIds: string[]; // Pakbon IDs
+  quoteIds: string[]; // Offerte IDs
+  workOrderIds: string[]; // Werkorder IDs
+  
+  // Notities
+  notes: DossierNote[];
+  
+  // Metadata
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Leverancier Dossier
+export interface SupplierDossier {
+  id: string;
+  supplierId: string; // Koppeling met Supplier
+  supplierName: string;
+  
+  // Adres & Contact
+  address?: string;
+  kvkNumber?: string;
+  vatNumber?: string;
+  
+  // Financieel
+  outstandingBalance: number; // Openstaand saldo (crediteuren)
+  paymentTerms?: string;
+  
+  // Documenten
+  purchaseInvoiceIds: string[]; // Inkoopfactuur IDs
+  
+  // Notities
+  notes: DossierNote[];
+  
+  // Metadata
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Dossier Notitie
+export interface DossierNote {
+  id: string;
+  content: string;
+  author: string; // Employee ID
+  authorName: string;
+  date: string;
+  type?: 'general' | 'payment' | 'reminder' | 'warning';
+}
+
+// Factuur Archief Item (Digitaal Dossier)
+export interface InvoiceArchiveItem {
+  id: string;
+  invoiceNumber: string; // Bijv. "2025-045"
+  invoiceId: string; // Koppeling met Invoice
+  date: string; // Datum uitgifte
+  dueDate?: string; // Vervaldatum
+  customerId?: string;
+  customerName: string;
+  supplierId?: string; // Voor inkoopfacturen
+  supplierName?: string;
+  
+  // Bedragen
+  totalExclVat: number;
+  vatAmount: number;
+  totalInclVat: number;
+  
+  // Status
+  status: 'paid' | 'outstanding' | 'overdue' | 'reminder_sent';
+  paidDate?: string;
+  
+  // Koppelingen
+  workOrderId?: string;
+  packingSlipId?: string;
+  posTransactionId?: string;
+  
+  // PDF
+  pdfUrl?: string; // URL naar PDF (gegenereerd of geüpload)
+  pdfUploaded: boolean; // Is PDF geüpload (handmatig)?
+  
+  // Metadata
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface User {
