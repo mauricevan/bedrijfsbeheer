@@ -2553,6 +2553,55 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 
 ## 🏆 Changelog
 
+### Versie 5.7.1 🆕 **CATEGORIE FILTER IN POS & ACCOUNTING + UX VERBETERINGEN**
+
+**Nieuwe Features:**
+
+**1. Categorie Filter in POS (Kassa)**
+
+- 🆕 **Categorie filter dropdown** - Filter items op categorie in kassasysteem
+- 🆕 **Zoekbare dropdown** - Type om snel categorieën te vinden
+- 🆕 **Visuele feedback** - Kleur badges en item count per categorie
+- 🆕 **"Wis filter" knop** - Snel filter resetten
+- 🆕 **Altijd zichtbaar** - Dropdown is altijd zichtbaar (ook zonder categories, met melding)
+- 🆕 **Combinatie filtering** - Werkt samen met zoekbalk voor naam/SKU
+
+**2. Categorie Filter in Accounting (Facturen & Offertes)**
+
+- 🆕 **Categorie filter dropdown** - Filter items op categorie bij het maken van offertes en facturen
+- 🆕 **Boven items sectie** - Filter staat duidelijk boven de items lijst
+- 🆕 **Zoekbare dropdown** - Type om snel categorieën te vinden
+- 🆕 **Visuele feedback** - Kleur badges en item count per categorie
+- 🆕 **"Wis filter" knop** - Snel filter resetten
+- 🆕 **Altijd zichtbaar** - Dropdown is altijd zichtbaar (ook zonder categories, met melding)
+- 🆕 **Aparte zoekbalk** - Zoekbalk voor naam/SKU staat apart van categorie filter
+
+**3. UX Verbeteringen**
+
+- 🆕 **Verwijderd dubbel zoekveld** - Het aparte zoekveld binnen item rows is verwijderd
+- 🆕 **Duidelijke scheiding** - Categorie filter en zoekbalk zijn nu duidelijk gescheiden
+- 🆕 **Consistente ervaring** - Zelfde filter functionaliteit in Inventory, POS en Accounting
+- ✅ **Betere workflow** - Eerst filteren op categorie, dan zoeken op naam/SKU
+
+**Voordelen:**
+
+- ✅ **Consistente filtering** - Zelfde categorie filter functionaliteit in alle modules
+- ✅ **Sneller werken** - Filter eerst op categorie, dan zoeken
+- ✅ **Minder verwarring** - Geen dubbele zoekvelden meer
+- ✅ **Altijd beschikbaar** - Filter is altijd zichtbaar, zelfs zonder categories
+- ✅ **Duidelijke instructies** - Melding wanneer geen categories beschikbaar zijn
+
+**Technische Updates:**
+
+- 🆕 `categoryFilter`, `categorySearchTerm`, `showCategoryDropdown` state toegevoegd aan POS component
+- 🆕 `inventoryCategoryFilter`, `inventoryCategorySearchTerm`, `showInventoryCategoryDropdown` state toegevoegd aan Accounting component
+- 🆕 `filteredCategories` useMemo voor zoekbare dropdown in POS
+- 🆕 `filteredInventoryCategories` useMemo voor zoekbare dropdown in Accounting
+- 🆕 Categorie filter dropdown UI toegevoegd aan POS (boven zoekbalk)
+- 🆕 Categorie filter dropdown UI toegevoegd aan Accounting (boven items sectie)
+- 🆕 Apart zoekveld binnen item rows verwijderd uit Accounting component
+- 🆕 `InventoryCategory` import toegevoegd aan Accounting component
+
 ### Versie 5.7.0 🆕 **VOORRAADBEHEER UITBREIDING: 3 SKU TYPES & CATEGORIEËN SYSTEEM**
 
 **Nieuwe Features:**
@@ -3983,13 +4032,18 @@ Dit project is ontwikkeld voor intern gebruik. Alle rechten voorbehouden.
 ---
 
 **Laatste update**: December 2024  
-**Versie**: 5.7.0 (Voorraadbeheer Uitbreiding: 3 SKU Types & Categorieën Systeem)
-**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering, **volledig responsive mobile-first design**, **factuurbeheer vanuit CRM**, **persoonlijk dossier systeem**, **automatische factuur generatie bij voltooide werkorders**, **Lean Six Sigma analytics dashboard**, **database diagnostics systeem**, **volledig webshop beheer systeem met producten, categorieën en bestellingen**, **batch operations voor offertes en facturen**, **verbeterde UX/UI met moderne modal design**, **volledig boekhouding & dossier systeem (MKB-ready, NL-compliant)**, **compacte/uitgebreide werkorder weergave toggle**, **kassa verkopen tab met klikbare facturen en clone functionaliteit**, **financieel overzicht met Excel-achtige tabellen en geavanceerde filtering**, **automatische kloon bij offerte acceptatie**, **automatische herinneringsplanning voor facturen**, **betaalde facturen automatisch verplaatst naar archief**, **3 SKU types per voorraad item**, **categorieën systeem voor voorraad organisatie**, **uitgebreide zoeken/filteren in alle velden**, en **dubbelklik om items te bewerken**
+**Versie**: 5.7.1 (Categorie Filter in POS & Accounting + UX Verbeteringen)
+**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering, **volledig responsive mobile-first design**, **factuurbeheer vanuit CRM**, **persoonlijk dossier systeem**, **automatische factuur generatie bij voltooide werkorders**, **Lean Six Sigma analytics dashboard**, **database diagnostics systeem**, **volledig webshop beheer systeem met producten, categorieën en bestellingen**, **batch operations voor offertes en facturen**, **verbeterde UX/UI met moderne modal design**, **volledig boekhouding & dossier systeem (MKB-ready, NL-compliant)**, **compacte/uitgebreide werkorder weergave toggle**, **kassa verkopen tab met klikbare facturen en clone functionaliteit**, **financieel overzicht met Excel-achtige tabellen en geavanceerde filtering**, **automatische kloon bij offerte acceptatie**, **automatische herinneringsplanning voor facturen**, **betaalde facturen automatisch verplaatst naar archief**, **3 SKU types per voorraad item**, **categorieën systeem voor voorraad organisatie**, **uitgebreide zoeken/filteren in alle velden**, **dubbelklik om items te bewerken**, **categorie filter in POS en Accounting modules**, en **verbeterde UX met duidelijke scheiding tussen filters**
 
 ---
 
 **Veel succes met het Bedrijfsbeheer Dashboard! 🚀**
 
+**✨ Nieuw in V5.7.1: Categorie Filter in POS & Accounting - consistente filtering in alle modules! 🎯 ✨**
+**✨ Categorie filter in kassa - filter items op categorie tijdens verkoop! ✨**
+**✨ Categorie filter in facturen/offertes - filter items op categorie bij het maken! ✨**
+**✨ Altijd zichtbaar - dropdown is altijd beschikbaar, zelfs zonder categories! ✨**
+**✨ Verbeterde UX - duidelijke scheiding tussen categorie filter en zoekbalk! ✨**
 **✨ Nieuw in V5.7: Voorraadbeheer Uitbreiding - 3 SKU types, categorieën & uitgebreide zoeken! 📦 ✨**
 **✨ 3 SKU types per item - SKU Leverancier, Automatische SKU (INV-XXXX), Aangepaste SKU! ✨**
 **✨ Categorieën systeem - organiseer voorraad met kleur badges en categorie beheer! ✨**
