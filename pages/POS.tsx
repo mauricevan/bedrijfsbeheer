@@ -1,14 +1,15 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { 
-  CartItem, 
-  Sale, 
-  Customer, 
-  InventoryItem, 
-  Transaction, 
+import React, { useState, useMemo, useEffect } from "react";
+import {
+  CartItem,
+  Sale,
+  Customer,
+  InventoryItem,
+  InventoryCategory,
+  Transaction,
   PaymentMethod,
   PackingSlip,
   Invoice,
-} from '../types';
+} from "../types";
 
 interface POSProps {
   products: any[]; // Legacy Product type
@@ -20,98 +21,158 @@ interface POSProps {
   customers: Customer[];
   invoices?: Invoice[];
   setInvoices?: React.Dispatch<React.SetStateAction<Invoice[]>>;
+  categories?: InventoryCategory[]; // 🆕 V5.7: Categories prop
 }
 
-type POSMode = 'b2c' | 'b2b'; // B2C = Kassa (Particulier), B2B = Pakbon (Bedrijf)
+type POSMode = "b2c" | "b2b"; // B2C = Kassa (Particulier), B2B = Pakbon (Bedrijf)
 
-export const POS: React.FC<POSProps> = ({ 
-  inventory, 
-  setInventory, 
-  sales, 
+export const POS: React.FC<POSProps> = ({
+  inventory,
+  setInventory,
+  sales,
   setSales,
   setTransactions,
   customers,
   invoices = [],
   setInvoices,
+  categories = [],
 }) => {
   // Mode: B2C (Kassa) of B2B (Pakbon)
-  const [mode, setMode] = useState<POSMode>('b2c');
+  const [mode, setMode] = useState<POSMode>("b2c");
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+    null
+  );
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // 🆕 V5.7: Category filter state
+  const [categoryFilter, setCategoryFilter] = useState<string>(""); // Selected category ID
+  const [categorySearchTerm, setCategorySearchTerm] = useState(""); // Search term for category dropdown
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showManualItemModal, setShowManualItemModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showPackingSlipModal, setShowPackingSlipModal] = useState(false);
   const [showFavoritesSettings, setShowFavoritesSettings] = useState(false);
-  const [posAlert, setPosAlert] = useState<{ itemName: string; message: string } | null>(null);
-  
+  const [posAlert, setPosAlert] = useState<{
+    itemName: string;
+    message: string;
+  } | null>(null);
+
   // Favorieten / Snelkoppelingen
   const [favoriteItems, setFavoriteItems] = useState<string[]>(() => {
-    const saved = localStorage.getItem('pos_favorites');
+    const saved = localStorage.getItem("pos_favorites");
     return saved ? JSON.parse(saved) : [];
   });
   const [maxFavorites, setMaxFavorites] = useState<number>(() => {
-    const saved = localStorage.getItem('pos_max_favorites');
+    const saved = localStorage.getItem("pos_max_favorites");
     return saved ? parseInt(saved) : 8; // Default 8 snelkoppelingen
   });
-  
+
   // Manual item form
   const [manualItem, setManualItem] = useState<Partial<CartItem>>({
-    name: '',
+    name: "",
     price: undefined,
-    vatRate: '21',
-    unit: 'stuk',
+    vatRate: "21",
+    unit: "stuk",
     isManual: true,
   });
 
   // Sla favorieten op in localStorage
   useEffect(() => {
-    localStorage.setItem('pos_favorites', JSON.stringify(favoriteItems));
+    localStorage.setItem("pos_favorites", JSON.stringify(favoriteItems));
   }, [favoriteItems]);
 
   useEffect(() => {
-    localStorage.setItem('pos_max_favorites', maxFavorites.toString());
+    localStorage.setItem("pos_max_favorites", maxFavorites.toString());
   }, [maxFavorites]);
 
   // Favorieten items uit inventory
   const favoriteInventoryItems = useMemo(() => {
-    return inventory.filter(item => favoriteItems.includes(item.id)).slice(0, maxFavorites);
+    return inventory
+      .filter((item) => favoriteItems.includes(item.id))
+      .slice(0, maxFavorites);
   }, [inventory, favoriteItems, maxFavorites]);
 
   // Toggle favoriet
   const toggleFavorite = (itemId: string) => {
     if (favoriteItems.includes(itemId)) {
-      setFavoriteItems(favoriteItems.filter(id => id !== itemId));
+      setFavoriteItems(favoriteItems.filter((id) => id !== itemId));
     } else {
       if (favoriteItems.length >= maxFavorites) {
-        alert(`⚠️ Maximum aantal favorieten bereikt (${maxFavorites}). Verwijder eerst een favoriet of verhoog het maximum in instellingen.`);
+        alert(
+          `⚠️ Maximum aantal favorieten bereikt (${maxFavorites}). Verwijder eerst een favoriet of verhoog het maximum in instellingen.`
+        );
         return;
       }
       setFavoriteItems([...favoriteItems, itemId]);
     }
   };
 
-  // Filtered inventory voor zoekbalk (exclusief favorieten, die komen bovenaan)
+  // 🆕 V5.7: Filtered categories for dropdown search
+  const filteredCategories = useMemo(() => {
+    if (!categorySearchTerm) return categories;
+    const searchLower = categorySearchTerm.toLowerCase();
+    return categories.filter(
+      (cat) =>
+        cat.name.toLowerCase().includes(searchLower) ||
+        cat.description?.toLowerCase().includes(searchLower)
+    );
+  }, [categories, categorySearchTerm]);
+
+  // 🆕 V5.7: Uitgebreide filtering - zoek in alle velden + categorie filter
   const filteredInventory = useMemo(() => {
-    if (!searchTerm) return inventory.filter(item => !favoriteItems.includes(item.id)).slice(0, 20);
-    
-    const term = searchTerm.toLowerCase();
-    return inventory.filter(item =>
-      !favoriteItems.includes(item.id) && (
-        item.name.toLowerCase().includes(term) ||
-        item.sku.toLowerCase().includes(term)
-      )
-    ).slice(0, 20);
-  }, [inventory, searchTerm, favoriteItems]);
+    let filtered = inventory.filter((item) => !favoriteItems.includes(item.id));
+
+    // Filter op categorie eerst
+    if (categoryFilter) {
+      filtered = filtered.filter((item) => item.categoryId === categoryFilter);
+    }
+
+    // Filter op zoekterm
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter((item) => {
+        // Zoek in naam
+        if (item.name.toLowerCase().includes(term)) return true;
+
+        // Zoek in alle SKU types
+        if (item.sku?.toLowerCase().includes(term)) return true;
+        if (item.supplierSku?.toLowerCase().includes(term)) return true;
+        if (item.autoSku?.toLowerCase().includes(term)) return true;
+        if (item.customSku?.toLowerCase().includes(term)) return true;
+
+        // Zoek in categorie naam
+        if (
+          item.categoryId &&
+          categories
+            .find((c) => c.id === item.categoryId)
+            ?.name.toLowerCase()
+            .includes(term)
+        )
+          return true;
+
+        return false;
+      });
+    }
+
+    return filtered.slice(0, 20);
+  }, [inventory, searchTerm, categoryFilter, favoriteItems, categories]);
 
   // Helper functions
-  const calculateVatInclusive = (priceExcl: number, vatRate: '21' | '9' | '0' | 'custom', customRate?: number): number => {
-    const rate = vatRate === 'custom' ? (customRate || 0) : parseFloat(vatRate);
+  const calculateVatInclusive = (
+    priceExcl: number,
+    vatRate: "21" | "9" | "0" | "custom",
+    customRate?: number
+  ): number => {
+    const rate = vatRate === "custom" ? customRate || 0 : parseFloat(vatRate);
     return priceExcl * (1 + rate / 100);
   };
 
-  const getVatRateValue = (vatRate: '21' | '9' | '0' | 'custom', customRate?: number): number => {
-    if (vatRate === 'custom') return customRate || 0;
+  const getVatRateValue = (
+    vatRate: "21" | "9" | "0" | "custom",
+    customRate?: number
+  ): number => {
+    if (vatRate === "custom") return customRate || 0;
     return parseFloat(vatRate);
   };
 
@@ -121,16 +182,16 @@ export const POS: React.FC<POSProps> = ({
     let totalVat = 0;
     const vatBreakdown: { rate: number; amount: number }[] = [];
 
-    cart.forEach(item => {
+    cart.forEach((item) => {
       const priceAfterDiscount = item.price * (1 - (item.discount || 0) / 100);
       const itemSubtotal = priceAfterDiscount * item.quantity;
       const vatRate = getVatRateValue(item.vatRate, item.customVatRate);
       const itemVat = itemSubtotal * (vatRate / 100);
-      
+
       subtotalExclVat += itemSubtotal;
       totalVat += itemVat;
 
-      const existingRate = vatBreakdown.find(b => b.rate === vatRate);
+      const existingRate = vatBreakdown.find((b) => b.rate === vatRate);
       if (existingRate) {
         existingRate.amount += itemVat;
       } else {
@@ -148,8 +209,8 @@ export const POS: React.FC<POSProps> = ({
 
   // Add item from inventory to cart
   const addInventoryItemToCart = (item: InventoryItem) => {
-    const existingCartItem = cart.find(c => c.inventoryItemId === item.id);
-    
+    const existingCartItem = cart.find((c) => c.inventoryItemId === item.id);
+
     // Check stock
     if (!item.isManual && item.quantity <= 0) {
       alert(`⚠️ "${item.name}" is niet op voorraad!`);
@@ -164,14 +225,18 @@ export const POS: React.FC<POSProps> = ({
       });
     }
 
-    const priceInclVat = calculateVatInclusive(item.salePrice, item.vatRate, item.customVatRate);
-    
+    const priceInclVat = calculateVatInclusive(
+      item.salePrice,
+      item.vatRate,
+      item.customVatRate
+    );
+
     if (existingCartItem) {
-      setCart(cart.map(c =>
-        c.id === existingCartItem.id
-          ? { ...c, quantity: c.quantity + 1 }
-          : c
-      ));
+      setCart(
+        cart.map((c) =>
+          c.id === existingCartItem.id ? { ...c, quantity: c.quantity + 1 } : c
+        )
+      );
     } else {
       const newCartItem: CartItem = {
         id: Date.now().toString(),
@@ -182,7 +247,7 @@ export const POS: React.FC<POSProps> = ({
         customVatRate: item.customVatRate,
         inventoryItemId: item.id,
         sku: item.sku,
-        unit: item.unit || 'stuk',
+        unit: item.unit || "stuk",
         isManual: false,
       };
       setCart([...cart, newCartItem]);
@@ -192,7 +257,7 @@ export const POS: React.FC<POSProps> = ({
   // Add manual item to cart
   const handleAddManualItem = () => {
     if (!manualItem.name || !manualItem.price || manualItem.price <= 0) {
-      alert('⚠️ Vul ten minste naam en een geldige prijs (groter dan 0) in.');
+      alert("⚠️ Vul ten minste naam en een geldige prijs (groter dan 0) in.");
       return;
     }
 
@@ -201,80 +266,88 @@ export const POS: React.FC<POSProps> = ({
       name: manualItem.name!,
       price: manualItem.price!,
       quantity: 1,
-      vatRate: manualItem.vatRate || '21',
+      vatRate: manualItem.vatRate || "21",
       customVatRate: manualItem.customVatRate,
-      unit: manualItem.unit || 'stuk',
+      unit: manualItem.unit || "stuk",
       isManual: true,
       sku: `MAN-${Date.now().toString().slice(-6)}`, // Generieke SKU voor handmatige items
     };
 
     setCart([...cart, newCartItem]);
     setManualItem({
-      name: '',
+      name: "",
       price: undefined,
-      vatRate: '21',
-      unit: 'stuk',
+      vatRate: "21",
+      unit: "stuk",
       isManual: true,
     });
     setShowManualItemModal(false);
-    alert(`✅ Handmatig item "${newCartItem.name}" toegevoegd aan winkelwagen!\n\nDit item wordt alleen gebruikt voor deze transactie en wordt niet opgeslagen in de voorraad.`);
+    alert(
+      `✅ Handmatig item "${newCartItem.name}" toegevoegd aan winkelwagen!\n\nDit item wordt alleen gebruikt voor deze transactie en wordt niet opgeslagen in de voorraad.`
+    );
   };
 
   // Update cart item quantity
   const updateCartQuantity = (itemId: string, delta: number) => {
-    const item = cart.find(c => c.id === itemId);
+    const item = cart.find((c) => c.id === itemId);
     if (!item) return;
 
     const newQuantity = item.quantity + delta;
     if (newQuantity <= 0) {
-      setCart(cart.filter(c => c.id !== itemId));
+      setCart(cart.filter((c) => c.id !== itemId));
     } else {
       // Check stock voor non-manual items
       if (!item.isManual && item.inventoryItemId) {
-        const invItem = inventory.find(i => i.id === item.inventoryItemId);
+        const invItem = inventory.find((i) => i.id === item.inventoryItemId);
         if (invItem && newQuantity > invItem.quantity) {
-          alert(`⚠️ Onvoldoende voorraad! Beschikbaar: ${invItem.quantity} ${invItem.unit || 'stuk'}`);
+          alert(
+            `⚠️ Onvoldoende voorraad! Beschikbaar: ${invItem.quantity} ${
+              invItem.unit || "stuk"
+            }`
+          );
           return;
         }
       }
-      
-      setCart(cart.map(c =>
-        c.id === itemId ? { ...c, quantity: newQuantity } : c
-      ));
+
+      setCart(
+        cart.map((c) => (c.id === itemId ? { ...c, quantity: newQuantity } : c))
+      );
     }
   };
 
   // Apply discount to cart item
   const applyDiscount = (itemId: string, discountPercent: number) => {
     if (discountPercent < 0 || discountPercent > 100) {
-      alert('⚠️ Korting moet tussen 0% en 100% zijn.');
+      alert("⚠️ Korting moet tussen 0% en 100% zijn.");
       return;
     }
-    
-    setCart(cart.map(c =>
-      c.id === itemId ? { ...c, discount: discountPercent } : c
-    ));
+
+    setCart(
+      cart.map((c) =>
+        c.id === itemId ? { ...c, discount: discountPercent } : c
+      )
+    );
   };
 
   // Apply discount to entire cart
   const applyCartDiscount = (discountPercent: number) => {
     if (discountPercent < 0 || discountPercent > 100) {
-      alert('⚠️ Korting moet tussen 0% en 100% zijn.');
+      alert("⚠️ Korting moet tussen 0% en 100% zijn.");
       return;
     }
-    
-    setCart(cart.map(c => ({ ...c, discount: discountPercent })));
+
+    setCart(cart.map((c) => ({ ...c, discount: discountPercent })));
   };
 
   // Remove item from cart
   const removeFromCart = (itemId: string) => {
-    setCart(cart.filter(c => c.id !== itemId));
+    setCart(cart.filter((c) => c.id !== itemId));
   };
 
   // Clear cart
   const clearCart = () => {
     if (cart.length === 0) return;
-    if (confirm('Weet u zeker dat u de winkelwagen wilt legen?')) {
+    if (confirm("Weet u zeker dat u de winkelwagen wilt legen?")) {
       setCart([]);
     }
   };
@@ -282,31 +355,39 @@ export const POS: React.FC<POSProps> = ({
   // Complete B2C sale (Direct payment)
   const completeB2CSale = (paymentMethod: PaymentMethod) => {
     if (cart.length === 0) {
-      alert('⚠️ Winkelwagen is leeg!');
+      alert("⚠️ Winkelwagen is leeg!");
       return;
     }
 
     // Check stock voor alle items
     const stockErrors: string[] = [];
-    cart.forEach(cartItem => {
+    cart.forEach((cartItem) => {
       if (!cartItem.isManual && cartItem.inventoryItemId) {
-        const invItem = inventory.find(i => i.id === cartItem.inventoryItemId);
+        const invItem = inventory.find(
+          (i) => i.id === cartItem.inventoryItemId
+        );
         if (invItem && cartItem.quantity > invItem.quantity) {
-          stockErrors.push(`${cartItem.name}: onvoldoende voorraad (beschikbaar: ${invItem.quantity})`);
+          stockErrors.push(
+            `${cartItem.name}: onvoldoende voorraad (beschikbaar: ${invItem.quantity})`
+          );
         }
       }
     });
 
     if (stockErrors.length > 0) {
-      alert(`⚠️ Voorraad problemen:\n\n${stockErrors.join('\n')}`);
+      alert(`⚠️ Voorraad problemen:\n\n${stockErrors.join("\n")}`);
       return;
     }
 
     // Update inventory
-    const updatedInventory = inventory.map(item => {
-      const cartItem = cart.find(c => c.inventoryItemId === item.id);
+    const updatedInventory = inventory.map((item) => {
+      const cartItem = cart.find((c) => c.inventoryItemId === item.id);
       if (cartItem && !cartItem.isManual) {
-        return { ...item, quantity: item.quantity - cartItem.quantity, updatedAt: new Date().toISOString() };
+        return {
+          ...item,
+          quantity: item.quantity - cartItem.quantity,
+          updatedAt: new Date().toISOString(),
+        };
       }
       return item;
     });
@@ -315,7 +396,7 @@ export const POS: React.FC<POSProps> = ({
     // Create sale
     const sale: Sale = {
       id: `s${Date.now()}`,
-      items: cart.map(c => ({
+      items: cart.map((c) => ({
         id: c.id,
         name: c.name,
         price: c.price,
@@ -324,49 +405,126 @@ export const POS: React.FC<POSProps> = ({
       })),
       total: calculateCartTotals.totalInclVat,
       customerId: selectedCustomer?.id || null,
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString().split("T")[0],
     };
     setSales([...sales, sale]);
 
     // Create transaction
     const transaction: Transaction = {
       id: `t${Date.now()}`,
-      type: 'income',
-      description: `POS Verkoop (${paymentMethod})${selectedCustomer ? ` - ${selectedCustomer.name}` : ''}`,
+      type: "income",
+      description: `POS Verkoop (${paymentMethod})${
+        selectedCustomer ? ` - ${selectedCustomer.name}` : ""
+      }`,
       amount: calculateCartTotals.totalInclVat,
       date: sale.date,
     };
-    setTransactions(prev => [...prev, transaction]);
+    setTransactions((prev) => [...prev, transaction]);
+
+    // Create invoice for B2C sale (voor boekhouding)
+    if (setInvoices) {
+      // Determine VAT rate (use most common rate in cart, or default to 21%)
+      const vatRates = cart.map((c) => {
+        const rate =
+          c.vatRate === "custom"
+            ? c.customVatRate || 21
+            : parseFloat(c.vatRate);
+        return rate;
+      });
+      const mostCommonVatRate =
+        vatRates.length > 0
+          ? vatRates.reduce((a, b, _, arr) =>
+              arr.filter((v) => v === a).length >=
+              arr.filter((v) => v === b).length
+                ? a
+                : b
+            )
+          : 21;
+
+      // Generate invoice number
+      const invoiceNumber = `${new Date().getFullYear()}-${String(
+        invoices.length + 1
+      ).padStart(3, "0")}`;
+
+      // Convert cart items to QuoteItem format
+      const invoiceItems = cart.map((c) => {
+        const itemPrice = c.price * (1 - (c.discount || 0) / 100);
+        return {
+          id: c.id,
+          description: c.name,
+          quantity: c.quantity,
+          pricePerUnit: itemPrice,
+          total: itemPrice * c.quantity,
+          inventoryItemId: c.inventoryItemId,
+        };
+      });
+
+      const invoice: Invoice = {
+        id: `inv-pos-${Date.now()}`,
+        invoiceNumber,
+        customerId: selectedCustomer?.id || "guest",
+        customerName: selectedCustomer?.name || "Particulier (Kassa)",
+        customerEmail: selectedCustomer?.email || "",
+        items: invoiceItems,
+        subtotal: calculateCartTotals.subtotalExclVat,
+        vatRate: mostCommonVatRate,
+        vatAmount: calculateCartTotals.totalVat,
+        total: calculateCartTotals.totalInclVat,
+        status: "paid", // Direct betaald bij kassa
+        issueDate: new Date().toISOString().split("T")[0],
+        dueDate: new Date().toISOString().split("T")[0], // Direct betaald
+        paidDate: new Date().toISOString().split("T")[0], // Betaaldatum = vandaag
+        paymentTerms: "Direct betaald",
+        notes: `Kassa verkoop (${paymentMethod})${
+          selectedCustomer ? ` - ${selectedCustomer.name}` : " - Particulier"
+        }`,
+        history: [],
+        timestamps: {
+          created: new Date().toISOString(),
+          sent: new Date().toISOString(),
+          paid: new Date().toISOString(),
+        },
+      };
+
+      setInvoices((prev) => [...prev, invoice]);
+    }
 
     // Reset
     setCart([]);
     setSelectedCustomer(null);
     setShowPaymentModal(false);
-    alert(`✅ Verkoop succesvol! Totaal: €${calculateCartTotals.totalInclVat.toFixed(2)}`);
+    alert(
+      `✅ Verkoop succesvol! Totaal: €${calculateCartTotals.totalInclVat.toFixed(
+        2
+      )}\n\n📋 Factuur automatisch aangemaakt voor boekhouding.`
+    );
   };
 
   // Generate packing slip for B2B
   const generatePackingSlip = () => {
     if (cart.length === 0) {
-      alert('⚠️ Winkelwagen is leeg!');
+      alert("⚠️ Winkelwagen is leeg!");
       return;
     }
 
     if (!selectedCustomer) {
-      alert('⚠️ Selecteer eerst een bedrijf voor pakbon!');
+      alert("⚠️ Selecteer eerst een bedrijf voor pakbon!");
       return;
     }
 
     // Check if customer has credit limit (mock check)
-    const hasCreditLimit = selectedCustomer.creditLimit && selectedCustomer.creditLimit > 0;
-    
+    const hasCreditLimit =
+      selectedCustomer.creditLimit && selectedCustomer.creditLimit > 0;
+
     // Generate packing slip number
-    const packingSlipNumber = `PKB-${new Date().getFullYear()}-${String((invoices?.length || 0) + 1).padStart(3, '0')}`;
-    
+    const packingSlipNumber = `PKB-${new Date().getFullYear()}-${String(
+      (invoices?.length || 0) + 1
+    ).padStart(3, "0")}`;
+
     // Calculate due date (14 days default, or from customer settings)
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + (selectedCustomer.paymentTerms || 14));
-    
+
     const packingSlip: PackingSlip = {
       id: `pkb-${Date.now()}`,
       packingSlipNumber,
@@ -376,35 +534,66 @@ export const POS: React.FC<POSProps> = ({
       subtotalExclVat: calculateCartTotals.subtotalExclVat,
       totalVat: calculateCartTotals.totalVat,
       totalInclVat: calculateCartTotals.totalInclVat,
-      dueDate: dueDate.toISOString().split('T')[0],
+      dueDate: dueDate.toISOString().split("T")[0],
       createdAt: new Date().toISOString(),
-      status: 'pending',
+      status: "pending",
       shippingAddress: selectedCustomer.address,
     };
 
     // Create invoice from packing slip (for B2B)
     if (setInvoices) {
-      const invoiceNumber = `${new Date().getFullYear()}-${String((invoices.length + 1)).padStart(3, '0')}`;
+      const invoiceNumber = `${new Date().getFullYear()}-${String(
+        invoices.length + 1
+      ).padStart(3, "0")}`;
+      // Determine VAT rate for B2B invoice
+      const vatRates = cart.map((c) => {
+        const rate =
+          c.vatRate === "custom"
+            ? c.customVatRate || 21
+            : parseFloat(c.vatRate);
+        return rate;
+      });
+      const mostCommonVatRate =
+        vatRates.length > 0
+          ? vatRates.reduce((a, b, _, arr) =>
+              arr.filter((v) => v === a).length >=
+              arr.filter((v) => v === b).length
+                ? a
+                : b
+            )
+          : 21;
+
+      // Convert cart items to QuoteItem format
+      const invoiceItems = cart.map((c) => {
+        const itemPrice = c.price * (1 - (c.discount || 0) / 100);
+        return {
+          id: c.id,
+          description: c.name,
+          quantity: c.quantity,
+          pricePerUnit: itemPrice,
+          total: itemPrice * c.quantity,
+          inventoryItemId: c.inventoryItemId,
+        };
+      });
+
       const invoice: Invoice = {
         id: `inv-${Date.now()}`,
         invoiceNumber,
         customerId: selectedCustomer.id,
         customerName: selectedCustomer.name,
-        customerEmail: selectedCustomer.email || '',
-        items: cart.map(c => ({
-          id: c.id,
-          name: c.name,
-          quantity: c.quantity,
-          price: c.price,
-          inventoryItemId: c.inventoryItemId,
-        })),
+        customerEmail: selectedCustomer.email || "",
+        items: invoiceItems,
         subtotal: calculateCartTotals.subtotalExclVat,
-        tax: calculateCartTotals.totalVat,
+        vatRate: mostCommonVatRate,
+        vatAmount: calculateCartTotals.totalVat,
         total: calculateCartTotals.totalInclVat,
-        status: 'sent',
-        issueDate: new Date().toISOString().split('T')[0],
+        status: "sent",
+        issueDate: new Date().toISOString().split("T")[0],
         dueDate: packingSlip.dueDate,
         paidDate: undefined,
+        paymentTerms: selectedCustomer.paymentTerms
+          ? `${selectedCustomer.paymentTerms} dagen`
+          : "14 dagen",
         notes: `Pakbon ${packingSlipNumber}`,
         history: [],
         timestamps: {
@@ -412,19 +601,25 @@ export const POS: React.FC<POSProps> = ({
           sent: new Date().toISOString(),
         },
       };
-      
-      setInvoices(prev => [...prev, invoice]);
+
+      setInvoices((prev) => [...prev, invoice]);
       packingSlip.invoiceId = invoice.id;
     }
 
     // Show packing slip modal
     setShowPackingSlipModal(true);
-    
+
     // Reset
     setCart([]);
     setSelectedCustomer(null);
-    
-    alert(`✅ Pakbon aangemaakt: ${packingSlipNumber}\nTotaal: €${calculateCartTotals.totalInclVat.toFixed(2)}\nVervaldatum: ${new Date(packingSlip.dueDate).toLocaleDateString('nl-NL')}`);
+
+    alert(
+      `✅ Pakbon aangemaakt: ${packingSlipNumber}\nTotaal: €${calculateCartTotals.totalInclVat.toFixed(
+        2
+      )}\nVervaldatum: ${new Date(packingSlip.dueDate).toLocaleDateString(
+        "nl-NL"
+      )}`
+    );
   };
 
   return (
@@ -432,37 +627,39 @@ export const POS: React.FC<POSProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-neutral">Kassasysteem (POS)</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-neutral">
+            Kassasysteem (POS)
+          </h1>
           <p className="text-sm sm:text-base text-gray-600 mt-1">
             Snelle checkout voor particulieren • Pakbonnen voor bedrijven
           </p>
         </div>
-        
+
         {/* Mode Toggle */}
         <div className="flex items-center gap-3 bg-white rounded-lg p-2 shadow-md">
           <button
             onClick={() => {
-              setMode('b2c');
+              setMode("b2c");
               setSelectedCustomer(null);
               setCart([]);
             }}
             className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
-              mode === 'b2c'
-                ? 'bg-primary text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              mode === "b2c"
+                ? "bg-primary text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             💰 Kassa (B2C)
           </button>
           <button
             onClick={() => {
-              setMode('b2b');
+              setMode("b2b");
               setCart([]);
             }}
             className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
-              mode === 'b2b'
-                ? 'bg-primary text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              mode === "b2b"
+                ? "bg-primary text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             📦 Pakbon (B2B)
@@ -475,12 +672,155 @@ export const POS: React.FC<POSProps> = ({
         <div className="lg:col-span-2 space-y-4">
           {/* Search Bar */}
           <div className="bg-white rounded-lg shadow-md p-4">
+            {/* 🆕 V5.7: Category Filter Dropdown + Search */}
+            <div className="mb-3 flex flex-col sm:flex-row gap-3">
+              {/* Category Filter Dropdown */}
+              <div
+                className="relative flex-shrink-0"
+                style={{ minWidth: "180px", maxWidth: "250px" }}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCategoryDropdown(!showCategoryDropdown);
+                    setCategorySearchTerm("");
+                  }}
+                  className={`w-full px-3 py-2 text-left border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-colors text-sm ${
+                    categoryFilter
+                      ? "bg-primary text-white border-primary"
+                      : "bg-white border-gray-300 text-gray-700 hover:border-gray-400"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">
+                      {categoryFilter
+                        ? categories.find((c) => c.id === categoryFilter)
+                            ?.name || "Categorie"
+                        : "🏷️ Categorie..."}
+                    </span>
+                    <span className="text-xs">▼</span>
+                  </div>
+                </button>
+
+                {showCategoryDropdown && (
+                  <>
+                    {/* Overlay om dropdown te sluiten */}
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setShowCategoryDropdown(false)}
+                    />
+                    {/* Dropdown */}
+                    <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
+                      {/* Search input in dropdown */}
+                      <div className="p-2 border-b border-gray-200">
+                        <input
+                          type="text"
+                          placeholder="Zoek categorie..."
+                          value={categorySearchTerm}
+                          onChange={(e) =>
+                            setCategorySearchTerm(e.target.value)
+                          }
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                          autoFocus
+                        />
+                      </div>
+
+                      {/* Category list */}
+                      <div className="overflow-y-auto max-h-48">
+                        {/* "Alle categorieën" option */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCategoryFilter("");
+                            setShowCategoryDropdown(false);
+                            setCategorySearchTerm("");
+                          }}
+                          className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors ${
+                            !categoryFilter ? "bg-blue-50 font-semibold" : ""
+                          }`}
+                        >
+                          <span className="text-gray-600">
+                            Alle categorieën
+                          </span>
+                        </button>
+
+                        {/* Filtered categories */}
+                        {categories.length === 0 ? (
+                          <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                            <p className="mb-1">Geen categorieën beschikbaar</p>
+                            <p className="text-xs text-gray-400">
+                              Ga naar Voorraadbeheer → Categorieën
+                            </p>
+                          </div>
+                        ) : filteredCategories.length === 0 ? (
+                          <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                            Geen categorieën gevonden
+                          </div>
+                        ) : (
+                          filteredCategories.map((category) => (
+                            <button
+                              key={category.id}
+                              type="button"
+                              onClick={() => {
+                                setCategoryFilter(category.id);
+                                setShowCategoryDropdown(false);
+                                setCategorySearchTerm("");
+                              }}
+                              className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors flex items-center gap-2 ${
+                                categoryFilter === category.id
+                                  ? "bg-blue-50 font-semibold"
+                                  : ""
+                              }`}
+                            >
+                              <div
+                                className="w-4 h-4 rounded-full border border-gray-300 flex-shrink-0"
+                                style={{
+                                  backgroundColor: category.color || "#3B82F6",
+                                }}
+                              />
+                              <span>{category.name}</span>
+                              <span className="ml-auto text-xs text-gray-500">
+                                (
+                                {
+                                  inventory.filter(
+                                    (i) => i.categoryId === category.id
+                                  ).length
+                                }
+                                )
+                              </span>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Clear filter button */}
+              {categoryFilter && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCategoryFilter("");
+                    setCategorySearchTerm("");
+                  }}
+                  className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  ✕ Wis
+                </button>
+              )}
+            </div>
+
             <div className="flex gap-3">
               <input
                 type="text"
-                placeholder={mode === 'b2c' 
-                  ? "🔍 Zoek item (bijv. 'sta' voor staalplaat)..." 
-                  : "🔍 Zoek item voor pakbon..."}
+                placeholder={
+                  mode === "b2c"
+                    ? "🔍 Zoek op naam, SKU, categorie..."
+                    : "🔍 Zoek op naam, SKU, categorie..."
+                }
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
@@ -498,38 +838,48 @@ export const POS: React.FC<POSProps> = ({
           </div>
 
           {/* Customer Selection (B2B only) */}
-          {mode === 'b2b' && (
+          {mode === "b2b" && (
             <div className="bg-white rounded-lg shadow-md p-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Bedrijf Selecteren <span className="text-red-500">*</span>
               </label>
               <select
-                value={selectedCustomer?.id || ''}
+                value={selectedCustomer?.id || ""}
                 onChange={(e) => {
-                  const customer = customers.find(c => c.id === e.target.value);
+                  const customer = customers.find(
+                    (c) => c.id === e.target.value
+                  );
                   setSelectedCustomer(customer || null);
                 }}
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-lg"
               >
                 <option value="">Selecteer bedrijf...</option>
                 {customers
-                  .filter(c => c.type === 'business' || !c.type)
-                  .map(customer => (
+                  .filter((c) => c.type === "business" || !c.type)
+                  .map((customer) => (
                     <option key={customer.id} value={customer.id}>
-                      {customer.name} {customer.creditLimit ? `(Krediet: €${customer.creditLimit})` : ''}
+                      {customer.name}{" "}
+                      {customer.creditLimit
+                        ? `(Krediet: €${customer.creditLimit})`
+                        : ""}
                     </option>
                   ))}
               </select>
               {selectedCustomer && (
                 <div className="mt-3 p-3 bg-blue-50 rounded-lg">
                   <p className="text-sm text-gray-700">
-                    <span className="font-medium">Klant:</span> {selectedCustomer.name}
+                    <span className="font-medium">Klant:</span>{" "}
+                    {selectedCustomer.name}
                   </p>
                   {selectedCustomer.email && (
-                    <p className="text-sm text-gray-600">{selectedCustomer.email}</p>
+                    <p className="text-sm text-gray-600">
+                      {selectedCustomer.email}
+                    </p>
                   )}
                   {selectedCustomer.address && (
-                    <p className="text-sm text-gray-600 mt-1">{selectedCustomer.address}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {selectedCustomer.address}
+                    </p>
                   )}
                 </div>
               )}
@@ -537,23 +887,25 @@ export const POS: React.FC<POSProps> = ({
           )}
 
           {/* Customer Selection (B2C - Optional) */}
-          {mode === 'b2c' && (
+          {mode === "b2c" && (
             <div className="bg-white rounded-lg shadow-md p-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Klant (Optioneel) - Voor terugkerende klanten
               </label>
               <select
-                value={selectedCustomer?.id || ''}
+                value={selectedCustomer?.id || ""}
                 onChange={(e) => {
-                  const customer = customers.find(c => c.id === e.target.value);
+                  const customer = customers.find(
+                    (c) => c.id === e.target.value
+                  );
                   setSelectedCustomer(customer || null);
                 }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">Gast (Geen klant)</option>
                 {customers
-                  .filter(c => c.type === 'individual' || !c.type)
-                  .map(customer => (
+                  .filter((c) => c.type === "individual" || !c.type)
+                  .map((customer) => (
                     <option key={customer.id} value={customer.id}>
                       {customer.name}
                     </option>
@@ -567,7 +919,9 @@ export const POS: React.FC<POSProps> = ({
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-md p-4 sm:p-6 border-2 border-blue-200">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-semibold text-neutral">⭐ Snelkoppelingen</h2>
+                  <h2 className="text-lg font-semibold text-neutral">
+                    ⭐ Snelkoppelingen
+                  </h2>
                   <span className="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded">
                     {favoriteInventoryItems.length}/{maxFavorites}
                   </span>
@@ -580,24 +934,28 @@ export const POS: React.FC<POSProps> = ({
                   ⚙️ Instellingen
                 </button>
               </div>
-              
+
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                {favoriteInventoryItems.map(item => {
-                  const priceInclVat = calculateVatInclusive(item.salePrice, item.vatRate, item.customVatRate);
+                {favoriteInventoryItems.map((item) => {
+                  const priceInclVat = calculateVatInclusive(
+                    item.salePrice,
+                    item.vatRate,
+                    item.customVatRate
+                  );
                   const isLowStock = item.quantity <= item.reorderLevel;
                   const isOutOfStock = item.quantity <= 0;
-                  
+
                   return (
                     <div
                       key={item.id}
                       className={`relative p-4 rounded-lg border-2 text-left transition-all min-h-[100px] flex flex-col justify-between ${
                         item.posAlertNote && item.posAlertNote.trim()
-                          ? 'border-orange-300 bg-orange-50 hover:border-orange-500 hover:shadow-md'
-                          : isOutOfStock && mode === 'b2c'
-                          ? 'border-red-200 bg-red-50 opacity-50'
+                          ? "border-orange-300 bg-orange-50 hover:border-orange-500 hover:shadow-md"
+                          : isOutOfStock && mode === "b2c"
+                          ? "border-red-200 bg-red-50 opacity-50"
                           : isLowStock
-                          ? 'border-orange-200 bg-orange-50 hover:border-orange-400'
-                          : 'border-blue-300 bg-white hover:border-blue-500 hover:shadow-md'
+                          ? "border-orange-200 bg-orange-50 hover:border-orange-400"
+                          : "border-blue-300 bg-white hover:border-blue-500 hover:shadow-md"
                       }`}
                     >
                       {/* Favorite Star Button */}
@@ -611,32 +969,41 @@ export const POS: React.FC<POSProps> = ({
                       >
                         ⭐
                       </button>
-                      
+
                       <button
                         onClick={() => addInventoryItemToCart(item)}
-                        disabled={isOutOfStock && mode === 'b2c'}
+                        disabled={isOutOfStock && mode === "b2c"}
                         className="w-full text-left"
                       >
                         <div>
-                          <h3 className="font-semibold text-neutral text-sm mb-1 line-clamp-2 pr-6">{item.name}</h3>
-                          <p className="text-xs text-gray-500 mb-2">{item.sku}</p>
+                          <h3 className="font-semibold text-neutral text-sm mb-1 line-clamp-2 pr-6">
+                            {item.name}
+                          </h3>
+                          <p className="text-xs text-gray-500 mb-2">
+                            {item.sku}
+                          </p>
                         </div>
                         <div>
                           <p className="text-lg font-bold text-primary">
                             €{priceInclVat.toFixed(2)}
                           </p>
                           <p className="text-xs text-gray-500">
-                            incl. {getVatRateValue(item.vatRate, item.customVatRate)}% BTW
+                            incl.{" "}
+                            {getVatRateValue(item.vatRate, item.customVatRate)}%
+                            BTW
                           </p>
-                          {isOutOfStock && mode === 'b2c' ? (
-                            <p className="text-xs text-red-600 font-semibold mt-1">❌ Uitverkocht</p>
+                          {isOutOfStock && mode === "b2c" ? (
+                            <p className="text-xs text-red-600 font-semibold mt-1">
+                              ❌ Uitverkocht
+                            </p>
                           ) : isLowStock ? (
                             <p className="text-xs text-orange-600 font-semibold mt-1">
-                              ⚠️ Laag ({item.quantity} {item.unit || 'stuk'})
+                              ⚠️ Laag ({item.quantity} {item.unit || "stuk"})
                             </p>
                           ) : (
                             <p className="text-xs text-gray-600 mt-1">
-                              ✓ {item.quantity} {item.unit || 'stuk'} op voorraad
+                              ✓ {item.quantity} {item.unit || "stuk"} op
+                              voorraad
                             </p>
                           )}
                         </div>
@@ -654,10 +1021,13 @@ export const POS: React.FC<POSProps> = ({
               <div className="flex items-start gap-3">
                 <span className="text-2xl">💡</span>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-yellow-800 mb-1">Tip: Maak Snelkoppelingen</h3>
+                  <h3 className="font-semibold text-yellow-800 mb-1">
+                    Tip: Maak Snelkoppelingen
+                  </h3>
                   <p className="text-sm text-yellow-700">
-                    Klik op de <strong>☆ ster</strong> rechtsboven op een item om het toe te voegen aan uw snelkoppelingen. 
-                    Snelkoppelingen verschijnen bovenaan voor snelle toegang!
+                    Klik op de <strong>☆ ster</strong> rechtsboven op een item
+                    om het toe te voegen aan uw snelkoppelingen. Snelkoppelingen
+                    verschijnen bovenaan voor snelle toegang!
                   </p>
                   <button
                     onClick={() => setShowFavoritesSettings(true)}
@@ -674,7 +1044,9 @@ export const POS: React.FC<POSProps> = ({
           <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-neutral">
-                {searchTerm ? `Zoekresultaten (${filteredInventory.length})` : 'Alle Items'}
+                {searchTerm
+                  ? `Zoekresultaten (${filteredInventory.length})`
+                  : "Alle Items"}
               </h2>
               {!searchTerm && favoriteItems.length > 0 && (
                 <button
@@ -686,33 +1058,38 @@ export const POS: React.FC<POSProps> = ({
                 </button>
               )}
             </div>
-            
+
             {filteredInventory.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-gray-500 mb-4">Geen items gevonden</p>
                 <p className="text-sm text-gray-400">
-                  Typ in de zoekbalk om te zoeken, of klik op "+ Nieuw Item" om handmatig toe te voegen
+                  Typ in de zoekbalk om te zoeken, of klik op "+ Nieuw Item" om
+                  handmatig toe te voegen
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                {filteredInventory.map(item => {
-                  const priceInclVat = calculateVatInclusive(item.salePrice, item.vatRate, item.customVatRate);
+                {filteredInventory.map((item) => {
+                  const priceInclVat = calculateVatInclusive(
+                    item.salePrice,
+                    item.vatRate,
+                    item.customVatRate
+                  );
                   const isLowStock = item.quantity <= item.reorderLevel;
                   const isOutOfStock = item.quantity <= 0;
                   const isFavorite = favoriteItems.includes(item.id);
-                  
+
                   return (
                     <div
                       key={item.id}
                       className={`relative p-4 rounded-lg border-2 text-left transition-all min-h-[100px] flex flex-col justify-between ${
                         item.posAlertNote && item.posAlertNote.trim()
-                          ? 'border-orange-300 bg-orange-50 hover:border-orange-500 hover:shadow-md'
-                          : isOutOfStock && mode === 'b2c'
-                          ? 'border-red-200 bg-red-50 opacity-50'
+                          ? "border-orange-300 bg-orange-50 hover:border-orange-500 hover:shadow-md"
+                          : isOutOfStock && mode === "b2c"
+                          ? "border-red-200 bg-red-50 opacity-50"
                           : isLowStock
-                          ? 'border-orange-200 bg-orange-50 hover:border-orange-400 hover:bg-orange-100'
-                          : 'border-gray-200 bg-white hover:border-primary hover:bg-blue-50 cursor-pointer'
+                          ? "border-orange-200 bg-orange-50 hover:border-orange-400 hover:bg-orange-100"
+                          : "border-gray-200 bg-white hover:border-primary hover:bg-blue-50 cursor-pointer"
                       }`}
                     >
                       {/* Favorite Star Button */}
@@ -722,40 +1099,53 @@ export const POS: React.FC<POSProps> = ({
                           toggleFavorite(item.id);
                         }}
                         className={`absolute top-2 right-2 text-lg z-10 ${
-                          isFavorite 
-                            ? 'text-yellow-500 hover:text-gray-400' 
-                            : 'text-gray-300 hover:text-yellow-500'
+                          isFavorite
+                            ? "text-yellow-500 hover:text-gray-400"
+                            : "text-gray-300 hover:text-yellow-500"
                         }`}
-                        title={isFavorite ? "Verwijder uit favorieten" : "Voeg toe aan favorieten"}
+                        title={
+                          isFavorite
+                            ? "Verwijder uit favorieten"
+                            : "Voeg toe aan favorieten"
+                        }
                       >
-                        {isFavorite ? '⭐' : '☆'}
+                        {isFavorite ? "⭐" : "☆"}
                       </button>
-                      
+
                       <button
                         onClick={() => addInventoryItemToCart(item)}
-                        disabled={isOutOfStock && mode === 'b2c'}
+                        disabled={isOutOfStock && mode === "b2c"}
                         className="w-full text-left"
                       >
                         <div>
-                          <h3 className="font-semibold text-neutral text-sm mb-1 line-clamp-2 pr-6">{item.name}</h3>
-                          <p className="text-xs text-gray-500 mb-2">{item.sku}</p>
+                          <h3 className="font-semibold text-neutral text-sm mb-1 line-clamp-2 pr-6">
+                            {item.name}
+                          </h3>
+                          <p className="text-xs text-gray-500 mb-2">
+                            {item.sku}
+                          </p>
                         </div>
                         <div>
                           <p className="text-lg font-bold text-primary">
                             €{priceInclVat.toFixed(2)}
                           </p>
                           <p className="text-xs text-gray-500">
-                            incl. {getVatRateValue(item.vatRate, item.customVatRate)}% BTW
+                            incl.{" "}
+                            {getVatRateValue(item.vatRate, item.customVatRate)}%
+                            BTW
                           </p>
-                          {isOutOfStock && mode === 'b2c' ? (
-                            <p className="text-xs text-red-600 font-semibold mt-1">❌ Uitverkocht</p>
+                          {isOutOfStock && mode === "b2c" ? (
+                            <p className="text-xs text-red-600 font-semibold mt-1">
+                              ❌ Uitverkocht
+                            </p>
                           ) : isLowStock ? (
                             <p className="text-xs text-orange-600 font-semibold mt-1">
-                              ⚠️ Laag ({item.quantity} {item.unit || 'stuk'})
+                              ⚠️ Laag ({item.quantity} {item.unit || "stuk"})
                             </p>
                           ) : (
                             <p className="text-xs text-gray-600 mt-1">
-                              ✓ {item.quantity} {item.unit || 'stuk'} op voorraad
+                              ✓ {item.quantity} {item.unit || "stuk"} op
+                              voorraad
                             </p>
                           )}
                         </div>
@@ -772,7 +1162,9 @@ export const POS: React.FC<POSProps> = ({
         <div className="lg:col-span-1">
           <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 sticky top-8">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-neutral">Winkelwagen</h2>
+              <h2 className="text-xl font-semibold text-neutral">
+                Winkelwagen
+              </h2>
               {cart.length > 0 && (
                 <button
                   onClick={clearCart}
@@ -793,32 +1185,51 @@ export const POS: React.FC<POSProps> = ({
                   </p>
                 </div>
               ) : (
-                cart.map(item => {
-                  const vatRate = getVatRateValue(item.vatRate, item.customVatRate);
-                  const priceAfterDiscount = item.price * (1 - (item.discount || 0) / 100);
+                cart.map((item) => {
+                  const vatRate = getVatRateValue(
+                    item.vatRate,
+                    item.customVatRate
+                  );
+                  const priceAfterDiscount =
+                    item.price * (1 - (item.discount || 0) / 100);
                   const itemSubtotal = priceAfterDiscount * item.quantity;
                   const itemVat = itemSubtotal * (vatRate / 100);
                   const itemTotal = itemSubtotal + itemVat;
-                  
+
                   // Check if this cart item has a POS alert note
-                  const inventoryItem = item.inventoryItemId 
-                    ? inventory.find(i => i.id === item.inventoryItemId)
+                  const inventoryItem = item.inventoryItemId
+                    ? inventory.find((i) => i.id === item.inventoryItemId)
                     : null;
-                  const hasAlertNote = inventoryItem?.posAlertNote && inventoryItem.posAlertNote.trim();
+                  const hasAlertNote =
+                    inventoryItem?.posAlertNote &&
+                    inventoryItem.posAlertNote.trim();
 
                   return (
-                    <div key={item.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div
+                      key={item.id}
+                      className="p-3 bg-gray-50 rounded-lg border border-gray-200"
+                    >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
-                          <p className="font-medium text-neutral text-sm">{item.name}</p>
-                          {item.sku && <p className="text-xs text-gray-500">{item.sku}</p>}
+                          <p className="font-medium text-neutral text-sm">
+                            {item.name}
+                          </p>
+                          {item.sku && (
+                            <p className="text-xs text-gray-500">{item.sku}</p>
+                          )}
                           {hasAlertNote && (
-                            <span className="text-xs bg-orange-200 text-orange-900 px-2 py-0.5 rounded mt-1 inline-block font-semibold" title={`Alert: ${inventoryItem.posAlertNote}`}>
+                            <span
+                              className="text-xs bg-orange-200 text-orange-900 px-2 py-0.5 rounded mt-1 inline-block font-semibold"
+                              title={`Alert: ${inventoryItem.posAlertNote}`}
+                            >
                               📢 Alert
                             </span>
                           )}
                           {item.isManual && (
-                            <span className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded mt-1 inline-block" title="Handmatig toegevoegd item - éénmalig gebruik, niet in voorraad">
+                            <span
+                              className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded mt-1 inline-block"
+                              title="Handmatig toegevoegd item - éénmalig gebruik, niet in voorraad"
+                            >
                               🆕 Handmatig (1x)
                             </span>
                           )}
@@ -831,7 +1242,7 @@ export const POS: React.FC<POSProps> = ({
                           ×
                         </button>
                       </div>
-                      
+
                       <div className="flex items-center gap-2 mb-2">
                         <button
                           onClick={() => updateCartQuantity(item.id, -1)}
@@ -839,7 +1250,9 @@ export const POS: React.FC<POSProps> = ({
                         >
                           −
                         </button>
-                        <span className="w-12 text-center font-semibold text-lg">{item.quantity}</span>
+                        <span className="w-12 text-center font-semibold text-lg">
+                          {item.quantity}
+                        </span>
                         <button
                           onClick={() => updateCartQuantity(item.id, 1)}
                           className="w-8 h-8 bg-gray-300 rounded text-sm hover:bg-gray-400 font-bold"
@@ -850,10 +1263,11 @@ export const POS: React.FC<POSProps> = ({
                           €{itemTotal.toFixed(2)}
                         </span>
                       </div>
-                      
+
                       <div className="flex items-center gap-2 flex-wrap text-xs">
                         <span className="text-gray-600">
-                          €{priceAfterDiscount.toFixed(2)} × {item.quantity} excl. BTW
+                          €{priceAfterDiscount.toFixed(2)} × {item.quantity}{" "}
+                          excl. BTW
                         </span>
                         <span className="text-gray-500">
                           BTW {vatRate}%: €{itemVat.toFixed(2)}
@@ -864,11 +1278,14 @@ export const POS: React.FC<POSProps> = ({
                           </span>
                         )}
                       </div>
-                      
+
                       <div className="mt-2 flex gap-2">
                         <button
                           onClick={() => {
-                            const discount = prompt(`Korting % voor "${item.name}":`, item.discount?.toString() || '0');
+                            const discount = prompt(
+                              `Korting % voor "${item.name}":`,
+                              item.discount?.toString() || "0"
+                            );
                             if (discount !== null) {
                               const discountValue = parseFloat(discount);
                               if (!isNaN(discountValue)) {
@@ -882,13 +1299,20 @@ export const POS: React.FC<POSProps> = ({
                         </button>
                         <button
                           onClick={() => {
-                            const newPrice = prompt(`Nieuwe prijs (excl. BTW) voor "${item.name}":`, item.price.toString());
+                            const newPrice = prompt(
+                              `Nieuwe prijs (excl. BTW) voor "${item.name}":`,
+                              item.price.toString()
+                            );
                             if (newPrice !== null) {
                               const priceValue = parseFloat(newPrice);
                               if (!isNaN(priceValue) && priceValue > 0) {
-                                setCart(cart.map(c =>
-                                  c.id === item.id ? { ...c, price: priceValue } : c
-                                ));
+                                setCart(
+                                  cart.map((c) =>
+                                    c.id === item.id
+                                      ? { ...c, price: priceValue }
+                                      : c
+                                  )
+                                );
                               }
                             }
                           }}
@@ -908,28 +1332,37 @@ export const POS: React.FC<POSProps> = ({
               <div className="border-t pt-4 mb-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Subtotaal excl. BTW:</span>
-                  <span className="font-medium">€{calculateCartTotals.subtotalExclVat.toFixed(2)}</span>
+                  <span className="font-medium">
+                    €{calculateCartTotals.subtotalExclVat.toFixed(2)}
+                  </span>
                 </div>
-                
+
                 {/* BTW Breakdown */}
                 {calculateCartTotals.vatBreakdown.map((vat, idx) => (
                   <div key={idx} className="flex justify-between text-sm">
                     <span className="text-gray-600">BTW {vat.rate}%:</span>
-                    <span className="font-medium">€{(Math.round(vat.amount * 100) / 100).toFixed(2)}</span>
+                    <span className="font-medium">
+                      €{(Math.round(vat.amount * 100) / 100).toFixed(2)}
+                    </span>
                   </div>
                 ))}
-                
+
                 <div className="flex justify-between items-center pt-2 border-t">
-                  <span className="text-lg font-semibold text-neutral">Totaal incl. BTW:</span>
+                  <span className="text-lg font-semibold text-neutral">
+                    Totaal incl. BTW:
+                  </span>
                   <span className="text-2xl font-bold text-primary">
                     €{calculateCartTotals.totalInclVat.toFixed(2)}
                   </span>
                 </div>
-                
+
                 {/* Cart Discount */}
                 <button
                   onClick={() => {
-                    const discount = prompt('Korting % op gehele winkelwagen:', '0');
+                    const discount = prompt(
+                      "Korting % op gehele winkelwagen:",
+                      "0"
+                    );
                     if (discount !== null) {
                       const discountValue = parseFloat(discount);
                       if (!isNaN(discountValue)) {
@@ -946,11 +1379,11 @@ export const POS: React.FC<POSProps> = ({
 
             {/* Action Buttons */}
             <div className="space-y-2">
-              {mode === 'b2c' ? (
+              {mode === "b2c" ? (
                 <button
                   onClick={() => {
                     if (cart.length === 0) {
-                      alert('⚠️ Winkelwagen is leeg!');
+                      alert("⚠️ Winkelwagen is leeg!");
                       return;
                     }
                     setShowPaymentModal(true);
@@ -958,8 +1391,8 @@ export const POS: React.FC<POSProps> = ({
                   disabled={cart.length === 0}
                   className={`w-full py-4 rounded-lg font-bold text-lg transition-colors ${
                     cart.length > 0
-                      ? 'bg-green-500 text-white hover:bg-green-600'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      ? "bg-green-500 text-white hover:bg-green-600"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
                   }`}
                 >
                   💰 AFREKENEN
@@ -970,8 +1403,8 @@ export const POS: React.FC<POSProps> = ({
                   disabled={cart.length === 0 || !selectedCustomer}
                   className={`w-full py-4 rounded-lg font-bold text-lg transition-colors ${
                     cart.length > 0 && selectedCustomer
-                      ? 'bg-blue-500 text-white hover:bg-blue-600'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      ? "bg-blue-500 text-white hover:bg-blue-600"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
                   }`}
                 >
                   📦 Pakbon Aanmaken
@@ -988,7 +1421,9 @@ export const POS: React.FC<POSProps> = ({
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-neutral">➕ Handmatig Item Toevoegen (Éénmalig Gebruik)</h3>
+                <h3 className="text-xl font-bold text-neutral">
+                  ➕ Handmatig Item Toevoegen (Éénmalig Gebruik)
+                </h3>
                 <button
                   onClick={() => setShowManualItemModal(false)}
                   className="text-gray-500 hover:text-gray-700 text-2xl"
@@ -996,15 +1431,17 @@ export const POS: React.FC<POSProps> = ({
                   ×
                 </button>
               </div>
-              
+
               {/* Info Banner */}
               <div className="bg-purple-50 border-l-4 border-purple-400 rounded-lg p-3 mb-4">
                 <p className="text-sm text-purple-800">
-                  <strong>ℹ️ Eenmalig Item:</strong> Dit item wordt alleen toegevoegd aan de winkelwagen en wordt <strong>niet opgeslagen</strong> in de voorraad. 
-                  Perfect voor diensten, meerwerk, of tijdelijke producten.
+                  <strong>ℹ️ Eenmalig Item:</strong> Dit item wordt alleen
+                  toegevoegd aan de winkelwagen en wordt{" "}
+                  <strong>niet opgeslagen</strong> in de voorraad. Perfect voor
+                  diensten, meerwerk, of tijdelijke producten.
                 </p>
               </div>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1012,13 +1449,15 @@ export const POS: React.FC<POSProps> = ({
                   </label>
                   <input
                     type="text"
-                    value={manualItem.name || ''}
-                    onChange={(e) => setManualItem({ ...manualItem, name: e.target.value })}
+                    value={manualItem.name || ""}
+                    onChange={(e) =>
+                      setManualItem({ ...manualItem, name: e.target.value })
+                    }
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="Bijv. Montage dienst"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Prijs excl. BTW (€) <span className="text-red-500">*</span>
@@ -1027,26 +1466,36 @@ export const POS: React.FC<POSProps> = ({
                     type="number"
                     step="0.01"
                     min="0"
-                    value={manualItem.price !== undefined ? manualItem.price : ''}
+                    value={
+                      manualItem.price !== undefined ? manualItem.price : ""
+                    }
                     onChange={(e) => {
                       const value = e.target.value;
-                      setManualItem({ 
-                        ...manualItem, 
-                        price: value === '' ? undefined : parseFloat(value) || undefined 
+                      setManualItem({
+                        ...manualItem,
+                        price:
+                          value === ""
+                            ? undefined
+                            : parseFloat(value) || undefined,
                       });
                     }}
                     placeholder="0.00"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     BTW-tarief
                   </label>
                   <select
-                    value={manualItem.vatRate || '21'}
-                    onChange={(e) => setManualItem({ ...manualItem, vatRate: e.target.value as any })}
+                    value={manualItem.vatRate || "21"}
+                    onChange={(e) =>
+                      setManualItem({
+                        ...manualItem,
+                        vatRate: e.target.value as any,
+                      })
+                    }
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="21">Standaard 21%</option>
@@ -1054,14 +1503,16 @@ export const POS: React.FC<POSProps> = ({
                     <option value="0">Vrij 0%</option>
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Eenheid
                   </label>
                   <select
-                    value={manualItem.unit || 'stuk'}
-                    onChange={(e) => setManualItem({ ...manualItem, unit: e.target.value })}
+                    value={manualItem.unit || "stuk"}
+                    onChange={(e) =>
+                      setManualItem({ ...manualItem, unit: e.target.value })
+                    }
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="stuk">Stuk</option>
@@ -1072,7 +1523,7 @@ export const POS: React.FC<POSProps> = ({
                   </select>
                 </div>
               </div>
-              
+
               <div className="flex gap-3 mt-6 pt-4 border-t">
                 <button
                   onClick={handleAddManualItem}
@@ -1093,12 +1544,14 @@ export const POS: React.FC<POSProps> = ({
       )}
 
       {/* Payment Modal (B2C) */}
-      {showPaymentModal && mode === 'b2c' && (
+      {showPaymentModal && mode === "b2c" && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-neutral">💳 Betaalwijze</h3>
+                <h3 className="text-xl font-bold text-neutral">
+                  💳 Betaalwijze
+                </h3>
                 <button
                   onClick={() => setShowPaymentModal(false)}
                   className="text-gray-500 hover:text-gray-700 text-2xl"
@@ -1106,7 +1559,7 @@ export const POS: React.FC<POSProps> = ({
                   ×
                 </button>
               </div>
-              
+
               <div className="mb-6">
                 <p className="text-2xl font-bold text-primary text-center mb-2">
                   €{calculateCartTotals.totalInclVat.toFixed(2)}
@@ -1115,28 +1568,28 @@ export const POS: React.FC<POSProps> = ({
                   Totaal incl. BTW
                 </p>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-3">
                 <button
-                  onClick={() => completeB2CSale('cash')}
+                  onClick={() => completeB2CSale("cash")}
                   className="px-6 py-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold text-lg"
                 >
                   💵 Contant
                 </button>
                 <button
-                  onClick={() => completeB2CSale('pin')}
+                  onClick={() => completeB2CSale("pin")}
                   className="px-6 py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold text-lg"
                 >
                   💳 PIN
                 </button>
                 <button
-                  onClick={() => completeB2CSale('ideal')}
+                  onClick={() => completeB2CSale("ideal")}
                   className="px-6 py-4 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-semibold text-lg"
                 >
                   🏦 iDEAL
                 </button>
                 <button
-                  onClick={() => completeB2CSale('credit')}
+                  onClick={() => completeB2CSale("credit")}
                   className="px-6 py-4 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-semibold text-lg"
                 >
                   💳 Creditcard
@@ -1153,7 +1606,9 @@ export const POS: React.FC<POSProps> = ({
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-neutral">⚙️ Snelkoppelingen Instellingen</h3>
+                <h3 className="text-xl font-bold text-neutral">
+                  ⚙️ Snelkoppelingen Instellingen
+                </h3>
                 <button
                   onClick={() => setShowFavoritesSettings(false)}
                   className="text-gray-500 hover:text-gray-700 text-2xl"
@@ -1161,7 +1616,7 @@ export const POS: React.FC<POSProps> = ({
                   ×
                 </button>
               </div>
-              
+
               <div className="space-y-6">
                 {/* Maximum Favorites Setting */}
                 <div>
@@ -1193,24 +1648,29 @@ export const POS: React.FC<POSProps> = ({
                 {/* Current Favorites List */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Huidige Snelkoppelingen ({favoriteItems.length}/{maxFavorites})
+                    Huidige Snelkoppelingen ({favoriteItems.length}/
+                    {maxFavorites})
                   </label>
                   {favoriteItems.length === 0 ? (
                     <div className="bg-gray-50 rounded-lg p-4 text-center">
-                      <p className="text-sm text-gray-500">Geen favorieten toegevoegd</p>
+                      <p className="text-sm text-gray-500">
+                        Geen favorieten toegevoegd
+                      </p>
                       <p className="text-xs text-gray-400 mt-1">
                         Klik op de ☆ knop bij items om ze toe te voegen
                       </p>
                     </div>
                   ) : (
                     <div className="space-y-2 max-h-60 overflow-y-auto">
-                      {favoriteInventoryItems.map(item => (
+                      {favoriteInventoryItems.map((item) => (
                         <div
                           key={item.id}
                           className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                         >
                           <div className="flex-1">
-                            <p className="font-medium text-sm text-neutral">{item.name}</p>
+                            <p className="font-medium text-sm text-neutral">
+                              {item.name}
+                            </p>
                             <p className="text-xs text-gray-500">{item.sku}</p>
                           </div>
                           <button
@@ -1230,7 +1690,11 @@ export const POS: React.FC<POSProps> = ({
                 {favoriteItems.length > 0 && (
                   <button
                     onClick={() => {
-                      if (confirm('Weet u zeker dat u alle snelkoppelingen wilt verwijderen?')) {
+                      if (
+                        confirm(
+                          "Weet u zeker dat u alle snelkoppelingen wilt verwijderen?"
+                        )
+                      ) {
                         setFavoriteItems([]);
                       }
                     }}
@@ -1240,7 +1704,7 @@ export const POS: React.FC<POSProps> = ({
                   </button>
                 )}
               </div>
-              
+
               <div className="flex gap-3 mt-6 pt-4 border-t">
                 <button
                   onClick={() => setShowFavoritesSettings(false)}
@@ -1260,7 +1724,9 @@ export const POS: React.FC<POSProps> = ({
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-neutral">✅ Pakbon Aangemaakt</h3>
+                <h3 className="text-xl font-bold text-neutral">
+                  ✅ Pakbon Aangemaakt
+                </h3>
                 <button
                   onClick={() => setShowPackingSlipModal(false)}
                   className="text-gray-500 hover:text-gray-700 text-2xl"
@@ -1268,21 +1734,24 @@ export const POS: React.FC<POSProps> = ({
                   ×
                 </button>
               </div>
-              
+
               <div className="bg-green-50 border-l-4 border-green-500 rounded-lg p-4 mb-6">
                 <p className="text-sm text-green-800">
-                  <strong>✅ Pakbon succesvol aangemaakt!</strong><br />
-                  De pakbon is automatisch gekoppeld aan een factuur in het Boekhouding module.
+                  <strong>✅ Pakbon succesvol aangemaakt!</strong>
+                  <br />
+                  De pakbon is automatisch gekoppeld aan een factuur in het
+                  Boekhouding module.
                 </p>
               </div>
-              
+
               <div className="space-y-4">
                 <div>
                   <p className="text-sm font-medium text-gray-700 mb-2">
-                    Pakbon details kunnen worden bekeken in het Boekhouding → Facturen tab.
+                    Pakbon details kunnen worden bekeken in het Boekhouding →
+                    Facturen tab.
                   </p>
                 </div>
-                
+
                 <button
                   onClick={() => setShowPackingSlipModal(false)}
                   className="w-full px-6 py-3 bg-primary text-white rounded-lg hover:bg-secondary transition-colors font-semibold"
@@ -1303,7 +1772,9 @@ export const POS: React.FC<POSProps> = ({
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <span className="text-3xl">⚠️</span>
-                  <h3 className="text-xl font-bold text-orange-800">Product Alert</h3>
+                  <h3 className="text-xl font-bold text-orange-800">
+                    Product Alert
+                  </h3>
                 </div>
                 <button
                   onClick={() => setPosAlert(null)}
@@ -1312,12 +1783,16 @@ export const POS: React.FC<POSProps> = ({
                   ×
                 </button>
               </div>
-              
+
               <div className="bg-orange-50 border-l-4 border-orange-400 rounded-lg p-4 mb-4">
-                <p className="font-semibold text-orange-900 mb-2">{posAlert.itemName}</p>
-                <p className="text-sm text-orange-800 whitespace-pre-wrap">{posAlert.message}</p>
+                <p className="font-semibold text-orange-900 mb-2">
+                  {posAlert.itemName}
+                </p>
+                <p className="text-sm text-orange-800 whitespace-pre-wrap">
+                  {posAlert.message}
+                </p>
               </div>
-              
+
               <button
                 onClick={() => setPosAlert(null)}
                 className="w-full px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-semibold"

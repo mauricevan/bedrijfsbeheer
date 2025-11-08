@@ -96,7 +96,7 @@ Het systeem heeft een volledig werkend login systeem met 4 test accounts:
 
 ## 🔧 Modules & Functionaliteiten
 
-### 1. **Dashboard / Overzicht**
+### 1. **Dashboard / Overzicht** 🆕 **UITGEBREID MET EMAIL INTEGRATIE V5.8**
 
 Realtime weergave van bedrijfsactiviteiten:
 
@@ -106,6 +106,14 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ **Notificaties paneel** met ongelezen meldingen
 - ✅ Lage voorraad alerts
 - ✅ Recente werkorders overzicht
+- 🆕 **Email Drop Zone** (V5.8) - Sleep .eml bestanden of Outlook emails naar dashboard:
+  - Drag-and-drop functionaliteit voor .eml bestanden
+  - Directe Outlook integratie (via Electron app)
+  - Automatische email parsing en workflow detectie
+  - Preview modal voor email verificatie
+  - Automatische klant/lead matching op basis van email adres
+  - Creëer orders, taken of notificaties vanuit emails
+  - Visuele feedback tijdens verwerking
 
 ### 2. **Voorraadbeheer (Inventory Management)** 🆕 **UITGEBREID MET 3 SKU TYPES & CATEGORIEËN V5.7**
 
@@ -253,7 +261,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ KPI cards (totale inkomsten, uitgaven, netto winst)
 - ✅ Transactie historie met datum
 
-**Offertes Tab:** 🆕 **UITGEBREID MET OVERZICHT MODALS V4.7**
+**Offertes Tab:** 🆕 **UITGEBREID MET OVERZICHT MODALS V4.7 + EMAIL INTEGRATIE V5.8**
 
 - ✅ **Offertes maken en beheren** met meerdere items
 - ✅ **Items uit voorraad selecteren** - Dropdown met alle voorraad items inclusief prijzen
@@ -286,6 +294,11 @@ Realtime weergave van bedrijfsactiviteiten:
   - ✏️ Bewerken knop bij elke offerte
   - 📋 Clonen knop bij elke offerte
   - 📤 Naar Werkorder knop (alleen voor approved/sent zonder werkorder)
+- 🆕 **Email integratie** (V5.8) - Sleep .eml bestanden naar offertes tab:
+  - Automatische offerte creatie vanuit emails
+  - Detecteert items, prijzen en werkuren in email tekst
+  - Klant selectie of creatie vanuit email adres
+  - Preview modal voor verificatie voordat offerte wordt aangemaakt
 
 **Facturen Tab:** 🆕 **NIEUW TOEGEVOEGD + WERKORDER INTEGRATIE V4.0 + OVERZICHT MODAL V4.7**
 
@@ -591,7 +604,7 @@ Realtime weergave van bedrijfsactiviteiten:
 - 🔄 Volledige dossiers met tabbladen functionaliteit
 - 🔄 Handmatige journaalposten toevoegen UI
 
-### 6. **CRM (Klantrelatiebeheer)** 🆕 **VOLLEDIG VERNIEUWD**
+### 6. **CRM (Klantrelatiebeheer)** 🆕 **VOLLEDIG VERNIEUWD + EMAIL INTEGRATIE V5.8**
 
 **Professioneel CRM Systeem:**
 
@@ -654,6 +667,16 @@ Realtime weergave van bedrijfsactiviteiten:
 - ✅ Follow-up datum tracking
 - ✅ Timeline weergave (chronologisch)
 - ✅ Visuele iconen per interactie type
+
+**Email Tab:** 🆕 **NIEUW IN V5.8**
+
+- 🆕 **Email Drop Zone** - Sleep .eml bestanden of Outlook emails naar CRM module
+- 🆕 **Universele email preview** - Preview modal voor alle email types
+- 🆕 **Automatische interactie creatie** - Emails worden automatisch omgezet naar interactie records
+- 🆕 **Klant/lead creatie** - Maak nieuwe klanten of leads aan vanuit email adres
+- 🆕 **Taak creatie** - Converteer emails naar taken met deadline tracking
+- 🆕 **Email-customer mapping** - Sla email adres naar klant mapping op voor toekomstige matching
+- 🆕 **Workflow detectie** - Systeem detecteert automatisch of email een order, taak of notificatie is
 
 **Taken Tab:**
 
@@ -2553,6 +2576,73 @@ A: Check relatieve tijd - "5 min geleden" is zeer recent!
 
 ## 🏆 Changelog
 
+### Versie 5.8.0 🆕 **EMAIL INTEGRATIE & AUTOMATISCHE OFFERTE CREATIE**
+
+**Nieuwe Features:**
+
+**1. Email Drop Zone op Dashboard**
+
+- 🆕 **Drag-and-drop zone** - Sleep .eml bestanden of Outlook emails direct naar dashboard
+- 🆕 **Outlook integratie** - Directe drag-and-drop vanuit Outlook (via Electron app)
+- 🆕 **Automatische email parsing** - Emails worden automatisch geparsed en geanalyseerd
+- 🆕 **Workflow detectie** - Systeem detecteert automatisch of email een order, taak of notificatie is
+- 🆕 **Email preview modal** - Bekijk email details voordat je actie onderneemt
+- 🆕 **Klant/lead matching** - Automatische matching op basis van email adres
+- 🆕 **Meerdere bestanden** - Sleep meerdere .eml bestanden tegelijk
+- 🆕 **Visuele feedback** - Duidelijke status indicatoren tijdens verwerking
+- 🆕 **Verwerkte emails lijst** - Overzicht van alle verwerkte emails met status
+
+**2. Email Integratie in Accounting Module**
+
+- 🆕 **QuoteEmailIntegration component** - Automatische offerte creatie vanuit emails
+- 🆕 **Email naar offerte parser** - Detecteert items, prijzen en werkuren in email tekst
+- 🆕 **Klant selectie** - Kies of maak klant aan vanuit email adres
+- 🆕 **Preview en bevestiging** - Bekijk geparsede data voordat offerte wordt aangemaakt
+- 🆕 **Automatische notities** - Email details worden automatisch toegevoegd aan offerte notities
+
+**3. Email Integratie in CRM Module**
+
+- 🆕 **Email tab** - Volledige email workflow in CRM module
+- 🆕 **EmailDropZone component** - Zelfde drag-and-drop functionaliteit als dashboard
+- 🆕 **Universele email preview** - Preview modal voor alle email types
+- 🆕 **Interactie creatie** - Automatisch interactie record aanmaken vanuit email
+- 🆕 **Klant/lead creatie** - Maak nieuwe klanten of leads aan vanuit email
+- 🆕 **Taak creatie** - Converteer emails naar taken met deadline tracking
+
+**4. Email Utilities & Parsing**
+
+- 🆕 **EML parser** - Volledige .eml bestand parser met ondersteuning voor:
+  - Van/Naar adressen
+  - Onderwerp en body tekst
+  - Datum parsing
+  - HTML naar tekst conversie
+- 🆕 **Email quote parser** - Intelligente parser voor offerte data uit emails:
+  - Detecteert items en prijzen
+  - Herkent werkuren en tarieven
+  - BTW berekeningen
+- 🆕 **Email-customer mapping** - Sla email adres naar klant mapping op voor toekomstige matching
+- 🆕 **Electron integratie** - Ondersteuning voor Electron app met Outlook drag-and-drop
+
+**Voordelen:**
+
+- ✅ **Tijd besparen** - Geen handmatig overtypen van email informatie meer nodig
+- ✅ **Minder fouten** - Automatische parsing voorkomt typefouten
+- ✅ **Snelle workflow** - Van email naar offerte/taak in enkele klikken
+- ✅ **Volledige traceerbaarheid** - Email details worden opgeslagen in notities
+- ✅ **Flexibele integratie** - Werkt met .eml bestanden en directe Outlook integratie
+
+**Technische Updates:**
+
+- 🆕 `EmailDropZone` component toegevoegd
+- 🆕 `EmailPreviewModal` component voor universele email preview
+- 🆕 `QuoteEmailIntegration` component voor offerte creatie vanuit emails
+- 🆕 `emlParser.ts` utility voor .eml bestand parsing
+- 🆕 `emailQuoteParser.ts` utility voor offerte data extractie
+- 🆕 `emailCustomerMapping.ts` utility voor email-klant mapping
+- 🆕 Electron API integratie voor Outlook drag-and-drop
+- 🆕 EmailDropZone geïntegreerd in Dashboard en CRM module
+- 🆕 QuoteEmailIntegration geïntegreerd in Accounting module
+
 ### Versie 5.7.1 🆕 **CATEGORIE FILTER IN POS & ACCOUNTING + UX VERBETERINGEN**
 
 **Nieuwe Features:**
@@ -4032,13 +4122,18 @@ Dit project is ontwikkeld voor intern gebruik. Alle rechten voorbehouden.
 ---
 
 **Laatste update**: December 2024  
-**Versie**: 5.7.1 (Categorie Filter in POS & Accounting + UX Verbeteringen)
-**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering, **volledig responsive mobile-first design**, **factuurbeheer vanuit CRM**, **persoonlijk dossier systeem**, **automatische factuur generatie bij voltooide werkorders**, **Lean Six Sigma analytics dashboard**, **database diagnostics systeem**, **volledig webshop beheer systeem met producten, categorieën en bestellingen**, **batch operations voor offertes en facturen**, **verbeterde UX/UI met moderne modal design**, **volledig boekhouding & dossier systeem (MKB-ready, NL-compliant)**, **compacte/uitgebreide werkorder weergave toggle**, **kassa verkopen tab met klikbare facturen en clone functionaliteit**, **financieel overzicht met Excel-achtige tabellen en geavanceerde filtering**, **automatische kloon bij offerte acceptatie**, **automatische herinneringsplanning voor facturen**, **betaalde facturen automatisch verplaatst naar archief**, **3 SKU types per voorraad item**, **categorieën systeem voor voorraad organisatie**, **uitgebreide zoeken/filteren in alle velden**, **dubbelklik om items te bewerken**, **categorie filter in POS en Accounting modules**, en **verbeterde UX met duidelijke scheiding tussen filters**
+**Versie**: 5.8.0 (Email Integratie & Automatische Offerte Creatie)
+**Status**: Productie-ready met intelligente werkorder herschikking, volledige werkorder synchronisatie, transparante audit trail, gegroepeerd overzicht, conflictvrije prioritering, **volledig responsive mobile-first design**, **factuurbeheer vanuit CRM**, **persoonlijk dossier systeem**, **automatische factuur generatie bij voltooide werkorders**, **Lean Six Sigma analytics dashboard**, **database diagnostics systeem**, **volledig webshop beheer systeem met producten, categorieën en bestellingen**, **batch operations voor offertes en facturen**, **verbeterde UX/UI met moderne modal design**, **volledig boekhouding & dossier systeem (MKB-ready, NL-compliant)**, **compacte/uitgebreide werkorder weergave toggle**, **kassa verkopen tab met klikbare facturen en clone functionaliteit**, **financieel overzicht met Excel-achtige tabellen en geavanceerde filtering**, **automatische kloon bij offerte acceptatie**, **automatische herinneringsplanning voor facturen**, **betaalde facturen automatisch verplaatst naar archief**, **3 SKU types per voorraad item**, **categorieën systeem voor voorraad organisatie**, **uitgebreide zoeken/filteren in alle velden**, **dubbelklik om items te bewerken**, **categorie filter in POS en Accounting modules**, **verbeterde UX met duidelijke scheiding tussen filters**, en **email integratie met drag-and-drop functionaliteit voor automatische offerte/taak creatie**
 
 ---
 
 **Veel succes met het Bedrijfsbeheer Dashboard! 🚀**
 
+**✨ Nieuw in V5.8.0: Email Integratie - sleep emails naar dashboard voor automatische offerte/taak creatie! 📧 ✨**
+**✨ Email Drop Zone - drag-and-drop .eml bestanden of Outlook emails direct naar dashboard! ✨**
+**✨ Automatische email parsing - detecteert items, prijzen en werkuren in emails! ✨**
+**✨ Email preview modal - bekijk email details voordat je actie onderneemt! ✨**
+**✨ Klant/lead matching - automatische matching op basis van email adres! ✨**
 **✨ Nieuw in V5.7.1: Categorie Filter in POS & Accounting - consistente filtering in alle modules! 🎯 ✨**
 **✨ Categorie filter in kassa - filter items op categorie tijdens verkoop! ✨**
 **✨ Categorie filter in facturen/offertes - filter items op categorie bij het maken! ✨**

@@ -24,6 +24,7 @@ import {
   InvoiceHistoryEntry,
   Customer,
   InventoryItem,
+  InventoryCategory,
   WorkOrder,
   Employee,
   User,
@@ -35,6 +36,7 @@ import {
   createQuoteApprovedNotification,
   createInvoiceSentNotification,
 } from "../utils/smartNotifications";
+import { QuoteEmailIntegration } from "../components/QuoteEmailIntegration";
 import {
   validateQuoteToWorkOrder,
   validateQuoteToInvoice,
@@ -60,6 +62,7 @@ interface AccountingProps {
   isAdmin: boolean;
   notifications?: Notification[];
   setNotifications?: React.Dispatch<React.SetStateAction<Notification[]>>;
+  categories?: InventoryCategory[]; // 🆕 V5.7: Categories prop
 }
 
 export const Accounting: React.FC<AccountingProps> = ({
@@ -77,10 +80,74 @@ export const Accounting: React.FC<AccountingProps> = ({
   isAdmin,
   notifications = [],
   setNotifications,
+  categories = [],
 }) => {
   const [activeTab, setActiveTab] = useState<
     "dashboard" | "transactions" | "quotes" | "invoices"
   >("dashboard");
+
+  // 🆕 V5.7: Inventory search & filter states for quote/invoice item selection
+  const [inventorySearchTerm, setInventorySearchTerm] = useState("");
+  const [inventoryCategoryFilter, setInventoryCategoryFilter] =
+    useState<string>("");
+  const [inventoryCategorySearchTerm, setInventoryCategorySearchTerm] =
+    useState("");
+  const [showInventoryCategoryDropdown, setShowInventoryCategoryDropdown] =
+    useState(false);
+
+  // 🆕 V5.7: Filtered categories for dropdown search
+  const filteredInventoryCategories = useMemo(() => {
+    if (!inventoryCategorySearchTerm) return categories;
+    const searchLower = inventoryCategorySearchTerm.toLowerCase();
+    return categories.filter(
+      (cat) =>
+        cat.name.toLowerCase().includes(searchLower) ||
+        cat.description?.toLowerCase().includes(searchLower)
+    );
+  }, [categories, inventoryCategorySearchTerm]);
+
+  // 🆕 V5.7: Filtered inventory for quote/invoice item selection
+  const filteredInventoryForSelection = useMemo(() => {
+    let filtered = inventory.filter(
+      (i) => (i.price || i.salePrice) && (i.price || i.salePrice) > 0
+    );
+
+    // Filter op categorie eerst
+    if (inventoryCategoryFilter) {
+      filtered = filtered.filter(
+        (item) => item.categoryId === inventoryCategoryFilter
+      );
+    }
+
+    // Filter op zoekterm
+    if (inventorySearchTerm) {
+      const term = inventorySearchTerm.toLowerCase();
+      filtered = filtered.filter((item) => {
+        // Zoek in naam
+        if (item.name.toLowerCase().includes(term)) return true;
+
+        // Zoek in alle SKU types
+        if (item.sku?.toLowerCase().includes(term)) return true;
+        if (item.supplierSku?.toLowerCase().includes(term)) return true;
+        if (item.autoSku?.toLowerCase().includes(term)) return true;
+        if (item.customSku?.toLowerCase().includes(term)) return true;
+
+        // Zoek in categorie naam
+        if (
+          item.categoryId &&
+          categories
+            .find((c) => c.id === item.categoryId)
+            ?.name.toLowerCase()
+            .includes(term)
+        )
+          return true;
+
+        return false;
+      });
+    }
+
+    return filtered;
+  }, [inventory, inventorySearchTerm, inventoryCategoryFilter, categories]);
 
   // Dashboard navigation state - track where user came from
   const [dashboardView, setDashboardView] = useState<string | null>(null);
@@ -91,6 +158,11 @@ export const Accounting: React.FC<AccountingProps> = ({
   // 🆕 Clone states
   const [showCloneQuoteModal, setShowCloneQuoteModal] = useState(false);
   const [showCloneInvoiceModal, setShowCloneInvoiceModal] = useState(false);
+
+  // 🆕 Accept quote modal with clone option
+  const [showAcceptQuoteModal, setShowAcceptQuoteModal] = useState(false);
+  const [quoteToAccept, setQuoteToAccept] = useState<string | null>(null);
+  const [cloneOnAccept, setCloneOnAccept] = useState(false);
 
   // 🆕 Edit states
   const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null);
@@ -1581,6 +1653,92 @@ export const Accounting: React.FC<AccountingProps> = ({
     alert(`✅ Offerte ${quote.id} succesvol aangemaakt!`);
   };
 
+  // 🆕 Accept quote with optional clone
+  const handleAcceptQuote = () => {
+    if (!quoteToAccept) return;
+
+    const quote = quotes.find((q) => q.id === quoteToAccept);
+    if (!quote) return;
+
+    // Update quote status to approved
+    updateQuoteStatus(quoteToAccept, "approved");
+
+    // If clone is requested, create a cloned quote for next period
+    if (cloneOnAccept) {
+      // Calculate next period date
+      let nextPeriodDate: Date;
+      if (quote.validUntil) {
+        const validUntilDate = new Date(quote.validUntil);
+        nextPeriodDate = new Date(validUntilDate);
+        nextPeriodDate.setDate(nextPeriodDate.getDate() + 30); // +30 days
+      } else {
+        // If no validUntil, use current date + 30 days
+        nextPeriodDate = new Date();
+        nextPeriodDate.setDate(nextPeriodDate.getDate() + 30);
+      }
+
+      const { subtotal, vatAmount, total } = {
+        subtotal: quote.subtotal,
+        vatAmount: quote.vatAmount,
+        total: quote.total,
+      };
+      const now = new Date().toISOString();
+      const customerName = getCustomerName(quote.customerId);
+
+      const clonedQuote: Quote = {
+        id: `Q${Date.now()}`,
+        customerId: quote.customerId,
+        items: quote.items.map((item) => ({ ...item })),
+        labor: quote.labor ? quote.labor.map((l) => ({ ...l })) : undefined,
+        subtotal: subtotal,
+        vatRate: quote.vatRate,
+        vatAmount: vatAmount,
+        total: total,
+        status: "draft",
+        createdDate: new Date().toISOString().split("T")[0],
+        validUntil: nextPeriodDate.toISOString().split("T")[0],
+        notes: `Gekloond van ${
+          quote.id
+        } (geaccepteerd op ${new Date().toLocaleDateString(
+          "nl-NL"
+        )}) voor volgende periode${
+          quote.notes ? `\n\nOriginele notitie: ${quote.notes}` : ""
+        }`,
+        createdBy: currentUser.employeeId,
+        timestamps: {
+          created: now,
+        },
+        history: [
+          createHistoryEntry(
+            "quote",
+            "created",
+            `Offerte automatisch gekloond van ${
+              quote.id
+            } voor volgende periode door ${getEmployeeName(
+              currentUser.employeeId
+            )}`
+          ) as QuoteHistoryEntry,
+        ],
+      };
+
+      setQuotes([...quotes, clonedQuote]);
+      alert(
+        `✅ Offerte geaccepteerd!\n\n📋 Nieuwe offerte ${
+          clonedQuote.id
+        } aangemaakt voor volgende periode (geldig tot ${nextPeriodDate.toLocaleDateString(
+          "nl-NL"
+        )}).`
+      );
+    } else {
+      alert(`✅ Offerte ${quote.id} succesvol geaccepteerd!`);
+    }
+
+    // Close modal
+    setShowAcceptQuoteModal(false);
+    setQuoteToAccept(null);
+    setCloneOnAccept(false);
+  };
+
   const updateQuoteStatus = (quoteId: string, newStatus: Quote["status"]) => {
     setQuotes(
       quotes.map((q) => {
@@ -1951,6 +2109,7 @@ export const Accounting: React.FC<AccountingProps> = ({
     // Filter by type
     switch (overviewType) {
       case "paid":
+        // Betaalde facturen zijn zichtbaar in Boekhouding & Dossier
         filtered = filtered.filter((inv) => inv.status === "paid");
         break;
       case "outstanding":
@@ -1961,7 +2120,13 @@ export const Accounting: React.FC<AccountingProps> = ({
       case "overdue":
         filtered = filtered.filter((inv) => inv.status === "overdue");
         break;
-      // 'all' doesn't filter
+      case "all":
+        // 🆕 V5.6: Verberg betaalde facturen bij "all" (alleen zichtbaar in Boekhouding & Dossier)
+        filtered = filtered.filter((inv) => inv.status !== "paid");
+        break;
+      // Default: no filter (but exclude paid)
+      default:
+        filtered = filtered.filter((inv) => inv.status !== "paid");
     }
 
     // Filter by customer name
@@ -2716,6 +2881,23 @@ export const Accounting: React.FC<AccountingProps> = ({
           if (newStatus === "sent" && !updates.timestamps.sent) {
             updates.timestamps.sent = now;
 
+            // 🆕 V5.6: Automatische herinneringsplanning bij verzenden
+            if (inv.dueDate) {
+              const dueDate = new Date(inv.dueDate);
+              const reminder1Date = new Date(dueDate);
+              reminder1Date.setDate(dueDate.getDate() + 7); // +7 dagen na vervaldatum
+
+              const reminder2Date = new Date(dueDate);
+              reminder2Date.setDate(dueDate.getDate() + 14); // +14 dagen na vervaldatum
+
+              updates.reminders = {
+                reminder1Date: reminder1Date.toISOString().split("T")[0],
+                reminder1Sent: false,
+                reminder2Date: reminder2Date.toISOString().split("T")[0],
+                reminder2Sent: false,
+              };
+            }
+
             // Track invoice validation completion
             trackAction(
               currentUser.employeeId,
@@ -2768,8 +2950,78 @@ export const Accounting: React.FC<AccountingProps> = ({
       return;
     }
 
-    // Proceed with sending
-    updateInvoiceStatus(invoiceToValidate.id, "sent");
+    // Directly update invoice status to "sent" without going through validation check again
+    const invoice = invoices.find((inv) => inv.id === invoiceToValidate.id);
+    if (!invoice) return;
+
+    const now = new Date().toISOString();
+    const oldStatus = invoice.status;
+
+    const updates: Partial<Invoice> = {
+      status: "sent",
+      history: [
+        ...(invoice.history || []),
+        createHistoryEntry(
+          "invoice",
+          "sent",
+          `Status gewijzigd van "${oldStatus}" naar "sent" na validatie door ${getEmployeeName(
+            currentUser.employeeId
+          )}`,
+          { fromStatus: oldStatus, toStatus: "sent" }
+        ) as InvoiceHistoryEntry,
+      ],
+    };
+
+    // Update timestamps
+    if (!invoice.timestamps) {
+      updates.timestamps = { created: invoice.issueDate };
+    } else {
+      updates.timestamps = { ...invoice.timestamps };
+    }
+
+    if (!updates.timestamps.sent) {
+      updates.timestamps.sent = now;
+
+      // 🆕 V5.6: Automatische herinneringsplanning bij verzenden
+      if (invoice.dueDate) {
+        const dueDate = new Date(invoice.dueDate);
+        const reminder1Date = new Date(dueDate);
+        reminder1Date.setDate(dueDate.getDate() + 7); // +7 dagen na vervaldatum
+
+        const reminder2Date = new Date(dueDate);
+        reminder2Date.setDate(dueDate.getDate() + 14); // +14 dagen na vervaldatum
+
+        updates.reminders = {
+          reminder1Date: reminder1Date.toISOString().split("T")[0],
+          reminder1Sent: false,
+          reminder2Date: reminder2Date.toISOString().split("T")[0],
+          reminder2Sent: false,
+        };
+      }
+
+      // Track invoice validation completion
+      trackAction(
+        currentUser.employeeId,
+        currentUser.role,
+        ModuleKey.ACCOUNTING,
+        "validate_invoice",
+        "complete",
+        {
+          invoiceId: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          wasAutoGenerated: isAutoGeneratedInvoice(invoice),
+        }
+      );
+    }
+
+    // Update invoice in state
+    setInvoices(
+      invoices.map((inv) =>
+        inv.id === invoice.id ? { ...inv, ...updates } : inv
+      )
+    );
+
+    // Close modal and reset
     setShowInvoiceValidationModal(false);
     setInvoiceToValidate(null);
     setValidationChecklist({
@@ -2777,6 +3029,11 @@ export const Accounting: React.FC<AccountingProps> = ({
       materialsChecked: false,
       extraWorkAdded: false,
     });
+
+    // Show success message
+    alert(
+      `✅ Factuur ${invoice.invoiceNumber} succesvol gevalideerd en verzonden!`
+    );
   };
 
   const handleEditInvoice = (invoiceId: string) => {
@@ -3024,6 +3281,62 @@ export const Accounting: React.FC<AccountingProps> = ({
     handleSaveClonedInvoice(true);
   };
 
+  // 🆕 V5.6: Send reminder manually
+  const handleSendReminder = (invoiceId: string, reminderNumber: 1 | 2) => {
+    const invoice = invoices.find((inv) => inv.id === invoiceId);
+    if (!invoice || !invoice.reminders) return;
+
+    const now = new Date().toISOString();
+    const reminderField =
+      reminderNumber === 1 ? "reminder1Sent" : "reminder2Sent";
+    const reminderDateField =
+      reminderNumber === 1 ? "reminder1SentDate" : "reminder2SentDate";
+
+    setInvoices(
+      invoices.map((inv) => {
+        if (inv.id === invoiceId && inv.reminders) {
+          return {
+            ...inv,
+            reminders: {
+              ...inv.reminders,
+              [reminderField]: true,
+              [reminderDateField]: now,
+            },
+            history: [
+              ...(inv.history || []),
+              createHistoryEntry(
+                "invoice",
+                "updated",
+                `Herinnering ${reminderNumber} verzonden voor factuur ${
+                  inv.invoiceNumber
+                } door ${getEmployeeName(currentUser.employeeId)}`
+              ) as InvoiceHistoryEntry,
+            ],
+          };
+        }
+        return inv;
+      })
+    );
+
+    const reminderDate =
+      reminderNumber === 1
+        ? invoice.reminders.reminder1Date
+        : invoice.reminders.reminder2Date;
+    alert(
+      `✅ Herinnering ${reminderNumber} verzonden voor factuur ${
+        invoice.invoiceNumber
+      }\n\n📧 Template: "Betreft factuur ${
+        invoice.invoiceNumber
+      } – vriendelijke herinnering"${
+        reminderDate
+          ? `\n📅 Gepland voor: ${new Date(reminderDate).toLocaleDateString(
+              "nl-NL"
+            )}`
+          : ""
+      }`
+    );
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <h1 className="text-2xl sm:text-3xl font-bold text-neutral mb-2">
@@ -3055,6 +3368,30 @@ export const Accounting: React.FC<AccountingProps> = ({
                   ×
                 </button>
               </div>
+
+              {/* 🆕 V5.6: Info banner voor betaalde facturen */}
+              {overviewType === "paid" && (
+                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg mb-4">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">ℹ️</span>
+                    <div>
+                      <p className="text-sm font-semibold text-blue-800 mb-1">
+                        Betaalde facturen zijn verplaatst naar Boekhouding &
+                        Dossier
+                      </p>
+                      <p className="text-xs text-blue-700">
+                        Alle betaalde facturen zijn automatisch geregistreerd in
+                        het{" "}
+                        <span className="font-semibold">
+                          Boekhouding & Dossier
+                        </span>{" "}
+                        module. Ga daarheen voor een volledig overzicht van alle
+                        betaalde facturen.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Filters */}
               <div className="bg-gray-50 p-4 rounded-lg mb-4">
@@ -3702,6 +4039,96 @@ export const Accounting: React.FC<AccountingProps> = ({
         </div>
       )}
 
+      {/* 🆕 ACCEPT QUOTE MODAL WITH CLONE OPTION */}
+      {showAcceptQuoteModal && quoteToAccept && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Offerte Accepteren
+              </h2>
+              <button
+                onClick={() => {
+                  setShowAcceptQuoteModal(false);
+                  setQuoteToAccept(null);
+                  setCloneOnAccept(false);
+                }}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {(() => {
+              const quote = quotes.find((q) => q.id === quoteToAccept);
+              if (!quote) return null;
+
+              return (
+                <>
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-600 mb-2">
+                      Deze offerte wordt geaccepteerd en gemarkeerd als
+                      goedgekeurd.
+                    </p>
+                    {quote.validUntil && (
+                      <p className="text-xs text-gray-500">
+                        Geldig tot:{" "}
+                        {new Date(quote.validUntil).toLocaleDateString("nl-NL")}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="mb-6">
+                    <label className="flex items-start cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={cloneOnAccept}
+                        onChange={(e) => setCloneOnAccept(e.target.checked)}
+                        className="mt-1 mr-3 h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                      />
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-gray-700 block">
+                          📋 Kloon voor volgende periode
+                        </span>
+                        <span className="text-xs text-gray-500 mt-1 block">
+                          {quote.validUntil
+                            ? `Nieuwe offerte wordt aangemaakt met geldigheidsdatum ${new Date(
+                                new Date(quote.validUntil).getTime() +
+                                  30 * 24 * 60 * 60 * 1000
+                              ).toLocaleDateString(
+                                "nl-NL"
+                              )} (+30 dagen vanaf huidige geldigheidsdatum)`
+                            : "Nieuwe offerte wordt aangemaakt voor volgende maand (status: Concept)"}
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleAcceptQuote}
+                      className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold"
+                    >
+                      ✓ Accepteren
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowAcceptQuoteModal(false);
+                        setQuoteToAccept(null);
+                        setCloneOnAccept(false);
+                      }}
+                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                    >
+                      Annuleren
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
       {/* 🆕 CLONE QUOTE MODAL */}
       {showCloneQuoteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
@@ -4300,212 +4727,231 @@ export const Accounting: React.FC<AccountingProps> = ({
       {/* Quotes Tab - Existing content continues here... */}
       {activeTab === "quotes" && (
         <>
-          {/* Quote Statistics */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <button
-              onClick={() => openQuotesOverviewModal("all")}
-              className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all transform hover:scale-105 cursor-pointer text-left"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Totaal Geoffreerd</p>
-                  <p className="text-2xl font-bold text-blue-600 mt-1">
-                    €{totalQuoted.toFixed(2)}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {quotes.length} offertes
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <span className="text-2xl">📊</span>
-                </div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => openQuotesOverviewModal("approved")}
-              className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all transform hover:scale-105 cursor-pointer text-left"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Geaccepteerd</p>
-                  <p className="text-2xl font-bold text-green-600 mt-1">
-                    €{totalApproved.toFixed(2)}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {approvedQuotes.length} offertes
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <span className="text-2xl">✅</span>
-                </div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => openQuotesOverviewModal("sent")}
-              className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all transform hover:scale-105 cursor-pointer text-left"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Verzonden</p>
-                  <p className="text-2xl font-bold text-orange-600 mt-1">
-                    €{totalSent.toFixed(2)}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {sentQuotes.length} offertes
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <span className="text-2xl">📤</span>
-                </div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => openQuotesOverviewModal("expired")}
-              className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all transform hover:scale-105 cursor-pointer text-left"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Verlopen</p>
-                  <p className="text-2xl font-bold text-red-600 mt-1">
-                    €{totalExpired.toFixed(2)}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {expiredQuotes.length} offertes
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                  <span className="text-2xl">⚠️</span>
-                </div>
-              </div>
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-            <div className="text-sm text-gray-600">
-              Totaal: {quotes.length} offertes
-              {batchMode && selectedQuotes.length > 0 && (
-                <span className="ml-3 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                  {selectedQuotes.length} geselecteerd
-                </span>
-              )}
+          {/* 📧 Email Parsing Integration */}
+          {isAdmin && (
+            <div className="mb-6">
+              <QuoteEmailIntegration
+                customers={customers}
+                onQuoteCreated={(quote) => {
+                  setQuotes([...quotes, quote]);
+                  alert(
+                    `✅ Offerte ${quote.id} succesvol aangemaakt vanuit email!`
+                  );
+                }}
+              />
             </div>
-            <div className="flex gap-2">
-              {isAdmin && (
-                <>
-                  <button
-                    onClick={() => {
-                      setBatchMode(!batchMode);
-                      if (batchMode) {
-                        setSelectedQuotes([]);
-                      }
-                    }}
-                    className={`px-4 py-2 rounded-lg transition-colors ${
-                      batchMode
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                    }`}
-                  >
-                    {batchMode ? "✓ Selectie Modus" : "☐ Batch Selectie"}
-                  </button>
+          )}
+
+          {
+            /* Quote Statistics */
+            <div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <button
+                  onClick={() => openQuotesOverviewModal("all")}
+                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all transform hover:scale-105 cursor-pointer text-left"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Totaal Geoffreerd</p>
+                      <p className="text-2xl font-bold text-blue-600 mt-1">
+                        €{totalQuoted.toFixed(2)}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {quotes.length} offertes
+                      </p>
+                    </div>
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <span className="text-2xl">📊</span>
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => openQuotesOverviewModal("approved")}
+                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all transform hover:scale-105 cursor-pointer text-left"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Geaccepteerd</p>
+                      <p className="text-2xl font-bold text-green-600 mt-1">
+                        €{totalApproved.toFixed(2)}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {approvedQuotes.length} offertes
+                      </p>
+                    </div>
+                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                      <span className="text-2xl">✅</span>
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => openQuotesOverviewModal("sent")}
+                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all transform hover:scale-105 cursor-pointer text-left"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Verzonden</p>
+                      <p className="text-2xl font-bold text-orange-600 mt-1">
+                        €{totalSent.toFixed(2)}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {sentQuotes.length} offertes
+                      </p>
+                    </div>
+                    <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                      <span className="text-2xl">📤</span>
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => openQuotesOverviewModal("expired")}
+                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all transform hover:scale-105 cursor-pointer text-left"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Verlopen</p>
+                      <p className="text-2xl font-bold text-red-600 mt-1">
+                        €{totalExpired.toFixed(2)}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {expiredQuotes.length} offertes
+                      </p>
+                    </div>
+                    <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                      <span className="text-2xl">⚠️</span>
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+                <div className="text-sm text-gray-600">
+                  Totaal: {quotes.length} offertes
                   {batchMode && selectedQuotes.length > 0 && (
-                    <div className="flex gap-2">
+                    <span className="ml-3 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                      {selectedQuotes.length} geselecteerd
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  {isAdmin && (
+                    <>
                       <button
                         onClick={() => {
-                          // Bulk convert to work orders
-                          const approvedQuotes = quotes.filter(
-                            (q) =>
-                              selectedQuotes.includes(q.id) &&
-                              q.status === "approved" &&
-                              !q.workOrderId
-                          );
-                          if (approvedQuotes.length === 0) {
-                            alert(
-                              "Geen geaccepteerde offertes zonder werkorder geselecteerd!"
-                            );
-                            return;
-                          }
-                          if (
-                            confirm(
-                              `Wil je ${approvedQuotes.length} offerte(s) omzetten naar werkorders?`
-                            )
-                          ) {
-                            approvedQuotes.forEach((q) =>
-                              convertQuoteToWorkOrder(q.id)
-                            );
+                          setBatchMode(!batchMode);
+                          if (batchMode) {
                             setSelectedQuotes([]);
-                            setBatchMode(false);
                           }
                         }}
-                        className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                        className={`px-4 py-2 rounded-lg transition-colors ${
+                          batchMode
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                        }`}
                       >
-                        📋 Maak Werkorders (
-                        {
-                          selectedQuotes.filter((id) => {
-                            const q = quotes.find((qu) => qu.id === id);
-                            return q?.status === "approved" && !q.workOrderId;
-                          }).length
-                        }
-                        )
+                        {batchMode ? "✓ Selectie Modus" : "☐ Batch Selectie"}
                       </button>
-                      <button
-                        onClick={() => {
-                          // Bulk status update
-                          const draftQuotes = quotes.filter(
-                            (q) =>
-                              selectedQuotes.includes(q.id) &&
-                              q.status === "draft"
-                          );
-                          if (draftQuotes.length > 0) {
-                            if (
-                              confirm(
-                                `Wil je ${draftQuotes.length} concept offerte(s) verzenden?`
-                              )
-                            ) {
-                              draftQuotes.forEach((q) =>
-                                updateQuoteStatus(q.id, "sent")
+                      {batchMode && selectedQuotes.length > 0 && (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              // Bulk convert to work orders
+                              const approvedQuotes = quotes.filter(
+                                (q) =>
+                                  selectedQuotes.includes(q.id) &&
+                                  q.status === "approved" &&
+                                  !q.workOrderId
                               );
+                              if (approvedQuotes.length === 0) {
+                                alert(
+                                  "Geen geaccepteerde offertes zonder werkorder geselecteerd!"
+                                );
+                                return;
+                              }
+                              if (
+                                confirm(
+                                  `Wil je ${approvedQuotes.length} offerte(s) omzetten naar werkorders?`
+                                )
+                              ) {
+                                approvedQuotes.forEach((q) =>
+                                  convertQuoteToWorkOrder(q.id)
+                                );
+                                setSelectedQuotes([]);
+                                setBatchMode(false);
+                              }
+                            }}
+                            className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                          >
+                            📋 Maak Werkorders (
+                            {
+                              selectedQuotes.filter((id) => {
+                                const q = quotes.find((qu) => qu.id === id);
+                                return (
+                                  q?.status === "approved" && !q.workOrderId
+                                );
+                              }).length
+                            }
+                            )
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Bulk status update
+                              const draftQuotes = quotes.filter(
+                                (q) =>
+                                  selectedQuotes.includes(q.id) &&
+                                  q.status === "draft"
+                              );
+                              if (draftQuotes.length > 0) {
+                                if (
+                                  confirm(
+                                    `Wil je ${draftQuotes.length} concept offerte(s) verzenden?`
+                                  )
+                                ) {
+                                  draftQuotes.forEach((q) =>
+                                    updateQuoteStatus(q.id, "sent")
+                                  );
+                                  setSelectedQuotes([]);
+                                  setBatchMode(false);
+                                }
+                              }
+                            }}
+                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                          >
+                            📤 Verzend (
+                            {
+                              selectedQuotes.filter((id) => {
+                                const q = quotes.find((qu) => qu.id === id);
+                                return q?.status === "draft";
+                              }).length
+                            }
+                            )
+                          </button>
+                          <button
+                            onClick={() => {
                               setSelectedQuotes([]);
                               setBatchMode(false);
-                            }
-                          }
-                        }}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                      >
-                        📤 Verzend (
-                        {
-                          selectedQuotes.filter((id) => {
-                            const q = quotes.find((qu) => qu.id === id);
-                            return q?.status === "draft";
-                          }).length
-                        }
-                        )
-                      </button>
+                            }}
+                            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                          >
+                            Annuleren
+                          </button>
+                        </div>
+                      )}
                       <button
-                        onClick={() => {
-                          setSelectedQuotes([]);
-                          setBatchMode(false);
-                        }}
-                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                        onClick={() => setShowQuoteForm(!showQuoteForm)}
+                        className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors"
                       >
-                        Annuleren
+                        + Nieuwe Offerte
                       </button>
-                    </div>
+                    </>
                   )}
-                  <button
-                    onClick={() => setShowQuoteForm(!showQuoteForm)}
-                    className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors"
-                  >
-                    + Nieuwe Offerte
-                  </button>
-                </>
-              )}
+                </div>
+              </div>
             </div>
-          </div>
-
-          {/* Add Quote Form - Existing form code here... */}
+          }
           {showQuoteForm && isAdmin && (
             <div className="bg-white rounded-lg shadow-md p-6 mb-6">
               <h2 className="text-xl font-semibold text-neutral mb-4">
@@ -4576,28 +5022,304 @@ export const Accounting: React.FC<AccountingProps> = ({
                   </div>
                 </div>
 
+                {/* 🆕 V5.7: Category Filter & Search - Always Visible Above Items */}
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    {/* Category Filter Dropdown */}
+                    <div
+                      className="relative flex-shrink-0"
+                      style={{ minWidth: "180px", maxWidth: "250px" }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowInventoryCategoryDropdown(
+                            !showInventoryCategoryDropdown
+                          );
+                          setInventoryCategorySearchTerm("");
+                        }}
+                        className={`w-full px-3 py-2 text-left border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-colors text-sm ${
+                          inventoryCategoryFilter
+                            ? "bg-primary text-white border-primary"
+                            : "bg-white border-gray-300 text-gray-700 hover:border-gray-400"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">
+                            {inventoryCategoryFilter
+                              ? categories.find(
+                                  (c) => c.id === inventoryCategoryFilter
+                                )?.name || "Categorie"
+                              : "🏷️ Categorie..."}
+                          </span>
+                          <span className="text-xs">▼</span>
+                        </div>
+                      </button>
+
+                      {showInventoryCategoryDropdown && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-10"
+                            onClick={() =>
+                              setShowInventoryCategoryDropdown(false)
+                            }
+                          />
+                          <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
+                            <div className="p-2 border-b border-gray-200">
+                              <input
+                                type="text"
+                                placeholder="Zoek categorie..."
+                                value={inventoryCategorySearchTerm}
+                                onChange={(e) =>
+                                  setInventoryCategorySearchTerm(e.target.value)
+                                }
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                                autoFocus
+                              />
+                            </div>
+                            <div className="overflow-y-auto max-h-48">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setInventoryCategoryFilter("");
+                                  setShowInventoryCategoryDropdown(false);
+                                  setInventoryCategorySearchTerm("");
+                                }}
+                                className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-100 transition-colors ${
+                                  !inventoryCategoryFilter
+                                    ? "bg-blue-50 font-semibold"
+                                    : ""
+                                }`}
+                              >
+                                <span className="text-gray-600">
+                                  Alle categorieën
+                                </span>
+                              </button>
+                              {filteredInventoryCategories.map((category) => (
+                                <button
+                                  key={category.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setInventoryCategoryFilter(category.id);
+                                    setShowInventoryCategoryDropdown(false);
+                                    setInventoryCategorySearchTerm("");
+                                  }}
+                                  className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-100 transition-colors flex items-center gap-2 ${
+                                    inventoryCategoryFilter === category.id
+                                      ? "bg-blue-50 font-semibold"
+                                      : ""
+                                  }`}
+                                >
+                                  <div
+                                    className="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0"
+                                    style={{
+                                      backgroundColor:
+                                        category.color || "#3B82F6",
+                                    }}
+                                  />
+                                  <span>{category.name}</span>
+                                  <span className="ml-auto text-xs text-gray-500">
+                                    (
+                                    {
+                                      inventory.filter(
+                                        (i) => i.categoryId === category.id
+                                      ).length
+                                    }
+                                    )
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Clear filter button */}
+                    {inventoryCategoryFilter && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setInventoryCategoryFilter("");
+                          setInventoryCategorySearchTerm("");
+                        }}
+                        className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        ✕ Wis
+                      </button>
+                    )}
+
+                    {/* Search input */}
+                    <input
+                      type="text"
+                      placeholder="Zoek op naam, SKU, categorie..."
+                      value={inventorySearchTerm}
+                      onChange={(e) => setInventorySearchTerm(e.target.value)}
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                </div>
+
                 {newQuote.items.map((item, index) => (
                   <div
                     key={index}
                     className="grid grid-cols-12 gap-2 items-center p-3 bg-gray-50 rounded-lg"
                   >
                     {item.inventoryItemId !== undefined ? (
-                      <select
-                        value={item.inventoryItemId}
-                        onChange={(e) =>
-                          handleInventoryItemChange(index, e.target.value)
-                        }
-                        className="col-span-5 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                      >
-                        <option value="">Selecteer voorraad item</option>
-                        {inventory
-                          .filter((i) => i.price && i.price > 0)
-                          .map((i) => (
-                            <option key={i.id} value={i.id}>
-                              {i.name} ({i.sku}) - €{i.price?.toFixed(2)}
-                            </option>
-                          ))}
-                      </select>
+                      <div className="col-span-5 space-y-2">
+                        {/* 🆕 V5.7: Category Filter & Search */}
+                        {categories.length > 0 && (
+                          <div className="flex gap-2">
+                            <div
+                              className="relative flex-1"
+                              style={{ minWidth: "150px" }}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowInventoryCategoryDropdown(
+                                    !showInventoryCategoryDropdown
+                                  );
+                                  setInventoryCategorySearchTerm("");
+                                }}
+                                className={`w-full px-3 py-1.5 text-left border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-colors text-xs ${
+                                  inventoryCategoryFilter
+                                    ? "bg-primary text-white border-primary"
+                                    : "bg-white border-gray-300 text-gray-700 hover:border-gray-400"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs">
+                                    {inventoryCategoryFilter
+                                      ? categories.find(
+                                          (c) =>
+                                            c.id === inventoryCategoryFilter
+                                        )?.name || "Categorie"
+                                      : "🏷️ Categorie"}
+                                  </span>
+                                  <span className="text-xs">▼</span>
+                                </div>
+                              </button>
+
+                              {showInventoryCategoryDropdown && (
+                                <>
+                                  <div
+                                    className="fixed inset-0 z-10"
+                                    onClick={() =>
+                                      setShowInventoryCategoryDropdown(false)
+                                    }
+                                  />
+                                  <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
+                                    <div className="p-2 border-b border-gray-200">
+                                      <input
+                                        type="text"
+                                        placeholder="Zoek categorie..."
+                                        value={inventoryCategorySearchTerm}
+                                        onChange={(e) =>
+                                          setInventoryCategorySearchTerm(
+                                            e.target.value
+                                          )
+                                        }
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                                        autoFocus
+                                      />
+                                    </div>
+                                    <div className="overflow-y-auto max-h-48">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setInventoryCategoryFilter("");
+                                          setShowInventoryCategoryDropdown(
+                                            false
+                                          );
+                                          setInventoryCategorySearchTerm("");
+                                        }}
+                                        className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-100 transition-colors ${
+                                          !inventoryCategoryFilter
+                                            ? "bg-blue-50 font-semibold"
+                                            : ""
+                                        }`}
+                                      >
+                                        <span className="text-gray-600">
+                                          Alle categorieën
+                                        </span>
+                                      </button>
+                                      {filteredInventoryCategories.map(
+                                        (category) => (
+                                          <button
+                                            key={category.id}
+                                            type="button"
+                                            onClick={() => {
+                                              setInventoryCategoryFilter(
+                                                category.id
+                                              );
+                                              setShowInventoryCategoryDropdown(
+                                                false
+                                              );
+                                              setInventoryCategorySearchTerm(
+                                                ""
+                                              );
+                                            }}
+                                            className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-100 transition-colors flex items-center gap-2 ${
+                                              inventoryCategoryFilter ===
+                                              category.id
+                                                ? "bg-blue-50 font-semibold"
+                                                : ""
+                                            }`}
+                                          >
+                                            <div
+                                              className="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0"
+                                              style={{
+                                                backgroundColor:
+                                                  category.color || "#3B82F6",
+                                              }}
+                                            />
+                                            <span>{category.name}</span>
+                                          </button>
+                                        )
+                                      )}
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                            {inventoryCategoryFilter && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setInventoryCategoryFilter("");
+                                  setInventoryCategorySearchTerm("");
+                                }}
+                                className="px-2 py-1.5 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Inventory dropdown */}
+                        <select
+                          value={item.inventoryItemId}
+                          onChange={(e) =>
+                            handleInventoryItemChange(index, e.target.value)
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                          <option value="">Selecteer voorraad item</option>
+                          {filteredInventoryForSelection.map((i) => {
+                            const price = i.price || i.salePrice || 0;
+                            return (
+                              <option key={i.id} value={i.id}>
+                                {i.name} ({i.autoSku || i.sku}) - €
+                                {price.toFixed(2)}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
                     ) : (
                       <input
                         type="text"
@@ -5142,9 +5864,11 @@ export const Accounting: React.FC<AccountingProps> = ({
                       {quote.status === "sent" && (
                         <>
                           <button
-                            onClick={() =>
-                              updateQuoteStatus(quote.id, "approved")
-                            }
+                            onClick={() => {
+                              setQuoteToAccept(quote.id);
+                              setCloneOnAccept(false);
+                              setShowAcceptQuoteModal(true);
+                            }}
                             className="flex-1 px-3 py-2 bg-green-500 text-white text-sm rounded hover:bg-green-600"
                           >
                             Accepteren
@@ -5374,31 +6098,307 @@ export const Accounting: React.FC<AccountingProps> = ({
                   </div>
                 </div>
 
+                {/* 🆕 V5.7: Category Filter & Search - Always Visible Above Items (Same as Quote) */}
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    {/* Category Filter Dropdown */}
+                    <div
+                      className="relative flex-shrink-0"
+                      style={{ minWidth: "180px", maxWidth: "250px" }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowInventoryCategoryDropdown(
+                            !showInventoryCategoryDropdown
+                          );
+                          setInventoryCategorySearchTerm("");
+                        }}
+                        className={`w-full px-3 py-2 text-left border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-colors text-sm ${
+                          inventoryCategoryFilter
+                            ? "bg-primary text-white border-primary"
+                            : "bg-white border-gray-300 text-gray-700 hover:border-gray-400"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">
+                            {inventoryCategoryFilter
+                              ? categories.find(
+                                  (c) => c.id === inventoryCategoryFilter
+                                )?.name || "Categorie"
+                              : "🏷️ Categorie..."}
+                          </span>
+                          <span className="text-xs">▼</span>
+                        </div>
+                      </button>
+
+                      {showInventoryCategoryDropdown && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-10"
+                            onClick={() =>
+                              setShowInventoryCategoryDropdown(false)
+                            }
+                          />
+                          <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
+                            <div className="p-2 border-b border-gray-200">
+                              <input
+                                type="text"
+                                placeholder="Zoek categorie..."
+                                value={inventoryCategorySearchTerm}
+                                onChange={(e) =>
+                                  setInventoryCategorySearchTerm(e.target.value)
+                                }
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                                autoFocus
+                              />
+                            </div>
+                            <div className="overflow-y-auto max-h-48">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setInventoryCategoryFilter("");
+                                  setShowInventoryCategoryDropdown(false);
+                                  setInventoryCategorySearchTerm("");
+                                }}
+                                className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-100 transition-colors ${
+                                  !inventoryCategoryFilter
+                                    ? "bg-blue-50 font-semibold"
+                                    : ""
+                                }`}
+                              >
+                                <span className="text-gray-600">
+                                  Alle categorieën
+                                </span>
+                              </button>
+                              {filteredInventoryCategories.map((category) => (
+                                <button
+                                  key={category.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setInventoryCategoryFilter(category.id);
+                                    setShowInventoryCategoryDropdown(false);
+                                    setInventoryCategorySearchTerm("");
+                                  }}
+                                  className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-100 transition-colors flex items-center gap-2 ${
+                                    inventoryCategoryFilter === category.id
+                                      ? "bg-blue-50 font-semibold"
+                                      : ""
+                                  }`}
+                                >
+                                  <div
+                                    className="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0"
+                                    style={{
+                                      backgroundColor:
+                                        category.color || "#3B82F6",
+                                    }}
+                                  />
+                                  <span>{category.name}</span>
+                                  <span className="ml-auto text-xs text-gray-500">
+                                    (
+                                    {
+                                      inventory.filter(
+                                        (i) => i.categoryId === category.id
+                                      ).length
+                                    }
+                                    )
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Clear filter button */}
+                    {inventoryCategoryFilter && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setInventoryCategoryFilter("");
+                          setInventoryCategorySearchTerm("");
+                        }}
+                        className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        ✕ Wis
+                      </button>
+                    )}
+
+                    {/* Search input */}
+                    <input
+                      type="text"
+                      placeholder="Zoek op naam, SKU, categorie..."
+                      value={inventorySearchTerm}
+                      onChange={(e) => setInventorySearchTerm(e.target.value)}
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                </div>
+
                 {newInvoice.items.map((item, index) => (
                   <div
                     key={index}
                     className="grid grid-cols-12 gap-2 items-center p-3 bg-gray-50 rounded-lg"
                   >
                     {item.inventoryItemId !== undefined ? (
-                      <select
-                        value={item.inventoryItemId}
-                        onChange={(e) =>
-                          handleInvoiceInventoryItemChange(
-                            index,
-                            e.target.value
-                          )
-                        }
-                        className="col-span-5 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                      >
-                        <option value="">Selecteer voorraad item</option>
-                        {inventory
-                          .filter((i) => i.price && i.price > 0)
-                          .map((i) => (
-                            <option key={i.id} value={i.id}>
-                              {i.name} ({i.sku}) - €{i.price?.toFixed(2)}
-                            </option>
-                          ))}
-                      </select>
+                      <div className="col-span-5 space-y-2">
+                        {/* 🆕 V5.7: Category Filter & Search (same as quote form) */}
+                        {categories.length > 0 && (
+                          <div className="flex gap-2">
+                            <div
+                              className="relative flex-1"
+                              style={{ minWidth: "150px" }}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowInventoryCategoryDropdown(
+                                    !showInventoryCategoryDropdown
+                                  );
+                                  setInventoryCategorySearchTerm("");
+                                }}
+                                className={`w-full px-3 py-1.5 text-left border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-colors text-xs ${
+                                  inventoryCategoryFilter
+                                    ? "bg-primary text-white border-primary"
+                                    : "bg-white border-gray-300 text-gray-700 hover:border-gray-400"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs">
+                                    {inventoryCategoryFilter
+                                      ? categories.find(
+                                          (c) =>
+                                            c.id === inventoryCategoryFilter
+                                        )?.name || "Categorie"
+                                      : "🏷️ Categorie"}
+                                  </span>
+                                  <span className="text-xs">▼</span>
+                                </div>
+                              </button>
+
+                              {showInventoryCategoryDropdown && (
+                                <>
+                                  <div
+                                    className="fixed inset-0 z-10"
+                                    onClick={() =>
+                                      setShowInventoryCategoryDropdown(false)
+                                    }
+                                  />
+                                  <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
+                                    <div className="p-2 border-b border-gray-200">
+                                      <input
+                                        type="text"
+                                        placeholder="Zoek categorie..."
+                                        value={inventoryCategorySearchTerm}
+                                        onChange={(e) =>
+                                          setInventoryCategorySearchTerm(
+                                            e.target.value
+                                          )
+                                        }
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                                        autoFocus
+                                      />
+                                    </div>
+                                    <div className="overflow-y-auto max-h-48">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setInventoryCategoryFilter("");
+                                          setShowInventoryCategoryDropdown(
+                                            false
+                                          );
+                                          setInventoryCategorySearchTerm("");
+                                        }}
+                                        className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-100 transition-colors ${
+                                          !inventoryCategoryFilter
+                                            ? "bg-blue-50 font-semibold"
+                                            : ""
+                                        }`}
+                                      >
+                                        <span className="text-gray-600">
+                                          Alle categorieën
+                                        </span>
+                                      </button>
+                                      {filteredInventoryCategories.map(
+                                        (category) => (
+                                          <button
+                                            key={category.id}
+                                            type="button"
+                                            onClick={() => {
+                                              setInventoryCategoryFilter(
+                                                category.id
+                                              );
+                                              setShowInventoryCategoryDropdown(
+                                                false
+                                              );
+                                              setInventoryCategorySearchTerm(
+                                                ""
+                                              );
+                                            }}
+                                            className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-100 transition-colors flex items-center gap-2 ${
+                                              inventoryCategoryFilter ===
+                                              category.id
+                                                ? "bg-blue-50 font-semibold"
+                                                : ""
+                                            }`}
+                                          >
+                                            <div
+                                              className="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0"
+                                              style={{
+                                                backgroundColor:
+                                                  category.color || "#3B82F6",
+                                              }}
+                                            />
+                                            <span>{category.name}</span>
+                                          </button>
+                                        )
+                                      )}
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                            {inventoryCategoryFilter && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setInventoryCategoryFilter("");
+                                  setInventoryCategorySearchTerm("");
+                                }}
+                                className="px-2 py-1.5 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Inventory dropdown */}
+                        <select
+                          value={item.inventoryItemId}
+                          onChange={(e) =>
+                            handleInvoiceInventoryItemChange(
+                              index,
+                              e.target.value
+                            )
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                          <option value="">Selecteer voorraad item</option>
+                          {filteredInventoryForSelection.map((i) => {
+                            const price = i.price || i.salePrice || 0;
+                            return (
+                              <option key={i.id} value={i.id}>
+                                {i.name} ({i.autoSku || i.sku}) - €
+                                {price.toFixed(2)}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
                     ) : (
                       <input
                         type="text"
@@ -5768,292 +6768,270 @@ export const Accounting: React.FC<AccountingProps> = ({
 
           {/* Invoices Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {invoices.map((invoice) => {
-              const workOrder = getWorkOrderStatus(invoice.workOrderId);
-              const workOrderBadge = getWorkOrderBadge(workOrder);
-              const isCompleted = workOrder?.status === "Completed";
-              const hasOverdue = invoice.status === "overdue";
-              const isSelected = selectedInvoices.includes(invoice.id);
+            {invoices
+              .filter((invoice) => invoice.status !== "paid") // 🆕 V5.6: Verberg betaalde facturen (zichtbaar in Boekhouding & Dossier)
+              .map((invoice) => {
+                const workOrder = getWorkOrderStatus(invoice.workOrderId);
+                const workOrderBadge = getWorkOrderBadge(workOrder);
+                const isCompleted = workOrder?.status === "Completed";
+                const hasOverdue = invoice.status === "overdue";
+                const isSelected = selectedInvoices.includes(invoice.id);
 
-              return (
-                <div
-                  key={invoice.id}
-                  className={`bg-white rounded-lg shadow-md p-6 transition-all ${
-                    hasOverdue
-                      ? "border-l-4 border-red-500"
-                      : isCompleted
-                      ? "border-l-4 border-green-500"
-                      : ""
-                  } ${
-                    batchMode && isSelected
-                      ? "ring-4 ring-blue-500 border-blue-500"
-                      : batchMode
-                      ? "hover:ring-2 hover:ring-gray-300"
-                      : ""
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    {batchMode && (
-                      <div className="mr-3 mt-1">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedInvoices([
-                                ...selectedInvoices,
-                                invoice.id,
-                              ]);
-                            } else {
-                              setSelectedInvoices(
-                                selectedInvoices.filter(
-                                  (id) => id !== invoice.id
-                                )
-                              );
-                            }
-                          }}
-                          className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg text-neutral">
-                        {invoice.invoiceNumber}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        {getCustomerName(invoice.customerId)}
-                      </p>
-                      {invoice.quoteId && (
-                        <p className="text-xs text-blue-600 mt-1">
-                          Van offerte: {invoice.quoteId}
+                return (
+                  <div
+                    key={invoice.id}
+                    className={`bg-white rounded-lg shadow-md p-6 transition-all ${
+                      hasOverdue
+                        ? "border-l-4 border-red-500"
+                        : isCompleted
+                        ? "border-l-4 border-green-500"
+                        : ""
+                    } ${
+                      batchMode && isSelected
+                        ? "ring-4 ring-blue-500 border-blue-500"
+                        : batchMode
+                        ? "hover:ring-2 hover:ring-gray-300"
+                        : ""
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      {batchMode && (
+                        <div className="mr-3 mt-1">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedInvoices([
+                                  ...selectedInvoices,
+                                  invoice.id,
+                                ]);
+                              } else {
+                                setSelectedInvoices(
+                                  selectedInvoices.filter(
+                                    (id) => id !== invoice.id
+                                  )
+                                );
+                              }
+                            }}
+                            className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                          />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg text-neutral">
+                          {invoice.invoiceNumber}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {getCustomerName(invoice.customerId)}
                         </p>
-                      )}
-                      {workOrderBadge && (
-                        <button
-                          onClick={() => {
-                            alert(`Werkorder ID: ${invoice.workOrderId}`);
-                          }}
-                          className={`mt-2 px-3 py-1 rounded-full text-xs font-semibold border-2 ${workOrderBadge.color} hover:opacity-80 transition-opacity cursor-pointer`}
-                          title="Klik om naar werkorder te gaan"
-                        >
-                          {workOrderBadge.icon} {workOrderBadge.text}
-                        </button>
-                      )}
-                    </div>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${getInvoiceStatusColor(
-                        invoice.status
-                      )}`}
-                    >
-                      {invoice.status === "draft" && "Concept"}
-                      {invoice.status === "sent" && "Verzonden"}
-                      {invoice.status === "paid" && "Betaald"}
-                      {invoice.status === "overdue" && "Verlopen"}
-                      {invoice.status === "cancelled" && "Geannuleerd"}
-                    </span>
-                  </div>
-
-                  {/* Items */}
-                  <div className="space-y-2 mb-3">
-                    <h4 className="text-sm font-semibold text-gray-700">
-                      Items:
-                    </h4>
-                    {invoice.items.map((item, index) => (
-                      <div key={index} className="flex justify-between text-sm">
-                        <span className="text-gray-700">
-                          {item.inventoryItemId
-                            ? getInventoryItemName(item.inventoryItemId)
-                            : item.description}
-                          <span className="text-gray-500">
-                            {" "}
-                            (×{item.quantity})
-                          </span>
-                        </span>
-                        <span className="font-medium">
-                          €{item.total.toFixed(2)}
-                        </span>
+                        {invoice.quoteId && (
+                          <p className="text-xs text-blue-600 mt-1">
+                            Van offerte: {invoice.quoteId}
+                          </p>
+                        )}
+                        {workOrderBadge && (
+                          <button
+                            onClick={() => {
+                              alert(`Werkorder ID: ${invoice.workOrderId}`);
+                            }}
+                            className={`mt-2 px-3 py-1 rounded-full text-xs font-semibold border-2 ${workOrderBadge.color} hover:opacity-80 transition-opacity cursor-pointer`}
+                            title="Klik om naar werkorder te gaan"
+                          >
+                            {workOrderBadge.icon} {workOrderBadge.text}
+                          </button>
+                        )}
                       </div>
-                    ))}
-                  </div>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${getInvoiceStatusColor(
+                          invoice.status
+                        )}`}
+                      >
+                        {invoice.status === "draft" && "Concept"}
+                        {invoice.status === "sent" && "Verzonden"}
+                        {invoice.status === "paid" && "Betaald"}
+                        {invoice.status === "overdue" && "Verlopen"}
+                        {invoice.status === "cancelled" && "Geannuleerd"}
+                      </span>
+                    </div>
 
-                  {/* Labor */}
-                  {invoice.labor && invoice.labor.length > 0 && (
-                    <div className="space-y-2 mb-3 border-t pt-3">
+                    {/* Items */}
+                    <div className="space-y-2 mb-3">
                       <h4 className="text-sm font-semibold text-gray-700">
-                        Werkuren:
+                        Items:
                       </h4>
-                      {invoice.labor.map((labor, index) => (
+                      {invoice.items.map((item, index) => (
                         <div
                           key={index}
                           className="flex justify-between text-sm"
                         >
                           <span className="text-gray-700">
-                            {labor.description}
+                            {item.inventoryItemId
+                              ? getInventoryItemName(item.inventoryItemId)
+                              : item.description}
                             <span className="text-gray-500">
                               {" "}
-                              ({labor.hours}u @ €{labor.hourlyRate}/u)
+                              (×{item.quantity})
                             </span>
                           </span>
                           <span className="font-medium">
-                            €{labor.total.toFixed(2)}
+                            €{item.total.toFixed(2)}
                           </span>
                         </div>
                       ))}
                     </div>
-                  )}
 
-                  {/* Totals */}
-                  <div className="border-t pt-3 mb-4 space-y-1">
-                    <div className="flex justify-between text-sm text-gray-600">
-                      <span>Subtotaal (excl. BTW):</span>
-                      <span>€{invoice.subtotal.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm text-gray-600">
-                      <span>BTW ({invoice.vatRate}%):</span>
-                      <span>€{invoice.vatAmount.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between items-center pt-2 border-t">
-                      <span className="font-semibold text-neutral">
-                        Totaal (incl. BTW):
-                      </span>
-                      <span className="text-xl font-bold text-primary">
-                        €{invoice.total.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between text-sm text-gray-600 mb-4">
-                    <span>Factuurdatum: {invoice.issueDate}</span>
-                    <span>Vervaldatum: {invoice.dueDate}</span>
-                  </div>
-
-                  {invoice.paidDate && (
-                    <div className="p-3 bg-green-50 rounded-lg mb-4">
-                      <p className="text-sm text-green-700 font-medium">
-                        ✓ Betaald op: {invoice.paidDate}
-                      </p>
-                    </div>
-                  )}
-
-                  {invoice.paymentTerms && (
-                    <div className="text-xs text-gray-500 mb-4">
-                      Betalingstermijn: {invoice.paymentTerms}
-                    </div>
-                  )}
-
-                  {invoice.notes && (
-                    <div className="p-3 bg-gray-50 rounded-lg mb-4">
-                      <p className="text-sm text-gray-700">{invoice.notes}</p>
-                    </div>
-                  )}
-
-                  {/* Tip 4: Warning banner for auto-generated invoices */}
-                  {invoice.status === "draft" &&
-                    isAutoGeneratedInvoice(invoice) && (
-                      <div className="p-4 bg-yellow-50 rounded-lg mb-4 border-l-4 border-yellow-400">
-                        <div className="flex items-start gap-3">
-                          <svg
-                            className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                    {/* Labor */}
+                    {invoice.labor && invoice.labor.length > 0 && (
+                      <div className="space-y-2 mb-3 border-t pt-3">
+                        <h4 className="text-sm font-semibold text-gray-700">
+                          Werkuren:
+                        </h4>
+                        {invoice.labor.map((labor, index) => (
+                          <div
+                            key={index}
+                            className="flex justify-between text-sm"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                            />
-                          </svg>
-                          <div className="flex-1">
-                            <h4 className="text-sm font-semibold text-yellow-800 mb-1">
-                              ⚠️ Automatisch aangemaakte factuur
-                            </h4>
-                            <p className="text-xs text-yellow-700 mb-2">
-                              Deze factuur is automatisch aangemaakt na
-                              voltooiing van een werkorder. Controleer{" "}
-                              <strong>gewerkte uren</strong>,{" "}
-                              <strong>materialen</strong> en voeg eventueel{" "}
-                              <strong>meerwerk</strong> toe voordat u verzendt.
-                            </p>
-                            {workOrder && (
-                              <div className="mt-2 text-xs">
-                                <button
-                                  onClick={() => handleEditInvoice(invoice.id)}
-                                  className="text-yellow-800 underline hover:text-yellow-900 font-medium"
-                                >
-                                  ✏️ Bewerk factuur om te controleren
-                                </button>
-                              </div>
-                            )}
+                            <span className="text-gray-700">
+                              {labor.description}
+                              <span className="text-gray-500">
+                                {" "}
+                                ({labor.hours}u @ €{labor.hourlyRate}/u)
+                              </span>
+                            </span>
+                            <span className="font-medium">
+                              €{labor.total.toFixed(2)}
+                            </span>
                           </div>
-                        </div>
+                        ))}
                       </div>
                     )}
 
-                  {/* Work Order Status Info for Completed */}
-                  {isCompleted && workOrder && (
-                    <div className="p-3 bg-green-50 rounded-lg mb-4 border border-green-200">
-                      <div className="flex items-center gap-2 mb-2">
-                        <svg
-                          className="w-5 h-5 text-green-600"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        <span className="text-sm font-semibold text-green-700">
-                          Werkorder Voltooid
+                    {/* Totals */}
+                    <div className="border-t pt-3 mb-4 space-y-1">
+                      <div className="flex justify-between text-sm text-gray-600">
+                        <span>Subtotaal (excl. BTW):</span>
+                        <span>€{invoice.subtotal.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-gray-600">
+                        <span>BTW ({invoice.vatRate}%):</span>
+                        <span>€{invoice.vatAmount.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between items-center pt-2 border-t">
+                        <span className="font-semibold text-neutral">
+                          Totaal (incl. BTW):
+                        </span>
+                        <span className="text-xl font-bold text-primary">
+                          €{invoice.total.toFixed(2)}
                         </span>
                       </div>
-                      {workOrder.hoursSpent !== undefined &&
-                        workOrder.estimatedHours && (
-                          <p className="text-xs text-gray-700">
-                            ⏱️ Gewerkt: {workOrder.hoursSpent}u (Geschat:{" "}
-                            {workOrder.estimatedHours}u)
-                            {workOrder.hoursSpent !==
-                              workOrder.estimatedHours && (
-                              <span
-                                className={`ml-2 font-semibold ${
-                                  workOrder.hoursSpent <=
-                                  workOrder.estimatedHours * 1.1
-                                    ? "text-green-600"
-                                    : workOrder.hoursSpent <=
-                                      workOrder.estimatedHours * 1.25
-                                    ? "text-orange-600"
-                                    : "text-red-600"
-                                }`}
-                              >
-                                (
-                                {Math.round(
-                                  (workOrder.hoursSpent /
-                                    workOrder.estimatedHours) *
-                                    100
-                                )}
-                                %)
-                              </span>
-                            )}
-                          </p>
-                        )}
                     </div>
-                  )}
 
-                  {/* Editable notification for active workorders */}
-                  {invoice.workOrderId &&
-                    workOrder &&
-                    workOrder.status !== "Completed" &&
-                    isAdmin && (
-                      <div className="p-3 bg-blue-50 rounded-lg mb-4 border border-blue-200">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
+                    <div className="flex justify-between text-sm text-gray-600 mb-4">
+                      <span>Factuurdatum: {invoice.issueDate}</span>
+                      <span>Vervaldatum: {invoice.dueDate}</span>
+                    </div>
+
+                    {/* 🆕 V5.6: Reminder Information */}
+                    {invoice.reminders && invoice.status === "sent" && (
+                      <div className="p-3 bg-blue-50 rounded-lg mb-4 border-l-4 border-blue-400">
+                        <h4 className="text-sm font-semibold text-blue-800 mb-2">
+                          📅 Herinneringsplanning
+                        </h4>
+                        <div className="space-y-2">
+                          {invoice.reminders.reminder1Date && (
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-blue-700">
+                                Herinnering 1:{" "}
+                                {new Date(
+                                  invoice.reminders.reminder1Date
+                                ).toLocaleDateString("nl-NL")}
+                              </span>
+                              {invoice.reminders.reminder1Sent ? (
+                                <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
+                                  ✓ Verzonden{" "}
+                                  {invoice.reminders.reminder1SentDate
+                                    ? new Date(
+                                        invoice.reminders.reminder1SentDate
+                                      ).toLocaleDateString("nl-NL")
+                                    : ""}
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() =>
+                                    handleSendReminder(invoice.id, 1)
+                                  }
+                                  className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs font-semibold transition-colors"
+                                >
+                                  📧 Herinnering nu sturen
+                                </button>
+                              )}
+                            </div>
+                          )}
+                          {invoice.reminders.reminder2Date && (
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-blue-700">
+                                Herinnering 2:{" "}
+                                {new Date(
+                                  invoice.reminders.reminder2Date
+                                ).toLocaleDateString("nl-NL")}
+                              </span>
+                              {invoice.reminders.reminder2Sent ? (
+                                <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
+                                  ✓ Verzonden{" "}
+                                  {invoice.reminders.reminder2SentDate
+                                    ? new Date(
+                                        invoice.reminders.reminder2SentDate
+                                      ).toLocaleDateString("nl-NL")
+                                    : ""}
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() =>
+                                    handleSendReminder(invoice.id, 2)
+                                  }
+                                  className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs font-semibold transition-colors"
+                                >
+                                  📧 Herinnering nu sturen
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-xs text-blue-600 mt-2">
+                          💡 Template: "Betreft factuur {invoice.invoiceNumber}{" "}
+                          – vriendelijke herinnering"
+                        </p>
+                      </div>
+                    )}
+
+                    {invoice.paidDate && (
+                      <div className="p-3 bg-green-50 rounded-lg mb-4">
+                        <p className="text-sm text-green-700 font-medium">
+                          ✓ Betaald op: {invoice.paidDate}
+                        </p>
+                      </div>
+                    )}
+
+                    {invoice.paymentTerms && (
+                      <div className="text-xs text-gray-500 mb-4">
+                        Betalingstermijn: {invoice.paymentTerms}
+                      </div>
+                    )}
+
+                    {invoice.notes && (
+                      <div className="p-3 bg-gray-50 rounded-lg mb-4">
+                        <p className="text-sm text-gray-700">{invoice.notes}</p>
+                      </div>
+                    )}
+
+                    {/* Tip 4: Warning banner for auto-generated invoices */}
+                    {invoice.status === "draft" &&
+                      isAutoGeneratedInvoice(invoice) && (
+                        <div className="p-4 bg-yellow-50 rounded-lg mb-4 border-l-4 border-yellow-400">
+                          <div className="flex items-start gap-3">
                             <svg
-                              className="w-5 h-5 text-blue-600"
+                              className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -6062,88 +7040,200 @@ export const Accounting: React.FC<AccountingProps> = ({
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 strokeWidth={2}
-                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                               />
                             </svg>
-                            <span className="text-xs font-medium text-blue-800">
-                              ✏️ Deze factuur is gekoppeld aan een actieve
-                              werkorder. Wijzigingen worden automatisch
-                              gesynchroniseerd.
-                            </span>
+                            <div className="flex-1">
+                              <h4 className="text-sm font-semibold text-yellow-800 mb-1">
+                                ⚠️ Automatisch aangemaakte factuur
+                              </h4>
+                              <p className="text-xs text-yellow-700 mb-2">
+                                Deze factuur is automatisch aangemaakt na
+                                voltooiing van een werkorder. Controleer{" "}
+                                <strong>gewerkte uren</strong>,{" "}
+                                <strong>materialen</strong> en voeg eventueel{" "}
+                                <strong>meerwerk</strong> toe voordat u
+                                verzendt.
+                              </p>
+                              {workOrder && (
+                                <div className="mt-2 text-xs">
+                                  <button
+                                    onClick={() =>
+                                      handleEditInvoice(invoice.id)
+                                    }
+                                    className="text-yellow-800 underline hover:text-yellow-900 font-medium"
+                                  >
+                                    ✏️ Bewerk factuur om te controleren
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
+                      )}
+
+                    {/* Work Order Status Info for Completed */}
+                    {isCompleted && workOrder && (
+                      <div className="p-3 bg-green-50 rounded-lg mb-4 border border-green-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <svg
+                            className="w-5 h-5 text-green-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          <span className="text-sm font-semibold text-green-700">
+                            Werkorder Voltooid
+                          </span>
+                        </div>
+                        {workOrder.hoursSpent !== undefined &&
+                          workOrder.estimatedHours && (
+                            <p className="text-xs text-gray-700">
+                              ⏱️ Gewerkt: {workOrder.hoursSpent}u (Geschat:{" "}
+                              {workOrder.estimatedHours}u)
+                              {workOrder.hoursSpent !==
+                                workOrder.estimatedHours && (
+                                <span
+                                  className={`ml-2 font-semibold ${
+                                    workOrder.hoursSpent <=
+                                    workOrder.estimatedHours * 1.1
+                                      ? "text-green-600"
+                                      : workOrder.hoursSpent <=
+                                        workOrder.estimatedHours * 1.25
+                                      ? "text-orange-600"
+                                      : "text-red-600"
+                                  }`}
+                                >
+                                  (
+                                  {Math.round(
+                                    (workOrder.hoursSpent /
+                                      workOrder.estimatedHours) *
+                                      100
+                                  )}
+                                  %)
+                                </span>
+                              )}
+                            </p>
+                          )}
                       </div>
                     )}
 
-                  {isAdmin && (
-                    <div className="flex gap-2 flex-wrap">
-                      {invoice.status === "draft" && (
-                        <button
-                          onClick={() =>
-                            updateInvoiceStatus(invoice.id, "sent")
-                          }
-                          className="flex-1 px-3 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
-                        >
-                          Verzenden
-                        </button>
+                    {/* Editable notification for active workorders */}
+                    {invoice.workOrderId &&
+                      workOrder &&
+                      workOrder.status !== "Completed" &&
+                      isAdmin && (
+                        <div className="p-3 bg-blue-50 rounded-lg mb-4 border border-blue-200">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <svg
+                                className="w-5 h-5 text-blue-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                              </svg>
+                              <span className="text-xs font-medium text-blue-800">
+                                ✏️ Deze factuur is gekoppeld aan een actieve
+                                werkorder. Wijzigingen worden automatisch
+                                gesynchroniseerd.
+                              </span>
+                            </div>
+                          </div>
+                        </div>
                       )}
-                      {(invoice.status === "sent" ||
-                        invoice.status === "draft") &&
-                        !invoice.workOrderId && (
+
+                    {isAdmin && (
+                      <div className="flex gap-2 flex-wrap">
+                        {invoice.status === "draft" && (
                           <button
                             onClick={() =>
-                              convertInvoiceToWorkOrder(invoice.id)
+                              updateInvoiceStatus(invoice.id, "sent")
                             }
-                            className="flex-1 px-3 py-2 bg-orange-500 text-white text-sm rounded hover:bg-orange-600 font-semibold"
+                            className="flex-1 px-3 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
                           >
-                            📋 Maak Werkorder
+                            Verzenden
                           </button>
                         )}
-                      {(invoice.status === "sent" ||
-                        invoice.status === "overdue") && (
-                        <button
-                          onClick={() =>
-                            updateInvoiceStatus(invoice.id, "paid")
-                          }
-                          className="flex-1 px-3 py-2 bg-green-500 text-white text-sm rounded hover:bg-green-600"
-                        >
-                          ✓ Markeer als Betaald
-                        </button>
-                      )}
-                      {invoice.status !== "paid" &&
-                        invoice.status !== "cancelled" && (
+                        {(invoice.status === "sent" ||
+                          invoice.status === "draft") &&
+                          !invoice.workOrderId && (
+                            <button
+                              onClick={() =>
+                                convertInvoiceToWorkOrder(invoice.id)
+                              }
+                              className="flex-1 px-3 py-2 bg-orange-500 text-white text-sm rounded hover:bg-orange-600 font-semibold"
+                            >
+                              📋 Maak Werkorder
+                            </button>
+                          )}
+                        {(invoice.status === "sent" ||
+                          invoice.status === "overdue") && (
                           <button
                             onClick={() =>
-                              updateInvoiceStatus(invoice.id, "cancelled")
+                              updateInvoiceStatus(invoice.id, "paid")
                             }
-                            className="flex-1 px-3 py-2 bg-gray-500 text-white text-sm rounded hover:bg-gray-600"
+                            className="flex-1 px-3 py-2 bg-green-500 text-white text-sm rounded hover:bg-green-600"
                           >
-                            Annuleren
+                            ✓ Markeer als Betaald
                           </button>
                         )}
-                      <button
-                        onClick={() => handleCloneInvoice(invoice.id)}
-                        className="px-3 py-2 bg-green-500 text-white text-sm rounded hover:bg-green-600 font-semibold"
-                        title="Factuur clonen"
-                      >
-                        📋 Clonen
-                      </button>
-                      <button
-                        onClick={() => deleteInvoice(invoice.id)}
-                        className="px-3 py-2 bg-red-500 text-white text-sm rounded hover:bg-red-600"
-                      >
-                        Verwijder
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                        {invoice.status !== "paid" &&
+                          invoice.status !== "cancelled" && (
+                            <button
+                              onClick={() =>
+                                updateInvoiceStatus(invoice.id, "cancelled")
+                              }
+                              className="flex-1 px-3 py-2 bg-gray-500 text-white text-sm rounded hover:bg-gray-600"
+                            >
+                              Annuleren
+                            </button>
+                          )}
+                        <button
+                          onClick={() => handleCloneInvoice(invoice.id)}
+                          className="px-3 py-2 bg-green-500 text-white text-sm rounded hover:bg-green-600 font-semibold"
+                          title="Factuur clonen"
+                        >
+                          📋 Clonen
+                        </button>
+                        <button
+                          onClick={() => deleteInvoice(invoice.id)}
+                          className="px-3 py-2 bg-red-500 text-white text-sm rounded hover:bg-red-600"
+                        >
+                          Verwijder
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
           </div>
 
-          {invoices.length === 0 && (
+          {invoices.filter((invoice) => invoice.status !== "paid").length ===
+            0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500">Geen facturen gevonden</p>
+              <p className="text-gray-500 text-lg mb-2">
+                Geen openstaande facturen
+              </p>
+              <p className="text-sm text-gray-400">
+                Betaalde facturen zijn verplaatst naar{" "}
+                <span className="font-semibold text-primary">
+                  Boekhouding & Dossier
+                </span>
+              </p>
             </div>
           )}
         </>

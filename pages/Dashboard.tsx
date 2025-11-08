@@ -1,5 +1,6 @@
 import React from 'react';
 import { InventoryItem, Sale, WorkOrder, Notification } from '../types';
+import { EmailDropZone } from '../components/EmailDropZone';
 
 interface DashboardProps {
   inventory: InventoryItem[];
@@ -61,7 +62,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <h1 className="text-2xl sm:text-3xl font-bold text-neutral mb-2">Dashboard</h1>
-      <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-8">Overzicht van uw bedrijfsactiviteiten</p>
+      <p className="text-sm sm:text-base text-gray-600 mb-6">Overzicht van uw bedrijfsactiviteiten</p>
+
+      {/* Email Drop Zone - NIEUWE SECTIE */}
+      <div className="mb-8">
+        <EmailDropZone />
+      </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

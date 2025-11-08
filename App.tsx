@@ -1,19 +1,26 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { Sidebar } from './components/Sidebar';
-import { Header } from './components/Header';
-import { Login } from './components/Login';
-import { AdminSettings } from './components/AdminSettings';
-import { AnalyticsTracker } from './components/AnalyticsTracker';
-import { ALL_MODULES } from './constants';
-import { 
-  ModuleKey, 
-  InventoryItem, 
-  Product, 
-  Sale, 
-  WorkOrder, 
-  Customer, 
-  Employee, 
+import React, { useState, useMemo, useEffect } from "react";
+import {
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+import { Sidebar } from "./components/Sidebar";
+import { Header } from "./components/Header";
+import { Login } from "./components/Login";
+import { AdminSettings } from "./components/AdminSettings";
+import { AnalyticsTracker } from "./components/AnalyticsTracker";
+import { ALL_MODULES } from "./constants";
+import {
+  ModuleKey,
+  InventoryItem,
+  InventoryCategory,
+  Product,
+  Sale,
+  WorkOrder,
+  Customer,
+  Employee,
   Transaction,
   Quote,
   Invoice,
@@ -23,8 +30,10 @@ import {
   User,
   Lead,
   Interaction,
-  WebshopProduct
-} from './types';
+  WebshopProduct,
+  Email,
+  EmailTemplate,
+} from "./types";
 import {
   MOCK_INVENTORY,
   MOCK_PRODUCTS,
@@ -40,21 +49,23 @@ import {
   MOCK_NOTIFICATIONS,
   MOCK_LEADS,
   MOCK_INTERACTIONS,
-} from './data/mockData';
+  MOCK_EMAILS,
+  MOCK_EMAIL_TEMPLATES,
+} from "./data/mockData";
 
 // Import functional pages
-import { Dashboard } from './pages/Dashboard';
-import { Inventory } from './pages/Inventory';
-import { POS } from './pages/POS';
-import { WorkOrders } from './pages/WorkOrders';
-import { Accounting } from './pages/Accounting';
-import Bookkeeping from './pages/Bookkeeping';
-import { CRM } from './pages/CRM';
-import { HRM } from './pages/HRM';
-import { Reports } from './pages/Reports';
-import { Planning } from './pages/Planning';
-import { Webshop } from './pages/Webshop';
-import { trackNavigation, trackAction } from './utils/analytics';
+import { Dashboard } from "./pages/Dashboard";
+import { Inventory } from "./pages/Inventory";
+import { POS } from "./pages/POS";
+import { WorkOrders } from "./pages/WorkOrders";
+import { Accounting } from "./pages/Accounting";
+import Bookkeeping from "./pages/Bookkeeping";
+import { CRM } from "./pages/CRM";
+import { HRM } from "./pages/HRM";
+import { Reports } from "./pages/Reports";
+import { Planning } from "./pages/Planning";
+import { Webshop } from "./pages/Webshop";
+import { trackNavigation, trackAction } from "./utils/analytics";
 
 // Default all modules to active
 const initialModulesState = ALL_MODULES.reduce((acc, module) => {
@@ -65,49 +76,58 @@ const initialModulesState = ALL_MODULES.reduce((acc, module) => {
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   // Authentication State
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  
+
   // Mobile Sidebar State
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  
-  const [activeModules, setActiveModules] = useState<Record<ModuleKey, boolean>>(initialModulesState);
+
+  const [activeModules, setActiveModules] =
+    useState<Record<ModuleKey, boolean>>(initialModulesState);
 
   // Centralized State Management for all modules
   const [inventory, setInventory] = useState<InventoryItem[]>(MOCK_INVENTORY);
+  const [categories, setCategories] = useState<InventoryCategory[]>([]); // 🆕 V5.7: Categories state
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
   const [sales, setSales] = useState<Sale[]>(MOCK_SALES);
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>(MOCK_WORK_ORDERS);
   const [customers, setCustomers] = useState<Customer[]>(MOCK_CUSTOMERS);
   const [employees, setEmployees] = useState<Employee[]>(MOCK_EMPLOYEES);
-  const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
+  const [transactions, setTransactions] =
+    useState<Transaction[]>(MOCK_TRANSACTIONS);
   const [quotes, setQuotes] = useState<Quote[]>(MOCK_QUOTES);
   const [invoices, setInvoices] = useState<Invoice[]>(MOCK_INVOICES);
   const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS);
-  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>(MOCK_CALENDAR_EVENTS);
-  const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+  const [calendarEvents, setCalendarEvents] =
+    useState<CalendarEvent[]>(MOCK_CALENDAR_EVENTS);
+  const [notifications, setNotifications] =
+    useState<Notification[]>(MOCK_NOTIFICATIONS);
   const [leads, setLeads] = useState<Lead[]>(MOCK_LEADS);
-  const [interactions, setInteractions] = useState<Interaction[]>(MOCK_INTERACTIONS);
+  const [interactions, setInteractions] =
+    useState<Interaction[]>(MOCK_INTERACTIONS);
+  const [emails, setEmails] = useState<Email[]>(MOCK_EMAILS);
+  const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>(MOCK_EMAIL_TEMPLATES);
   const [webshopProducts, setWebshopProducts] = useState<WebshopProduct[]>([]);
 
   // IMPORTANT: useMemo must be called unconditionally (before any early returns)
   const visibleModules = useMemo(() => {
-    return ALL_MODULES.filter(module => activeModules[module.id]);
+    return ALL_MODULES.filter((module) => activeModules[module.id]);
   }, [activeModules]);
 
   // Handle login
   const handleLogin = (employee: Employee) => {
     // Determine if user is admin (Manager Productie OR has full_admin permission OR isAdmin flag)
-    const hasFullAdmin = employee.isAdmin || 
-                        employee.permissions?.includes('full_admin') || 
-                        employee.role === 'Manager Productie';
-    
+    const hasFullAdmin =
+      employee.isAdmin ||
+      employee.permissions?.includes("full_admin") ||
+      employee.role === "Manager Productie";
+
     // Get permissions from employee
-    const permissions = hasFullAdmin 
-      ? ['full_admin']
+    const permissions = hasFullAdmin
+      ? ["full_admin"]
       : employee.permissions || [];
-    
+
     const user: User = {
       id: `user_${employee.id}`,
       employeeId: employee.id,
@@ -117,7 +137,7 @@ function App() {
       isAdmin: hasFullAdmin,
       permissions: permissions.length > 0 ? permissions : undefined,
     };
-    
+
     setCurrentUser(user);
   };
 
@@ -135,54 +155,59 @@ function App() {
   const handleNavigate = (module: ModuleKey, id: string) => {
     // Navigate to the module first
     navigate(`/${module}`);
-    
+
     // Then scroll to or highlight the item (could be enhanced with state management)
     // For now, we'll just navigate - the modules can handle highlighting via URL params or state
     setTimeout(() => {
       // Could emit an event or use state to highlight the item
-      window.dispatchEvent(new CustomEvent('highlight-item', { detail: { id, type: module } }));
+      window.dispatchEvent(
+        new CustomEvent("highlight-item", { detail: { id, type: module } })
+      );
     }, 100);
   };
 
   const moduleRoutes = {
     [ModuleKey.DASHBOARD]: (
-      <Dashboard 
-        inventory={inventory} 
-        sales={sales} 
+      <Dashboard
+        inventory={inventory}
+        sales={sales}
         workOrders={workOrders}
         notifications={notifications}
         setNotifications={setNotifications}
       />
     ),
     [ModuleKey.INVENTORY]: (
-      <Inventory 
-        inventory={inventory} 
-        setInventory={setInventory} 
+      <Inventory
+        inventory={inventory}
+        setInventory={setInventory}
         isAdmin={currentUser.isAdmin}
         webshopProducts={webshopProducts}
         setWebshopProducts={setWebshopProducts}
+        categories={categories}
+        setCategories={setCategories}
       />
     ),
     [ModuleKey.POS]: (
-      <POS 
-        products={products} 
-        inventory={inventory} 
-        setInventory={setInventory} 
-        sales={sales} 
-        setSales={setSales} 
-        setTransactions={setTransactions} 
+      <POS
+        products={products}
+        inventory={inventory}
+        setInventory={setInventory}
+        sales={sales}
+        setSales={setSales}
+        setTransactions={setTransactions}
         customers={customers}
         invoices={invoices}
         setInvoices={setInvoices}
+        categories={categories}
       />
     ),
     [ModuleKey.WORK_ORDERS]: (
-      <WorkOrders 
-        workOrders={workOrders} 
-        setWorkOrders={setWorkOrders} 
+      <WorkOrders
+        workOrders={workOrders}
+        setWorkOrders={setWorkOrders}
         employees={employees}
         customers={customers}
-        inventory={inventory} 
+        inventory={inventory}
         setInventory={setInventory}
         currentUser={currentUser}
         isAdmin={currentUser.isAdmin}
@@ -190,10 +215,11 @@ function App() {
         setQuotes={setQuotes}
         invoices={invoices}
         setInvoices={setInvoices}
+        categories={categories}
       />
     ),
     [ModuleKey.ACCOUNTING]: (
-      <Accounting 
+      <Accounting
         transactions={transactions}
         quotes={quotes}
         setQuotes={setQuotes}
@@ -208,11 +234,15 @@ function App() {
         isAdmin={currentUser.isAdmin}
         notifications={notifications}
         setNotifications={setNotifications}
+        categories={categories}
       />
     ),
     [ModuleKey.BOOKKEEPING]: (
       <Bookkeeping
         invoices={invoices}
+        setInvoices={setInvoices}
+        quotes={quotes}
+        setQuotes={setQuotes}
         customers={customers}
         employees={employees}
         currentUser={currentUser}
@@ -220,9 +250,9 @@ function App() {
       />
     ),
     [ModuleKey.CRM]: (
-      <CRM 
-        customers={customers} 
-        setCustomers={setCustomers} 
+      <CRM
+        customers={customers}
+        setCustomers={setCustomers}
         sales={sales}
         tasks={tasks}
         setTasks={setTasks}
@@ -240,13 +270,17 @@ function App() {
         workOrders={workOrders}
         setWorkOrders={setWorkOrders}
         inventory={inventory}
+        emails={emails}
+        setEmails={setEmails}
+        emailTemplates={emailTemplates}
+        setEmailTemplates={setEmailTemplates}
       />
     ),
     [ModuleKey.HRM]: (
-      <HRM 
-        employees={employees} 
-        setEmployees={setEmployees} 
-        isAdmin={currentUser.isAdmin} 
+      <HRM
+        employees={employees}
+        setEmployees={setEmployees}
+        isAdmin={currentUser.isAdmin}
       />
     ),
     [ModuleKey.PLANNING]: (
@@ -260,8 +294,8 @@ function App() {
       />
     ),
     [ModuleKey.REPORTS]: (
-      <Reports 
-        sales={sales} 
+      <Reports
+        sales={sales}
         inventory={inventory}
         quotes={quotes}
         workOrders={workOrders}
@@ -280,23 +314,28 @@ function App() {
 
   return (
     <div className="flex h-screen bg-base-100">
-      <AnalyticsTracker userId={currentUser.employeeId} userRole={currentUser.role} />
-      <Sidebar 
-        activeModules={activeModules} 
-        isAdmin={currentUser.isAdmin} 
+      <AnalyticsTracker
+        userId={currentUser.employeeId}
+        userRole={currentUser.role}
+      />
+      <Sidebar
+        activeModules={activeModules}
+        isAdmin={currentUser.isAdmin}
         setIsAdmin={() => {}} // Not needed anymore since admin is determined by role
         notifications={notifications}
         isMobileOpen={isMobileSidebarOpen}
         onMobileClose={() => setIsMobileSidebarOpen(false)}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header 
+        <Header
           isAdmin={currentUser.isAdmin}
           notifications={notifications}
           setNotifications={setNotifications}
           currentUser={currentUser}
           onLogout={handleLogout}
-          onMobileMenuToggle={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+          onMobileMenuToggle={() =>
+            setIsMobileSidebarOpen(!isMobileSidebarOpen)
+          }
           quotes={quotes}
           invoices={invoices}
           workOrders={workOrders}
@@ -305,13 +344,16 @@ function App() {
         />
         <main className="flex-1 overflow-x-hidden overflow-y-auto">
           <Routes>
-            <Route path="/" element={<Navigate to={`/${ModuleKey.DASHBOARD}`} replace />} />
-            
-            {visibleModules.map(module => (
-              <Route 
+            <Route
+              path="/"
+              element={<Navigate to={`/${ModuleKey.DASHBOARD}`} replace />}
+            />
+
+            {visibleModules.map((module) => (
+              <Route
                 key={module.id}
-                path={`/${module.id}`} 
-                element={moduleRoutes[module.id as keyof typeof moduleRoutes]} 
+                path={`/${module.id}`}
+                element={moduleRoutes[module.id as keyof typeof moduleRoutes]}
               />
             ))}
 
@@ -328,7 +370,10 @@ function App() {
             )}
 
             {/* Fallback route to the dashboard if a module is disabled or path is invalid */}
-            <Route path="*" element={<Navigate to={`/${ModuleKey.DASHBOARD}`} replace />} />
+            <Route
+              path="*"
+              element={<Navigate to={`/${ModuleKey.DASHBOARD}`} replace />}
+            />
           </Routes>
         </main>
       </div>
