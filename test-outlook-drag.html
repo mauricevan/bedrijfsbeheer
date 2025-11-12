@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outlook Drag & Drop Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .drop-zone {
+            border: 3px dashed #3498db;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            background: white;
+            margin: 20px 0;
+            min-height: 200px;
+            transition: all 0.3s;
+        }
+        .drop-zone.dragover {
+            border-color: #2ecc71;
+            background: #ecf0f1;
+        }
+        .info-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .result-box {
+            background: #d1ecf1;
+            border: 1px solid #17a2b8;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            display: none;
+        }
+        .result-box.show {
+            display: block;
+        }
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            text-align: left;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <h1>📧 Outlook Drag & Drop Test</h1>
+    
+    <div class="info-box">
+        <strong>📋 Instructies:</strong><br>
+        1. Open Outlook<br>
+        2. Selecteer een email<br>
+        3. Sleep de email naar de blauwe zone hieronder<br>
+        4. Bekijk wat er wordt gedetecteerd
+    </div>
+
+    <div 
+        id="dropZone" 
+        class="drop-zone"
+        ondrop="handleDrop(event)"
+        ondragover="handleDragOver(event)"
+        ondragleave="handleDragLeave(event)"
+        ondragenter="handleDragEnter(event)"
+    >
+        <h2>📥 Sleep hier je Outlook email</h2>
+        <p>Of klik om een bestand te selecteren</p>
+        <input type="file" id="fileInput" style="display: none;" onchange="handleFileSelect(event)">
+        <button onclick="document.getElementById('fileInput').click()">📁 Selecteer Bestand</button>
+    </div>
+
+    <div id="resultBox" class="result-box">
+        <h2>✅ Resultaat:</h2>
+        <div id="resultContent"></div>
+    </div>
+
+    <script>
+        function handleDragEnter(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('dropZone').classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('dropZone').classList.remove('dragover');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('dropZone').classList.remove('dragover');
+            
+            const resultBox = document.getElementById('resultBox');
+            const resultContent = document.getElementById('resultContent');
+            
+            let output = '<h3>🔍 Detectie Resultaten:</h3>';
+            
+            // Check voor files
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                output += '<h4>📁 Bestanden gedetecteerd:</h4><ul>';
+                for (let file of e.dataTransfer.files) {
+                    output += `<li>
+                        <strong>Naam:</strong> ${file.name}<br>
+                        <strong>Type:</strong> ${file.type || 'Geen type'}<br>
+                        <strong>Grootte:</strong> ${(file.size / 1024).toFixed(2)} KB<br>
+                        <strong>Laatste wijziging:</strong> ${new Date(file.lastModified).toLocaleString()}<br>
+                    </li>`;
+                }
+                output += '</ul>';
+                
+                // Try to read first file
+                const firstFile = e.dataTransfer.files[0];
+                readFile(firstFile, resultContent, output);
+            } else {
+                output += '<p>❌ Geen bestanden gedetecteerd</p>';
+                
+                // Check voor data transfer types
+                output += '<h4>📋 Data Transfer Types:</h4><ul>';
+                for (let type of e.dataTransfer.types) {
+                    output += `<li>${type}</li>`;
+                }
+                output += '</ul>';
+                
+                // Try to get data for each type
+                output += '<h4>📦 Data Transfer Data:</h4><ul>';
+                for (let type of e.dataTransfer.types) {
+                    try {
+                        const data = e.dataTransfer.getData(type);
+                        output += `<li><strong>${type}:</strong> ${data ? data.substring(0, 200) : 'Geen data'}...</li>`;
+                    } catch (err) {
+                        output += `<li><strong>${type}:</strong> Kon niet lezen (${err.message})</li>`;
+                    }
+                }
+                output += '</ul>';
+                
+                resultContent.innerHTML = output;
+                resultBox.classList.add('show');
+            }
+        }
+
+        function handleFileSelect(e) {
+            if (e.target.files && e.target.files.length > 0) {
+                readFile(e.target.files[0], document.getElementById('resultContent'), '');
+            }
+        }
+
+        function readFile(file, resultContent, initialOutput) {
+            let output = initialOutput || '';
+            
+            output += `<h4>📄 Bestand Inhoud (${file.name}):</h4>`;
+            
+            // Read as text
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const content = e.target.result;
+                
+                output += `<h5>📝 Als Tekst (eerste 2000 karakters):</h5>`;
+                output += `<pre>${escapeHtml(content.substring(0, 2000))}${content.length > 2000 ? '\n... (truncated)' : ''}</pre>`;
+                
+                // Check if it's JSON
+                try {
+                    const json = JSON.parse(content);
+                    output += `<h5>✅ Geldige JSON gedetecteerd:</h5>`;
+                    output += `<pre>${JSON.stringify(json, null, 2)}</pre>`;
+                } catch (err) {
+                    // Not JSON, check if it's EML format
+                    if (content.includes('From:') || content.includes('Subject:') || content.includes('Content-Type:')) {
+                        output += `<h5>📧 EML formaat gedetecteerd!</h5>`;
+                        output += `<pre>${escapeHtml(content)}</pre>`;
+                    }
+                }
+                
+                // File info
+                output += `<h5>ℹ️ Bestand Info:</h5>`;
+                output += `<ul>
+                    <li><strong>Bestandstype:</strong> ${file.type || 'Onbekend'}</li>
+                    <li><strong>Extensie:</strong> ${file.name.split('.').pop()}</li>
+                    <li><strong>Grootte:</strong> ${(file.size / 1024).toFixed(2)} KB</li>
+                </ul>`;
+                
+                resultContent.innerHTML = output;
+                document.getElementById('resultBox').classList.add('show');
+            };
+            
+            reader.onerror = function(e) {
+                output += `<p>❌ Fout bij lezen: ${e.target.error}</p>`;
+                resultContent.innerHTML = output;
+                document.getElementById('resultBox').classList.add('show');
+            };
+            
+            // Try to read as text first
+            reader.readAsText(file);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
+
+
+
+
+
+

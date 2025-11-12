@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git restore:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add V5.10 Advanced Material Search & Filters to EmailWorkOrderEditModal\n\n## 🎯 V5.10: Enhanced Material Selection with Advanced Filters\n\n### New Features:\n- **🔍 Searchable Dropdown**: Replace static select with intelligent search field\n  - Real-time filtering by name or product ID\n  - Auto-show dropdown on focus\n  - Click-outside to close functionality\n  \n- **📁 Category Filter**: Filter materials by inventory category\n  - Dropdown with all available categories\n  - Shows category badges in search results\n  - \"All categories\" option to reset\n  \n- **📦 Stock Status Filter**: \n  - All inventory (default)\n  - In stock only (quantity > 0)\n  - Low stock (≤10 items)\n  - Prevents selecting unavailable items\n  \n- **🔃 Sort Functionality**:\n  - Alphabetical (A-Z / Z-A)\n  - Stock level (High-Low / Low-High)\n  - Price (Low-High / High-Low)\n  - Works with all filters combined\n  \n- **Reset Filters Button**: Quickly clear all active filters\n\n### UI Improvements:\n- Compact filter bar with 3 dropdowns\n- Enhanced dropdown items show:\n  - Product name (bold, hover effect)\n  - Product ID\n  - Category badge (purple)\n  - Selling price (green)\n  - Stock status (color-coded: green/yellow/red)\n- Selected item indicator with clear button\n- Results counter in dropdown header\n- Empty state with helpful message\n\n### Technical Details:\n- Added `categories` prop to EmailWorkOrderEditModal\n- Multi-stage filtering: search → category → stock → sort\n- useRef + useEffect for click-outside detection\n- Maintained backward compatibility with existing implementations\n\n🚀 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(git rm:*)",
+      "Bash(npm install:*)",
+      "Bash(git commit:*)",
+      "Bash(git filter-branch:*)",
+      "Bash(git checkout:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
