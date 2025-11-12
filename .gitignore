@@ -41,3 +41,11 @@ Thumbs.db
 # Lock files (keep package-lock.json but ignore others)
 yarn.lock
 pnpm-lock.yaml
+node_modules/
+dist/
+.DS_Store
+*.log
+.env
+.env.local
+.vscode/
+.idea/

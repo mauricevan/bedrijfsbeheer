@@ -13,6 +13,7 @@ import { AdminSettings } from "./components/AdminSettings";
 import { AnalyticsTracker } from "./components/AnalyticsTracker";
 import { LoadingSpinner } from "./components/LoadingSpinner";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { BottomNavigation } from "./components/BottomNavigation";
 import { ALL_MODULES } from "./constants";
 import {
   ModuleKey,
@@ -56,6 +57,7 @@ import {
 } from "./data/mockData";
 
 // Import functional pages with lazy loading
+// Lazy load functional pages for code splitting
 const Dashboard = lazy(() => import("./pages/Dashboard").then(m => ({ default: m.Dashboard })));
 const Inventory = lazy(() => import("./pages/Inventory").then(m => ({ default: m.Inventory })));
 const POS = lazy(() => import("./pages/POS").then(m => ({ default: m.POS })));
@@ -68,6 +70,16 @@ const Reports = lazy(() => import("./pages/Reports").then(m => ({ default: m.Rep
 const Planning = lazy(() => import("./pages/Planning").then(m => ({ default: m.Planning })));
 const Webshop = lazy(() => import("./pages/Webshop").then(m => ({ default: m.Webshop })));
 import { trackNavigation, trackAction } from "./utils/analytics";
+
+// Loading component for Suspense fallback
+const PageLoader = () => (
+  <div className="flex items-center justify-center h-screen bg-base-100">
+    <div className="text-center">
+      <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <p className="mt-4 text-neutral-600">Laden...</p>
+    </div>
+  </div>
+);
 
 // Default all modules to active
 const initialModulesState = ALL_MODULES.reduce((acc, module) => {
@@ -348,6 +360,8 @@ function App() {
           <ErrorBoundary>
             <Suspense fallback={<LoadingSpinner />}>
               <Routes>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
               <Route
                 path="/"
                 element={<Navigate to={`/${ModuleKey.DASHBOARD}`} replace />}
@@ -381,7 +395,10 @@ function App() {
               </Routes>
             </Suspense>
           </ErrorBoundary>
+            </Routes>
+          </Suspense>
         </main>
+        <BottomNavigation />
       </div>
     </div>
   );

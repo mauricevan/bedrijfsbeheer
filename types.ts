@@ -206,6 +206,12 @@ export interface WebshopProduct {
 
   // Admin Notities
   adminNotes?: string; // Interne notities (niet zichtbaar voor klanten)
+
+  // Product Attributen (BESA-Style Filtering)
+  attributes?: ProductAttributeValue[]; // Product eigenschappen voor filtering
+
+  // Badges (NEW, SALE, FEATURED, etc.)
+  badges?: ProductBadge[]; // Max 3 badges (getoond op basis van priority)
 }
 
 export interface ProductVariant {
@@ -243,6 +249,7 @@ export interface ProductCategory {
   description?: string;
   parentId?: string; // Voor hiërarchische categorieën (subcategorieën)
   image?: string; // Categorie afbeelding
+  icon?: string; // Icoon voor visuele weergave (emoji of icon class)
   order: number; // Sorteervolgorde
   active: boolean; // Is categorie actief?
 
@@ -256,6 +263,71 @@ export interface ProductCategory {
   // Datums
   createdAt: string;
   updatedAt: string;
+}
+
+// Product Attributen voor Geavanceerde Filtering (BESA-Style)
+export type AttributeType =
+  | 'text'
+  | 'number'
+  | 'select'
+  | 'multiselect'
+  | 'range'
+  | 'checkbox'
+  | 'color';
+
+export interface ProductAttribute {
+  id: string;
+  name: string; // Bijv. "Backset", "Materiaal", "Kleur"
+  slug: string; // URL-vriendelijk (bijv. "backset", "materiaal")
+  type: AttributeType;
+  unit?: string; // Eenheid (bijv. "mm", "kg", "cm")
+  categoryIds?: string[]; // Op welke categorieën is dit attribuut van toepassing?
+  required: boolean;
+  showInFilters: boolean; // Toon in filter sidebar?
+  showInProductList: boolean; // Toon in productlijst?
+  order: number; // Volgorde in filters
+
+  // Voor select/multiselect types
+  options?: AttributeOption[];
+
+  // Voor range types
+  min?: number;
+  max?: number;
+  step?: number;
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AttributeOption {
+  id: string;
+  label: string; // Bijv. "Roestvrij Staal", "Rood", "25mm"
+  value: string; // Bijv. "stainless_steel", "red", "25"
+  order: number;
+  colorHex?: string; // Voor kleur attributen (bijv. "#FF0000")
+}
+
+export interface ProductAttributeValue {
+  attributeId: string;
+  value: string | number | string[]; // Enkele waarde, nummer, of array voor multiselect
+  displayValue?: string; // Weergavewaarde (optioneel)
+}
+
+export interface ProductBadge {
+  type: 'new' | 'sale' | 'featured' | 'bestseller' | 'lowstock' | 'custom';
+  label?: string; // Voor custom badges
+  color?: string; // Voor custom badges
+  priority?: number; // Hogere priority = hoger getoond (max 3 badges)
+}
+
+export interface FilterState {
+  categoryId?: string;
+  attributes: Record<string, any>; // attributeId -> value(s)
+  priceRange?: { min: number; max: number };
+  search?: string;
+  status?: 'active' | 'draft' | 'archived';
+  inStock?: boolean;
+  badges?: ProductBadge['type'][];
 }
 
 export type OrderStatus =

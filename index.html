@@ -3,8 +3,15 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Bedrijfsbeheer Dashboard - Complete bedrijfsmanagement oplossing" />
+    <meta name="theme-color" content="#1e40af" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Bedrijfsbeheer" />
     <title>Bedrijfsbeheer Dashboard</title>
+    <link rel="manifest" href="/manifest.json" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -18,6 +25,16 @@
               'base-100': '#f3f4f6',
               'base-200': '#e5e7eb',
               'base-300': '#d1d5db',
+              'success': '#10b981',
+              'warning': '#f59e0b',
+              'error': '#ef4444',
+              'info': '#3b82f6',
+              'surface': '#ffffff',
+              'surface-secondary': '#f9fafb',
+              'surface-tertiary': '#f3f4f6',
+              'text-primary': '#111827',
+              'text-secondary': '#6b7280',
+              'text-tertiary': '#9ca3af',
             },
           }
         }

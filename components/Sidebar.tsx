@@ -76,16 +76,16 @@ const SidebarComponent: React.FC<SidebarProps> = ({
         onTouchEnd={onTouchEnd}
       >
         {/* Header */}
-        <div className="p-4 sm:p-6 border-b border-gray-700">
+        <div className="p-6 border-b border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold">Bedrijfsbeheer</h1>
-              <p className="text-xs sm:text-sm text-gray-400 mt-1">Dashboard Systeem</p>
+              <h1 className="text-heading-2 font-bold">Bedrijfsbeheer</h1>
+              <p className="text-body-small text-gray-400 mt-1">Dashboard Systeem</p>
             </div>
             {/* Close button for mobile */}
             <button
               onClick={onMobileClose}
-              className="lg:hidden p-2 hover:bg-gray-700 rounded-lg transition-colors"
+              className="lg:hidden btn-ghost p-2"
               aria-label="Sluit menu"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,9 +94,9 @@ const SidebarComponent: React.FC<SidebarProps> = ({
             </button>
           </div>
           {unreadCount > 0 && (
-            <div className="mt-3 px-3 py-2 bg-red-500 rounded-lg flex items-center justify-between">
-              <span className="text-xs sm:text-sm font-semibold">Nieuwe meldingen</span>
-              <span className="px-2 py-1 bg-white text-red-500 text-xs font-bold rounded-full">
+            <div className="mt-4 px-4 py-3 bg-error rounded-xl flex items-center justify-between shadow-lg">
+              <span className="text-body-small font-semibold">Nieuwe meldingen</span>
+              <span className="badge bg-white text-error">
                 {unreadCount}
               </span>
             </div>
@@ -104,7 +104,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-2 sm:py-4">
+        <nav className="flex-1 overflow-y-auto py-4">
           {visibleModules.map(module => {
             const Icon = module.icon;
             return (
@@ -113,13 +113,13 @@ const SidebarComponent: React.FC<SidebarProps> = ({
                 to={`/${module.id}`}
                 onClick={onMobileClose}
                 className={({ isActive }) =>
-                  `flex items-center px-4 sm:px-6 py-3 hover:bg-gray-700 transition-colors ${
-                    isActive ? 'bg-primary text-white' : 'text-gray-300'
+                  `flex items-center px-6 py-3 hover:bg-gray-700 transition-all ${
+                    isActive ? 'bg-primary text-white border-l-4 border-accent' : 'text-gray-300'
                   }`
                 }
               >
                 <Icon className="w-5 h-5 mr-3 flex-shrink-0" />
-                <span className="font-medium text-sm sm:text-base">{module.name}</span>
+                <span className="text-body font-medium">{module.name}</span>
               </NavLink>
             );
           })}
@@ -129,26 +129,26 @@ const SidebarComponent: React.FC<SidebarProps> = ({
               to={`/${ModuleKey.ADMIN_SETTINGS}`}
               onClick={onMobileClose}
               className={({ isActive }) =>
-                `flex items-center px-4 sm:px-6 py-3 hover:bg-gray-700 transition-colors mt-4 border-t border-gray-700 ${
-                  isActive ? 'bg-primary text-white' : 'text-gray-300'
+                `flex items-center px-6 py-3 hover:bg-gray-700 transition-all mt-4 border-t border-gray-700 ${
+                  isActive ? 'bg-primary text-white border-l-4 border-accent' : 'text-gray-300'
                 }`
               }
             >
               <ADMIN_MODULE.icon className="w-5 h-5 mr-3 flex-shrink-0" />
-              <span className="font-medium text-sm sm:text-base">{ADMIN_MODULE.name}</span>
+              <span className="text-body font-medium">{ADMIN_MODULE.name}</span>
             </NavLink>
           )}
         </nav>
 
         {/* Footer */}
-        <div className="p-4 sm:p-6 border-t border-gray-700">
-          <div className="flex items-center gap-3 px-3 py-2 bg-gray-700 rounded-lg">
+        <div className="p-6 border-t border-gray-700">
+          <div className="flex items-center gap-3 px-4 py-3 bg-gray-700 rounded-xl">
             <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-              <p className="text-xs text-gray-400">Versie</p>
-              <p className="text-sm font-semibold text-white">4.5.0</p>
+              <p className="text-caption text-gray-400">Versie</p>
+              <p className="text-body-small font-semibold text-white">5.8.0</p>
             </div>
           </div>
         </div>
