@@ -1,55 +1,410 @@
 # Projectstructuur - Bedrijfsbeheer 2.0
 
-> **Laatst bijgewerkt:** `2025-04-05`  
-> **Genereerd door:** Cursor AI (refactoring guard)  
+> **Laatst bijgewerkt:** `2025-04-05`
+> **Genereerd door:** Cursor AI (refactoring guard)
 > **Doel:** Voorkom toekomstige refactoring door strikte structuur.
-> src/
-> ├── components/ # UI-componenten (geen business logic)
-> │ ├── common/ # Herbruikbare UI
-> │ │ ├── modals/ # ConfirmModal, OverviewModal
-> │ │ ├── forms/ # InventoryItemSelector, LaborInput
-> │ │ ├── charts/ # LineChart, BarChart
-> │ │ └── index.ts
-> │ ├── accounting/ # Accounting-specifieke UI
-> │ │ ├── dashboard/ # AccountingDashboard, DashboardStats
-> │ │ ├── quotes/ # QuoteList, QuoteForm, QuoteItemRow
-> │ │ ├── invoices/ # InvoiceList, InvoiceForm
-> │ │ ├── transactions/ # TransactionList
-> │ │ └── index.ts
-> │ ├── crm/
-> │ └── index.ts
-> │
-> ├── features/ # Business logic per domein
-> │ └── accounting/
-> │ ├── hooks/ # useQuotes, useInvoices, useQuoteForm
-> │ │ └── index.ts
-> │ ├── services/ # quoteService, invoiceService
-> │ │ └── index.ts
-> │ ├── utils/ # calculations, formatters, validators
-> │ │ └── index.ts
-> │ ├── types/ # accounting.types.ts
-> │ └── index.ts
-> │
-> ├── pages/ # Orchestratie (max 300 regels)
-> │ ├── Accounting.tsx # Tab-navigatie + component rendering
-> │ ├── CRM.tsx
-> │ └── index.ts
-> │
-> ├── hooks/ # Globale custom hooks
-> │ ├── useLocalStorage.ts
-> │ ├── useDebounce.ts
-> │ └── index.ts
-> │
-> ├── utils/ # Algemene helpers
-> │ ├── analytics.ts
-> │ ├── email/
-> │ ├── fileHelpers.ts # list_directory, pages_directory
-> │ └── index.ts
-> │
-> └── types/ # Globale TypeScript types
-> ├── index.ts
-> └── global.d.ts
-> text**Cursor AI moet dit bestand altijd updaten bij nieuwe mappen.**
+
+---
+
+## 🎨 Frontend Structuur (Huidige Implementatie)
+
+```
+src/
+├── components/           # UI-componenten (geen business logic)
+│   ├── common/          # Herbruikbare UI
+│   │   ├── modals/      # ConfirmModal, OverviewModal
+│   │   ├── forms/       # InventoryItemSelector, LaborInput
+│   │   ├── charts/      # LineChart, BarChart
+│   │   └── index.ts
+│   ├── accounting/      # Accounting-specifieke UI
+│   │   ├── dashboard/   # AccountingDashboard, DashboardStats
+│   │   ├── quotes/      # QuoteList, QuoteForm, QuoteItemRow
+│   │   ├── invoices/    # InvoiceList, InvoiceForm
+│   │   ├── transactions/ # TransactionList
+│   │   └── index.ts
+│   ├── crm/
+│   └── index.ts
+│
+├── features/            # Business logic per domein
+│   └── accounting/
+│       ├── hooks/       # useQuotes, useInvoices, useQuoteForm
+│       │   └── index.ts
+│       ├── services/    # quoteService, invoiceService (pure functions)
+│       │   └── index.ts
+│       ├── utils/       # calculations, formatters, validators
+│       │   └── index.ts
+│       ├── types/       # accounting.types.ts
+│       └── index.ts
+│
+├── pages/               # Orchestratie (max 300 regels)
+│   ├── Accounting.tsx   # Tab-navigatie + component rendering
+│   ├── CRM.tsx
+│   └── index.ts
+│
+├── hooks/               # Globale custom hooks
+│   ├── useLocalStorage.ts
+│   ├── useDebounce.ts
+│   └── index.ts
+│
+├── utils/               # Algemene helpers
+│   ├── analytics.ts
+│   ├── email/
+│   ├── fileHelpers.ts   # list_directory, pages_directory
+│   └── index.ts
+│
+└── types/               # Globale TypeScript types
+    ├── index.ts
+    └── global.d.ts
+```
+
+**⚠️ HUIDIGE STATUS:**
+- ✅ Frontend: Volledig geïmplementeerd
+- ❌ Backend: Nog niet geïmplementeerd (data is in-memory)
+- ❌ Database: Geen persistentie (data verloren bij refresh)
+- ❌ API: Geen REST endpoints
+
+---
+
+## 🔧 Backend Structuur (Voor Toekomstige Implementatie)
+
+```
+backend/
+├── config/              # Configuratie & setup
+│   ├── database.js      # Prisma client instantie
+│   ├── env.js           # Environment variabelen validatie
+│   ├── security.js      # CORS, Helmet, rate limiting
+│   └── logger.js        # Winston logger configuratie
+│
+├── controllers/         # Request handlers (business logic)
+│   ├── authController.js      # Login, register, logout
+│   ├── quoteController.js     # CRUD voor offertes
+│   ├── invoiceController.js   # CRUD voor facturen
+│   ├── workOrderController.js # CRUD voor werkorders
+│   ├── customerController.js  # CRUD voor klanten
+│   └── inventoryController.js # CRUD voor voorraad
+│
+├── models/              # Database schema
+│   └── schema.prisma    # Prisma schema (PostgreSQL)
+│
+├── routes/              # API endpoints definitie
+│   ├── authRoutes.js         # POST /api/auth/login, /register
+│   ├── quoteRoutes.js        # /api/quotes (GET, POST, PUT, DELETE)
+│   ├── invoiceRoutes.js      # /api/invoices
+│   ├── workOrderRoutes.js    # /api/workorders
+│   ├── customerRoutes.js     # /api/customers
+│   ├── inventoryRoutes.js    # /api/inventory
+│   └── index.js              # Centrale route aggregator
+│
+├── middleware/          # Express middleware
+│   ├── authenticate.js       # JWT verificatie
+│   ├── authorize.js          # Role-based access control (isAdmin)
+│   ├── errorHandler.js       # Global error handler
+│   ├── validateQuote.js      # Joi validation voor quotes
+│   ├── validateInvoice.js    # Joi validation voor invoices
+│   ├── validateWorkOrder.js  # Joi validation voor workorders
+│   └── rateLimiter.js        # Rate limiting per endpoint
+│
+├── utils/               # Backend helpers
+│   ├── jwt.js          # JWT sign & verify functies
+│   ├── password.js     # bcrypt hash & compare
+│   ├── logger.js       # Winston logger wrapper
+│   ├── validators.js   # Custom validation functies
+│   └── formatters.js   # Response formatters
+│
+├── tests/               # Test suites
+│   ├── unit/           # Unit tests (controllers, services)
+│   │   ├── quoteController.test.js
+│   │   ├── invoiceController.test.js
+│   │   └── jwt.test.js
+│   ├── integration/    # Integration tests (API endpoints)
+│   │   ├── quotes.test.js
+│   │   ├── invoices.test.js
+│   │   └── auth.test.js
+│   └── setup.js        # Test setup (DB seeding, fixtures)
+│
+├── prisma/              # Prisma specifieke bestanden
+│   ├── migrations/     # Database migrations
+│   └── seed.js         # Database seeding script
+│
+├── app.js               # Express app setup (routes, middleware)
+├── server.js            # Server entry point (listen op poort)
+├── .env.example         # Example environment variabelen
+└── package.json         # Backend dependencies
+```
+
+---
+
+## 📋 Regels per Map
+
+### Frontend Regels
+
+#### `src/components/`
+- ✅ **Alleen UI rendering** (geen data fetching)
+- ✅ **Props drilling** voor data en callbacks
+- ✅ **Max 300 regels** per component
+- ✅ **Gebruik React.memo** voor performance
+- ❌ **Geen useState** voor data (wel voor UI state zoals open/closed)
+- ❌ **Geen API calls** (data komt via props)
+
+#### `src/features/[module]/hooks/`
+- ✅ **Business logic** voor module
+- ✅ **State management** (useState, useReducer)
+- ✅ **Side effects** (useEffect voor data sync)
+- ✅ **Max 200 regels** per hook
+- ❌ **Geen JSX** (wel return object met functies/state)
+
+#### `src/features/[module]/services/`
+- ✅ **Pure functies** alleen
+- ✅ **Berekeningen** (calculateTotal, generateId)
+- ✅ **Transformaties** (convertQuoteToInvoice)
+- ✅ **Max 250 regels** per service
+- ❌ **Geen React** (geen hooks, geen JSX)
+- ❌ **Geen side effects** (geen API calls)
+
+#### `src/pages/`
+- ✅ **Orchestratie** alleen (componenten samenbrengen)
+- ✅ **State ophalen** van App.tsx
+- ✅ **Props doorgeven** aan child componenten
+- ✅ **Max 300 regels**
+- ❌ **Geen business logic** (delegeer naar hooks)
+- ❌ **Geen complexe berekeningen** (delegeer naar services)
+
+### Backend Regels
+
+#### `backend/controllers/`
+- ✅ **Request handling** (extract req.body, req.params)
+- ✅ **Authorization checks** (req.user.isAdmin)
+- ✅ **Database operations** (Prisma queries)
+- ✅ **Response formatting** (res.status().json())
+- ✅ **Error handling** (try/catch + next(error))
+- ❌ **Geen validatie** (gebeurt in middleware)
+- ❌ **Geen direct error response** (gebruik next(error))
+
+**Pattern:**
+```javascript
+export const createQuote = async (req, res, next) => {
+  try {
+    // 1. Extract data
+    const { customerId, items } = req.body;
+
+    // 2. Authorization (indien niet in middleware)
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ error: 'Niet toegestaan' });
+    }
+
+    // 3. Database operation
+    const quote = await prisma.quote.create({
+      data: { /* ... */ },
+      include: { customer: true }
+    });
+
+    // 4. Success response
+    res.status(201).json(quote);
+
+  } catch (error) {
+    // 5. Pass to error handler
+    next(error);
+  }
+};
+```
+
+#### `backend/routes/`
+- ✅ **Endpoint definitie** (GET, POST, PUT, DELETE)
+- ✅ **Middleware chaining** (authenticate → authorize → validate → controller)
+- ✅ **RESTful naming** (/api/quotes/:id)
+- ❌ **Geen business logic** (alleen routing)
+
+**Pattern:**
+```javascript
+import express from 'express';
+import { authenticate, requireAdmin } from '../middleware/authenticate.js';
+import { validateQuote } from '../middleware/validateQuote.js';
+import * as quoteController from '../controllers/quoteController.js';
+
+const router = express.Router();
+
+router.get('/quotes', authenticate, quoteController.getQuotes);
+router.get('/quotes/:id', authenticate, quoteController.getQuote);
+router.post('/quotes', authenticate, requireAdmin, validateQuote, quoteController.createQuote);
+router.put('/quotes/:id', authenticate, requireAdmin, validateQuote, quoteController.updateQuote);
+router.delete('/quotes/:id', authenticate, requireAdmin, quoteController.deleteQuote);
+
+export default router;
+```
+
+#### `backend/middleware/`
+- ✅ **Reusable middleware** (authenticate, authorize, validate)
+- ✅ **Call next()** om door te gaan
+- ✅ **Error responses** bij validation failures
+- ❌ **Geen business logic** (alleen verificatie/validatie)
+
+#### `backend/models/schema.prisma`
+- ✅ **PostgreSQL types** (String, Int, Decimal, DateTime, Boolean)
+- ✅ **Relations** (User → Quote → WorkOrder)
+- ✅ **Indexes** op vaak-gebruikte velden (customerId, userId, status)
+- ✅ **@map()** voor snake_case in database
+- ✅ **@@map()** voor plural table names
+
+**Pattern:**
+```prisma
+model Quote {
+  id          String   @id
+  customerId  String   @map("customer_id")
+  userId      String   @map("user_id")
+  status      String
+  total       Decimal  @db.Decimal(10, 2)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user        User       @relation(fields: [userId], references: [id])
+  customer    Customer   @relation(fields: [customerId], references: [id])
+  items       QuoteItem[]
+
+  @@index([customerId])
+  @@index([userId])
+  @@map("quotes")
+}
+```
+
+#### `backend/tests/`
+- ✅ **Unit tests** voor controllers (80%+ coverage)
+- ✅ **Integration tests** voor API endpoints
+- ✅ **Mock Prisma** voor unit tests
+- ✅ **Test database** voor integration tests
+- ✅ **Vitest** als test framework
+
+---
+
+## 🚫 Anti-Patterns (NOOIT DOEN!)
+
+### Frontend Anti-Patterns
+
+❌ **Component > 300 regels**
+```typescript
+// FOUT - Te groot!
+export const Accounting = () => {
+  // 800 regels code...
+};
+
+// GOED - Split in kleinere componenten
+export const Accounting = () => {
+  return (
+    <>
+      <AccountingDashboard />
+      <QuoteList />
+      <InvoiceList />
+    </>
+  );
+};
+```
+
+❌ **API calls in componenten**
+```typescript
+// FOUT - Direct fetch in component
+export const QuoteList = () => {
+  useEffect(() => {
+    fetch('/api/quotes').then(/* ... */);
+  }, []);
+};
+
+// GOED - Data via props van parent
+export const QuoteList = ({ quotes, onUpdate }) => {
+  // ...
+};
+```
+
+❌ **React hooks in services**
+```typescript
+// FOUT - useState in service
+export const calculateTotal = () => {
+  const [total, setTotal] = useState(0); // NO!
+};
+
+// GOED - Pure function
+export const calculateTotal = (items: Item[]): number => {
+  return items.reduce((sum, item) => sum + item.total, 0);
+};
+```
+
+### Backend Anti-Patterns
+
+❌ **Business logic in routes**
+```javascript
+// FOUT - Logic in route file
+router.post('/quotes', (req, res) => {
+  const total = req.body.items.reduce(/* ... */); // NO!
+  // ...
+});
+
+// GOED - Logic in controller
+router.post('/quotes', authenticate, requireAdmin, validateQuote, createQuote);
+```
+
+❌ **Direct error handling in controllers**
+```javascript
+// FOUT - Direct response
+export const createQuote = async (req, res) => {
+  try {
+    // ...
+  } catch (error) {
+    res.status(500).json({ error: error.message }); // NO!
+  }
+};
+
+// GOED - Pass to error middleware
+export const createQuote = async (req, res, next) => {
+  try {
+    // ...
+  } catch (error) {
+    next(error); // Let global handler deal with it
+  }
+};
+```
+
+❌ **Hardcoded secrets**
+```javascript
+// FOUT - Hardcoded
+const JWT_SECRET = 'my-secret-key'; // NO!
+
+// GOED - Environment variable
+const JWT_SECRET = process.env.JWT_SECRET;
+```
+
+---
+
+## ✅ Quick Reference
+
+**Nieuwe hook toevoegen?**
+```
+features/[module]/hooks/useNewHook.ts
+→ Export via features/[module]/hooks/index.ts
+```
+
+**Nieuwe component toevoegen?**
+```
+components/[module]/[feature]/NewComponent.tsx
+→ Export via components/[module]/index.ts
+```
+
+**Nieuwe API endpoint toevoegen?**
+```
+1. backend/controllers/newController.js (business logic)
+2. backend/middleware/validateNew.js (Joi schema)
+3. backend/routes/newRoutes.js (endpoint definitie)
+4. backend/routes/index.js (registreer route)
+5. backend/tests/integration/new.test.js (API test)
+```
+
+**Nieuwe database model toevoegen?**
+```
+1. backend/models/schema.prisma (model definitie)
+2. npx prisma migrate dev --name add_new_model
+3. npx prisma generate
+```
+
+---
+
+**Cursor AI moet dit bestand altijd updaten bij nieuwe mappen.**
 
 2. utils/fileHelpers.ts (Veilige list_directory)
    ts// src/utils/fileHelpers.ts

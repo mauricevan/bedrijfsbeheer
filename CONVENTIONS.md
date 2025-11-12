@@ -611,4 +611,428 @@ Voor je commit:
 
 ---
 
-**Voor meer details: zie [docs/AI_GUIDE.md](./docs/AI_GUIDE.md)**
+## 🔧 Backend Conventions
+
+### Backend File Naming
+
+```
+backend/
+  ├── config/           # camelCase files
+  │   ├── database.js
+  │   ├── env.js
+  │   └── security.js
+  │
+  ├── controllers/      # camelCase + "Controller" suffix
+  │   ├── quoteController.js
+  │   ├── invoiceController.js
+  │   └── workOrderController.js
+  │
+  ├── models/           # PascalCase (Prisma naming)
+  │   └── schema.prisma
+  │
+  ├── routes/           # camelCase + "Routes" suffix
+  │   ├── quoteRoutes.js
+  │   ├── invoiceRoutes.js
+  │   └── authRoutes.js
+  │
+  ├── middleware/       # camelCase + purpose
+  │   ├── authenticate.js
+  │   ├── authorize.js
+  │   ├── validateQuote.js
+  │   └── errorHandler.js
+  │
+  └── utils/            # camelCase
+      ├── jwt.js
+      ├── logger.js
+      └── helpers.js
+```
+
+### Database Naming (PostgreSQL + Prisma)
+
+```prisma
+// ✅ GOED - snake_case columns, lowercase plural tables
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")  // DB: password_hash
+  isAdmin      Boolean  @default(false) @map("is_admin")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("users")  // DB: users (plural)
+}
+
+// ❌ FOUT - camelCase in DB
+model User {
+  id           String   @id
+  passwordHash String   // DB: passwordHash (fout!)
+  isAdmin      Boolean
+
+  @@map("User")  // DB: User (singular - fout!)
+}
+```
+
+### API Endpoint Patterns
+
+```typescript
+// ✅ GOED - RESTful conventions
+GET    /api/quotes           # List all
+GET    /api/quotes/:id       # Get one
+POST   /api/quotes           # Create
+PUT    /api/quotes/:id       # Update
+DELETE /api/quotes/:id       # Delete
+
+// Resource-specific actions
+POST   /api/quotes/:id/approve
+POST   /api/quotes/:id/convert-to-invoice
+
+// ❌ FOUT - Non-RESTful
+GET    /api/getQuotes
+POST   /api/createQuote
+GET    /api/quote/:id/get
+```
+
+### Controller Pattern
+
+```javascript
+// ✅ GOED - Standard controller structure
+export const createQuote = async (req, res, next) => {
+  try {
+    // 1. Extract data from req.body
+    const { customerId, items } = req.body;
+
+    // 2. Authorization check (if not in middleware)
+    if (!req.user.isAdmin) {
+      return res.status(403).json({
+        error: 'Alleen admins kunnen offertes aanmaken'
+      });
+    }
+
+    // 3. Business logic / database operations
+    const quote = await prisma.quote.create({
+      data: {
+        id: `Q${Date.now()}`,
+        customerId,
+        userId: req.user.id,
+        // ... other fields
+      },
+      include: { customer: true, items: true }
+    });
+
+    // 4. Success response
+    res.status(201).json(quote);
+
+  } catch (error) {
+    // 5. Pass to error middleware
+    next(error);
+  }
+};
+
+// ❌ FOUT - Direct error handling
+export const createQuote = async (req, res) => {
+  try {
+    // ...
+  } catch (error) {
+    res.status(500).json({ error: error.message }); // NO!
+  }
+};
+```
+
+### Response Format Standards
+
+```javascript
+// ✅ GOED - Consistent response formats
+
+// Success (200, 201)
+res.status(200).json({
+  id: 'Q123',
+  name: 'Offerte XYZ',
+  total: 1210.50
+});
+
+// Success with list (200)
+res.status(200).json({
+  quotes: [...],
+  total: 45,
+  page: 1,
+  limit: 20
+});
+
+// Error (400, 401, 403, 404, 500)
+res.status(400).json({
+  error: 'Naam en email zijn verplicht'
+});
+
+// Validation error (400)
+res.status(400).json({
+  error: 'Validatie fout',
+  details: [
+    { field: 'email', message: 'Ongeldig email formaat' },
+    { field: 'quantity', message: 'Moet groter zijn dan 0' }
+  ]
+});
+
+// ❌ FOUT - Inconsistent formats
+res.json({ success: true, data: {} });  // Don't wrap in "data"
+res.json({ message: 'Success' });       // Don't use "message" for data
+res.json({ status: 'ok' });             // Don't use custom status fields
+```
+
+### Middleware Pattern
+
+```javascript
+// ✅ GOED - Standard middleware structure
+export const authenticate = (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        error: 'Geen toegang - login vereist'
+      });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    req.user = decoded; // Attach to request
+    next(); // Continue
+
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        error: 'Token verlopen - login opnieuw'
+      });
+    }
+    return res.status(401).json({
+      error: 'Ongeldige token'
+    });
+  }
+};
+
+// ❌ FOUT - Doesn't call next()
+export const authenticate = (req, res, next) => {
+  const token = req.headers.authorization;
+  jwt.verify(token, process.env.JWT_SECRET);
+  // Missing: next()!
+};
+```
+
+### Validation Pattern (Joi)
+
+```javascript
+// ✅ GOED - Joi validation middleware
+import Joi from 'joi';
+
+const quoteSchema = Joi.object({
+  customerId: Joi.string().required(),
+  items: Joi.array().min(1).items(
+    Joi.object({
+      inventoryItemId: Joi.string().required(),
+      quantity: Joi.number().min(1).required(),
+      unitPrice: Joi.number().min(0).required()
+    })
+  ).required(),
+  notes: Joi.string().allow(''),
+  validUntil: Joi.date().min('now')
+});
+
+export const validateQuote = (req, res, next) => {
+  const { error } = quoteSchema.validate(req.body, { abortEarly: false });
+
+  if (error) {
+    return res.status(400).json({
+      error: 'Validatie fout',
+      details: error.details.map(d => ({
+        field: d.path.join('.'),
+        message: d.message
+      }))
+    });
+  }
+
+  next();
+};
+
+// ❌ FOUT - Manual validation
+export const validateQuote = (req, res, next) => {
+  if (!req.body.customerId) {
+    return res.status(400).json({ error: 'customerId required' });
+  }
+  // ... etc (onhandig!)
+};
+```
+
+### Environment Variables
+
+```javascript
+// ✅ GOED - .env structure
+DATABASE_URL="postgresql://user:password@localhost:5432/bedrijfsbeheer"
+JWT_SECRET="your-super-secret-jwt-key-here"
+JWT_EXPIRES_IN="24h"
+PORT=3001
+NODE_ENV="development"
+CORS_ORIGIN="http://localhost:5173"
+
+// Load with dotenv
+import dotenv from 'dotenv';
+dotenv.config();
+
+const config = {
+  database: process.env.DATABASE_URL,
+  jwt: {
+    secret: process.env.JWT_SECRET,
+    expiresIn: process.env.JWT_EXPIRES_IN || '24h'
+  },
+  port: parseInt(process.env.PORT || '3001'),
+  isDevelopment: process.env.NODE_ENV === 'development'
+};
+
+// ❌ FOUT - Hardcoded secrets
+const JWT_SECRET = 'my-secret-key';  // NO!
+const DATABASE_URL = 'postgresql://...';  // NO!
+```
+
+### Error Handling
+
+```javascript
+// ✅ GOED - Global error handler
+export const errorHandler = (err, req, res, next) => {
+  // Log error (use Winston in production)
+  console.error(`[${new Date().toISOString()}] Error:`, err);
+
+  // Prisma errors
+  if (err.code === 'P2002') {
+    return res.status(409).json({
+      error: 'Dit item bestaat al'
+    });
+  }
+
+  if (err.code === 'P2025') {
+    return res.status(404).json({
+      error: 'Item niet gevonden'
+    });
+  }
+
+  // Validation errors
+  if (err.name === 'ValidationError') {
+    return res.status(400).json({
+      error: 'Validatie fout',
+      details: err.details
+    });
+  }
+
+  // Default error
+  res.status(err.status || 500).json({
+    error: err.message || 'Er is een fout opgetreden'
+  });
+};
+
+// Use in app.js
+app.use(errorHandler);
+```
+
+### Testing Patterns
+
+```javascript
+// ✅ GOED - Controller unit test
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createQuote } from '../controllers/quoteController.js';
+
+describe('QuoteController - createQuote', () => {
+  let req, res, next;
+
+  beforeEach(() => {
+    req = {
+      user: { id: '1', email: 'admin@test.com', isAdmin: true },
+      body: {
+        customerId: 'c1',
+        items: [{ inventoryItemId: 'i1', quantity: 1, unitPrice: 100 }]
+      }
+    };
+    res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn()
+    };
+    next = vi.fn();
+  });
+
+  it('should create quote for admin', async () => {
+    await createQuote(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: expect.stringMatching(/^Q\d+$/),
+        customerId: 'c1'
+      })
+    );
+  });
+
+  it('should reject non-admin', async () => {
+    req.user.isAdmin = false;
+
+    await createQuote(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Alleen admins kunnen offertes aanmaken'
+    });
+  });
+});
+
+// ✅ GOED - API integration test
+import { describe, it, expect, beforeAll } from 'vitest';
+import request from 'supertest';
+import app from '../app.js';
+
+describe('Quotes API', () => {
+  let adminToken;
+
+  beforeAll(async () => {
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'admin@test.com', password: 'password' });
+    adminToken = res.body.token;
+  });
+
+  describe('POST /api/quotes', () => {
+    it('should create quote', async () => {
+      const res = await request(app)
+        .post('/api/quotes')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          customerId: 'c1',
+          items: [{ inventoryItemId: 'i1', quantity: 1, unitPrice: 100 }]
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body).toHaveProperty('id');
+      expect(res.body.total).toBe(121); // 100 + 21% VAT
+    });
+  });
+});
+```
+
+---
+
+## 📋 Backend Checklist
+
+Voor je backend code commit:
+
+```markdown
+- [ ] Endpoints: RESTful patterns gebruikt
+- [ ] Database: snake_case kolommen, lowercase plural tabellen
+- [ ] Controllers: try/catch + next(error)
+- [ ] Middleware: authenticate + authorize + validate
+- [ ] Validation: Joi schemas voor input
+- [ ] Responses: Consistente formats (error/success)
+- [ ] Security: JWT verificatie + bcrypt passwords
+- [ ] Environment: Geen hardcoded secrets
+- [ ] Testing: Unit + integration tests
+- [ ] Coverage: Minimum 80%
+- [ ] Errors: Nederlandse error messages
+```
+
+---
+
+**Voor meer details: zie [docs/AI_GUIDE.md](./docs/AI_GUIDE.md) en [docs/api/backend-setup.md](./docs/api/backend-setup.md)**

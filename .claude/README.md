@@ -58,6 +58,124 @@ components/accounting/
 
 pages/
   └── Accounting.tsx  # Alleen tab navigatie + component rendering
+
+backend/ (NIEUW!)
+  ├── config/         # Database, env, security configuratie
+  ├── controllers/    # Request handlers (quoteController.js)
+  ├── models/         # Prisma schema (schema.prisma)
+  ├── routes/         # API routes (/api/quotes)
+  ├── middleware/     # Auth, validation, error handling
+  ├── utils/          # JWT, logger, helpers
+  └── tests/          # Unit + integration tests
+```
+
+---
+
+## 🏗️ Tech Stack & Architecture
+
+**⚠️ HUIDIGE STATUS: Frontend-Only (In-Memory)**
+- ✅ UI componenten compleet
+- ✅ State management werkend (App.tsx centralized)
+- ❌ Geen backend API (data verloren bij refresh)
+- ❌ Geen database persistentie
+- ❌ Geen echte authenticatie (alleen UI checks!)
+
+**Backend Stack (Voor Toekomstige Implementatie):**
+- **Framework:** Express.js v4
+- **Database:** PostgreSQL v15 (NIET MongoDB!)
+- **ORM:** Prisma v5
+- **Auth:** JWT (jsonwebtoken)
+- **Validation:** Joi
+- **Testing:** Vitest + Supertest
+
+**Frontend Stack:**
+- **Framework:** React 19 + TypeScript
+- **State:** React Hooks (centralized in App.tsx)
+- **Styling:** Tailwind CSS 4
+- **Testing:** Vitest + React Testing Library
+
+---
+
+## 🔒 Security Requirements (Voor Backend Implementatie)
+
+**Verplicht voor ALLE API endpoints:**
+- [ ] ✅ Input validation (Joi schema)
+- [ ] ✅ Authentication (JWT verify middleware)
+- [ ] ✅ Authorization (role check middleware)
+- [ ] ✅ Error handling (try/catch + error middleware)
+- [ ] ✅ Logging (Winston voor errors)
+
+**Endpoint Pattern:**
+```typescript
+router.post('/api/quotes',
+  authenticate,        // JWT verificatie
+  requireAdmin,        // isAdmin check
+  validateQuote,       // Joi validation
+  createQuote          // Controller logica
+);
+```
+
+**Password Security:**
+```typescript
+// ALTIJD bcrypt voor wachtwoorden
+import bcrypt from 'bcrypt';
+const hash = await bcrypt.hash(password, 10);
+```
+
+**JWT Pattern:**
+```typescript
+// Token bevat: id, email, isAdmin
+const token = jwt.sign(
+  { id: user.id, email: user.email, isAdmin: user.isAdmin },
+  process.env.JWT_SECRET,
+  { expiresIn: '24h' }
+);
+```
+
+---
+
+## 🧪 Testing Requirements (VERPLICHT!)
+
+**Voor Elke Feature:**
+- [ ] ✅ Unit tests voor controllers
+- [ ] ✅ Unit tests voor services/utils
+- [ ] ✅ Integration tests voor API endpoints
+- [ ] ✅ Frontend component tests
+- [ ] ✅ Minimum **80% code coverage**
+- [ ] ✅ `npm run test` moet slagen
+
+**Test Pattern:**
+```typescript
+describe('QuoteController', () => {
+  it('should create quote for admin', async () => {
+    // Arrange
+    const adminUser = { id: '1', isAdmin: true };
+    const quoteData = { customerId: 'c1', items: [] };
+
+    // Act
+    const result = await createQuote(adminUser, quoteData);
+
+    // Assert
+    expect(result.id).toBeDefined();
+    expect(result.status).toBe('draft');
+  });
+
+  it('should reject non-admin', async () => {
+    const userUser = { id: '2', isAdmin: false };
+
+    await expect(
+      createQuote(userUser, {})
+    ).rejects.toThrow('Alleen admins kunnen offertes aanmaken');
+  });
+});
+```
+
+**Test Commands:**
+```bash
+npm run test              # Run all tests
+npm run test:coverage     # With coverage report
+npm run test:watch        # Watch mode
+npm run test:e2e          # End-to-end tests
 ```
 
 ---
@@ -81,11 +199,17 @@ pages/
    └─ Gebruik barrel files voor imports
    └─ Immutable state updates
 
-5. ✅ TEST
-   └─ npm run build
+5. 🧪 WRITE TESTS (VERPLICHT!)
+   └─ Unit tests voor nieuwe functie
+   └─ Integration tests voor API endpoints
+   └─ Component tests voor UI
+
+6. ✅ RUN TESTS
+   └─ npm run test (moet slagen!)
+   └─ npm run build (TypeScript check)
    └─ Test beide rollen (Admin + User)
 
-6. 📝 COMMIT
+7. 📝 COMMIT
    └─ Duidelijke commit message
    └─ Update docs indien nodig
 ```
