@@ -52,6 +52,7 @@ import { HRM } from './pages/HRM';
 import { Planning } from './pages/Planning';
 import { Reports } from './pages/Reports';
 import { Webshop } from './pages/Webshop';
+import { WebshopEnhanced } from './pages/WebshopEnhanced';
 
 interface AppInnerProps {
   currentUser: User;
@@ -269,7 +270,7 @@ export const AppInner: React.FC<AppInnerProps> = ({
       />
     ),
     [ModuleKey.WEBSHOP]: (
-      <Webshop
+      <WebshopEnhanced
         inventory={inventory}
         customers={customers}
         isAdmin={currentUser.isAdmin}
