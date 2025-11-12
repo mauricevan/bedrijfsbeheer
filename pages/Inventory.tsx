@@ -16,7 +16,7 @@ interface InventoryProps {
   setCategories?: React.Dispatch<React.SetStateAction<InventoryCategory[]>>; // 🆕 V5.7: Set categories prop
 }
 
-export const Inventory: React.FC<InventoryProps> = ({
+const InventoryComponent: React.FC<InventoryProps> = ({
   inventory,
   setInventory,
   isAdmin,
@@ -2662,3 +2662,5 @@ export const Inventory: React.FC<InventoryProps> = ({
     </div>
   );
 };
+
+export const Inventory = React.memo(InventoryComponent);

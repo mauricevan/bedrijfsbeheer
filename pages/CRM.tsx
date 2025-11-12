@@ -64,7 +64,7 @@ type TabType =
   | "tasks"
   | "email";
 
-export const CRM: React.FC<CRMProps> = ({
+const CRMComponent: React.FC<CRMProps> = ({
   customers,
   setCustomers,
   sales,
@@ -4869,5 +4869,7 @@ export const CRM: React.FC<CRMProps> = ({
     </div>
   );
 };
+
+export const CRM = React.memo(CRMComponent);
 
 // Old EmailTab code removed - Now using EmailDropZone component

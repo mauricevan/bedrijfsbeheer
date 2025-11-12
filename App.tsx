@@ -11,6 +11,8 @@ import { Header } from "./components/Header";
 import { Login } from "./components/Login";
 import { AdminSettings } from "./components/AdminSettings";
 import { AnalyticsTracker } from "./components/AnalyticsTracker";
+import { LoadingSpinner } from "./components/LoadingSpinner";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { BottomNavigation } from "./components/BottomNavigation";
 import { ALL_MODULES } from "./constants";
 import {
@@ -54,6 +56,7 @@ import {
   MOCK_EMAIL_TEMPLATES,
 } from "./data/mockData";
 
+// Import functional pages with lazy loading
 // Lazy load functional pages for code splitting
 const Dashboard = lazy(() => import("./pages/Dashboard").then(m => ({ default: m.Dashboard })));
 const Inventory = lazy(() => import("./pages/Inventory").then(m => ({ default: m.Inventory })));
@@ -354,6 +357,9 @@ function App() {
           onNavigate={handleNavigate}
         />
         <main className="flex-1 overflow-x-hidden overflow-y-auto">
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              <Routes>
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route
@@ -386,6 +392,9 @@ function App() {
                 path="*"
                 element={<Navigate to={`/${ModuleKey.DASHBOARD}`} replace />}
               />
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
             </Routes>
           </Suspense>
         </main>

@@ -42,7 +42,7 @@ interface WorkOrdersProps {
   categories?: InventoryCategory[]; // 🆕 V5.7: Categories prop
 }
 
-export const WorkOrders: React.FC<WorkOrdersProps> = ({
+const WorkOrdersComponent: React.FC<WorkOrdersProps> = ({
   workOrders,
   setWorkOrders,
   employees,
@@ -6149,3 +6149,5 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({
     </div>
   );
 };
+
+export const WorkOrders = React.memo(WorkOrdersComponent);

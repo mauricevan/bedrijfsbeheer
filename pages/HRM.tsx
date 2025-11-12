@@ -8,7 +8,7 @@ interface HRMProps {
   isAdmin: boolean;
 }
 
-export const HRM: React.FC<HRMProps> = ({ employees, setEmployees, isAdmin }) => {
+const HRMComponent: React.FC<HRMProps> = ({ employees, setEmployees, isAdmin }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [showEmployeeDetail, setShowEmployeeDetail] = useState(false);
@@ -836,3 +836,5 @@ export const HRM: React.FC<HRMProps> = ({ employees, setEmployees, isAdmin }) =>
     </div>
   );
 };
+
+export const HRM = React.memo(HRMComponent);

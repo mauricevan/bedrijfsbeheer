@@ -44,7 +44,7 @@ const STANDARD_LEDGER_ACCOUNTS: LedgerAccount[] = [
   { id: '2210', accountNumber: '2210', name: 'BTW laag (9%)', type: 'liability', category: 'btw', description: 'BTW af te dragen 9%', isStandard: true, createdAt: new Date().toISOString() },
 ];
 
-const Bookkeeping: React.FC<BookkeepingProps> = ({
+const BookkeepingComponent: React.FC<BookkeepingProps> = ({
   invoices,
   setInvoices,
   quotes = [],
@@ -1935,5 +1935,6 @@ const Bookkeeping: React.FC<BookkeepingProps> = ({
   );
 };
 
+const Bookkeeping = React.memo(BookkeepingComponent);
 export default Bookkeeping;
 

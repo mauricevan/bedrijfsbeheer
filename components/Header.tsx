@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Notification, User, Quote, Invoice, WorkOrder, Customer, ModuleKey } from '../types';
 import { UnifiedSearch } from './UnifiedSearch';
 
@@ -16,9 +16,9 @@ interface HeaderProps {
   onNavigate?: (module: ModuleKey, id: string) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ 
-  isAdmin, 
-  notifications, 
+const HeaderComponent: React.FC<HeaderProps> = ({
+  isAdmin,
+  notifications,
   setNotifications,
   currentUser,
   onLogout,
@@ -31,18 +31,18 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  
+
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  const markAsRead = (id: string) => {
-    setNotifications(notifications.map(n => 
+  const markAsRead = useCallback((id: string) => {
+    setNotifications(notifications.map(n =>
       n.id === id ? { ...n, read: true } : n
     ));
-  };
+  }, [notifications, setNotifications]);
 
-  const markAllAsRead = () => {
+  const markAllAsRead = useCallback(() => {
     setNotifications(notifications.map(n => ({ ...n, read: true })));
-  };
+  }, [notifications, setNotifications]);
 
   const getNotificationColor = (type: string) => {
     switch (type) {
@@ -272,3 +272,5 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+
+export const Header = React.memo(HeaderComponent);

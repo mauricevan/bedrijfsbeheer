@@ -10,7 +10,7 @@ interface PlanningProps {
   isAdmin: boolean;
 }
 
-export const Planning: React.FC<PlanningProps> = ({
+const PlanningComponent: React.FC<PlanningProps> = ({
   events,
   setEvents,
   employees,
@@ -404,3 +404,5 @@ export const Planning: React.FC<PlanningProps> = ({
     </div>
   );
 };
+
+export const Planning = React.memo(PlanningComponent);
