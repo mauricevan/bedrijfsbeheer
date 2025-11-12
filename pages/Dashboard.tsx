@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { InventoryItem, Sale, WorkOrder, Notification } from '../types';
 import { EmailDropZone } from '../components/EmailDropZone';
 
@@ -10,9 +10,9 @@ interface DashboardProps {
   setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ 
-  inventory, 
-  sales, 
+const DashboardComponent: React.FC<DashboardProps> = ({
+  inventory,
+  sales,
   workOrders,
   notifications,
   setNotifications
@@ -24,11 +24,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const unreadNotifications = notifications.filter(n => !n.read);
 
-  const markAsRead = (id: string) => {
-    setNotifications(notifications.map(n => 
+  const markAsRead = useCallback((id: string) => {
+    setNotifications(notifications.map(n =>
       n.id === id ? { ...n, read: true } : n
     ));
-  };
+  }, [notifications, setNotifications]);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -219,3 +219,5 @@ export const Dashboard: React.FC<DashboardProps> = ({
     </div>
   );
 };
+
+export const Dashboard = React.memo(DashboardComponent);

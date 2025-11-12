@@ -8,7 +8,7 @@ interface ReportsProps {
   workOrders: WorkOrder[];
 }
 
-export const Reports: React.FC<ReportsProps> = ({ sales, inventory, quotes, workOrders }) => {
+const ReportsComponent: React.FC<ReportsProps> = ({ sales, inventory, quotes, workOrders }) => {
   const [reportType, setReportType] = useState<'sales' | 'inventory' | 'quotes' | 'workorders'>('sales');
 
   // Sales Analytics
@@ -382,3 +382,5 @@ export const Reports: React.FC<ReportsProps> = ({ sales, inventory, quotes, work
     </div>
   );
 };
+
+export const Reports = React.memo(ReportsComponent);

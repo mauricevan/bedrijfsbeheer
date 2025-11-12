@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { NavLink } from 'react-router-dom';
 import { ALL_MODULES, ADMIN_MODULE } from '../constants';
 import { ModuleKey, Notification } from '../types';
@@ -12,8 +12,8 @@ interface SidebarProps {
   onMobileClose: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ 
-  activeModules, 
+const SidebarComponent: React.FC<SidebarProps> = ({
+  activeModules,
   isAdmin,
   notifications,
   isMobileOpen,
@@ -27,28 +27,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const touchEndX = useRef<number | null>(null);
   const minSwipeDistance = 50;
   
-  const onTouchStart = (e: React.TouchEvent) => {
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
     touchEndX.current = null;
     touchStartX.current = e.touches[0].clientX;
-  };
-  
-  const onTouchMove = (e: React.TouchEvent) => {
+  }, []);
+
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
     touchEndX.current = e.touches[0].clientX;
-  };
-  
-  const onTouchEnd = () => {
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
     if (!touchStartX.current || !touchEndX.current) return;
     const distance = touchStartX.current - touchEndX.current;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
-    
+
     if (isLeftSwipe && isMobileOpen) {
       // Swipe left to close sidebar
       onMobileClose();
     } else if (isRightSwipe && !isMobileOpen) {
       // Swipe right to open sidebar (handled by Header hamburger menu)
     }
-  };
+  }, [isMobileOpen, onMobileClose]);
 
   return (
     <>
@@ -156,3 +156,5 @@ export const Sidebar: React.FC<SidebarProps> = ({
     </>
   );
 };
+
+export const Sidebar = React.memo(SidebarComponent);
