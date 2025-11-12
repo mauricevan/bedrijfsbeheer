@@ -6,6 +6,19 @@
 
 ---
 
+## ⚠️ LEES DIT EERST
+
+**Als je Claude Code bent:** Check eerst [`.claude/README.md`](../.claude/README.md) voor quick reference!
+
+Dit document bevat volledige details (910 regels). Gebruik als **reference**, niet als eerste lezing.
+
+**Voor quick start:**
+1. 📖 Lees [`.claude/README.md`](../.claude/README.md) (3 minuten)
+2. 📖 Lees [CONVENTIONS.md](../CONVENTIONS.md) voor code style (5 minuten)
+3. 📖 Kom terug naar dit document voor details (bij twijfel)
+
+---
+
 ## 📋 Inhoudsopgave
 
 1. [Project Overzicht](#project-overzicht)

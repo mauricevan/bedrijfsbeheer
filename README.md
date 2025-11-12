@@ -6,6 +6,61 @@
 
 ---
 
+## 🤖 Voor AI Assistenten - LEES DIT EERST!
+
+**Als je een AI assistant bent die aan dit project werkt:**
+
+### 📋 START HIER (Verplicht!)
+
+**→ [`.claude/README.md`](./.claude/README.md) ⭐ VERPLICHTE QUICK REFERENCE**
+
+Deze file bevat:
+- ✅ Verplichte checklist (wat lezen voor je begint)
+- ✅ Kritieke regels (max file sizes, permissions, etc.)
+- ✅ Workflow guide (stap-voor-stap proces)
+- ✅ Quick code patterns (copy-paste ready)
+- ✅ Test accounts (Admin + User)
+
+### 📚 Volledige Documentatie
+
+**Must Read:**
+- [**AI Development Guide**](./docs/AI_GUIDE.md) - 910 regels met alle coding standards & patterns
+- [**Project Structure**](./docs/02-architecture/project-structure.md) - Strikte mappenstructuur & regels
+- [**Conventions**](./CONVENTIONS.md) - Code style quick reference
+
+**Reference Docs:**
+- [State Management](./docs/02-architecture/state-management.md) - Immutable updates & data flow
+- [User Roles & Permissions](./docs/04-features/user-roles.md) - Complete permission matrix
+- [Workorder Workflow](./docs/04-features/workorder-workflow.md) - Offerte ↔ Werkorder ↔ Factuur sync
+
+### 🚨 Kritieke Principes
+
+| Principe | Check |
+|----------|-------|
+| 🔒 **Permissions** | Altijd `currentUser?.isAdmin` check voor create/edit/delete |
+| 🔄 **Immutable Updates** | Altijd spread operators: `{...prev, ...updates}` |
+| 🔗 **Bidirectional Sync** | Offerte ↔ Werkorder ↔ Factuur BEIDE kanten updaten |
+| 📏 **Component Size** | Max 300 regels per component, max 200 per hook |
+| 🎯 **Barrel Files** | Import via `@/features/accounting/hooks` |
+| 🇳🇱 **Dutch UI** | Alle labels, buttons, errors in Nederlands |
+| ✅ **TypeScript** | Altijd types, NOOIT `any` |
+| 🧪 **Test Both Roles** | Admin + User (sophie@bedrijf.nl / jan@bedrijf.nl) |
+
+### ⚡ Quick Start for AI
+
+```bash
+# 1. Lees .claude/README.md (3 min)
+# 2. Lees docs/AI_GUIDE.md relevant sections (10-15 min)
+# 3. Check docs/02-architecture/project-structure.md voor waar code hoort (2 min)
+# 4. Code met bestaande patterns
+# 5. npm run build (always!)
+# 6. Test Admin + User rollen
+```
+
+**Twijfel je?** → Check [AI_GUIDE.md](./docs/AI_GUIDE.md) sectie "Common Pitfalls"
+
+---
+
 ## 🎯 Project Overzicht
 
 Een volledig geïntegreerd dashboard/backend-systeem waarmee de eigenaar alle bedrijfsprocessen kan overzien en regelen, en medewerkers alle tools hebben die nodig zijn om hun taken efficiënt uit te voeren.
@@ -242,24 +297,6 @@ Factuur (Draft → Verzenden → Betaald)
 - 🔄 Automatische journaalposten
 
 [Bekijk volledige changelog →](./docs/06-changelog/overview.md)
-
----
-
-## 🤖 Voor AI Assistenten
-
-Als je een AI assistant bent die werkt aan dit project:
-
-1. **Lees eerst:** [AI_GUIDE.md](./docs/AI_GUIDE.md) voor development richtlijnen
-2. **Volg:** [SCALING_GUIDE.md](./docs/SCALING_GUIDE.md) bij documentatie updates
-3. **Raadpleeg:** [State Management](./docs/02-architecture/state-management.md) voor data patterns
-4. **Check:** [User Roles](./docs/04-features/user-roles.md) voor permission rules
-
-**Belangrijkste principes:**
-- 🔒 Altijd permission checks (Admin vs User)
-- 🔄 Altijd immutable state updates
-- 🔗 Altijd bidirectional synchronization (Offerte ↔ Werkorder ↔ Factuur)
-- 🇳🇱 Altijd Nederlands in UI
-- ✅ Altijd TypeScript types gebruiken
 
 ---
 
