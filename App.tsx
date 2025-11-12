@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, lazy, Suspense } from "react";
 import {
   Routes,
   Route,
@@ -11,6 +11,7 @@ import { Header } from "./components/Header";
 import { Login } from "./components/Login";
 import { AdminSettings } from "./components/AdminSettings";
 import { AnalyticsTracker } from "./components/AnalyticsTracker";
+import { BottomNavigation } from "./components/BottomNavigation";
 import { ALL_MODULES } from "./constants";
 import {
   ModuleKey,
@@ -53,19 +54,29 @@ import {
   MOCK_EMAIL_TEMPLATES,
 } from "./data/mockData";
 
-// Import functional pages
-import { Dashboard } from "./pages/Dashboard";
-import { Inventory } from "./pages/Inventory";
-import { POS } from "./pages/POS";
-import { WorkOrders } from "./pages/WorkOrders";
-import { Accounting } from "./pages/Accounting";
-import Bookkeeping from "./pages/Bookkeeping";
-import { CRM } from "./pages/CRM";
-import { HRM } from "./pages/HRM";
-import { Reports } from "./pages/Reports";
-import { Planning } from "./pages/Planning";
-import { Webshop } from "./pages/Webshop";
+// Lazy load functional pages for code splitting
+const Dashboard = lazy(() => import("./pages/Dashboard").then(m => ({ default: m.Dashboard })));
+const Inventory = lazy(() => import("./pages/Inventory").then(m => ({ default: m.Inventory })));
+const POS = lazy(() => import("./pages/POS").then(m => ({ default: m.POS })));
+const WorkOrders = lazy(() => import("./pages/WorkOrders").then(m => ({ default: m.WorkOrders })));
+const Accounting = lazy(() => import("./pages/Accounting").then(m => ({ default: m.Accounting })));
+const Bookkeeping = lazy(() => import("./pages/Bookkeeping"));
+const CRM = lazy(() => import("./pages/CRM").then(m => ({ default: m.CRM })));
+const HRM = lazy(() => import("./pages/HRM").then(m => ({ default: m.HRM })));
+const Reports = lazy(() => import("./pages/Reports").then(m => ({ default: m.Reports })));
+const Planning = lazy(() => import("./pages/Planning").then(m => ({ default: m.Planning })));
+const Webshop = lazy(() => import("./pages/Webshop").then(m => ({ default: m.Webshop })));
 import { trackNavigation, trackAction } from "./utils/analytics";
+
+// Loading component for Suspense fallback
+const PageLoader = () => (
+  <div className="flex items-center justify-center h-screen bg-base-100">
+    <div className="text-center">
+      <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <p className="mt-4 text-neutral-600">Laden...</p>
+    </div>
+  </div>
+);
 
 // Default all modules to active
 const initialModulesState = ALL_MODULES.reduce((acc, module) => {
@@ -343,39 +354,42 @@ function App() {
           onNavigate={handleNavigate}
         />
         <main className="flex-1 overflow-x-hidden overflow-y-auto">
-          <Routes>
-            <Route
-              path="/"
-              element={<Navigate to={`/${ModuleKey.DASHBOARD}`} replace />}
-            />
-
-            {visibleModules.map((module) => (
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
               <Route
-                key={module.id}
-                path={`/${module.id}`}
-                element={moduleRoutes[module.id as keyof typeof moduleRoutes]}
+                path="/"
+                element={<Navigate to={`/${ModuleKey.DASHBOARD}`} replace />}
               />
-            ))}
 
-            {currentUser.isAdmin && (
+              {visibleModules.map((module) => (
+                <Route
+                  key={module.id}
+                  path={`/${module.id}`}
+                  element={moduleRoutes[module.id as keyof typeof moduleRoutes]}
+                />
+              ))}
+
+              {currentUser.isAdmin && (
+                <Route
+                  path={`/${ModuleKey.ADMIN_SETTINGS}`}
+                  element={
+                    <AdminSettings
+                      activeModules={activeModules}
+                      setActiveModules={setActiveModules}
+                    />
+                  }
+                />
+              )}
+
+              {/* Fallback route to the dashboard if a module is disabled or path is invalid */}
               <Route
-                path={`/${ModuleKey.ADMIN_SETTINGS}`}
-                element={
-                  <AdminSettings
-                    activeModules={activeModules}
-                    setActiveModules={setActiveModules}
-                  />
-                }
+                path="*"
+                element={<Navigate to={`/${ModuleKey.DASHBOARD}`} replace />}
               />
-            )}
-
-            {/* Fallback route to the dashboard if a module is disabled or path is invalid */}
-            <Route
-              path="*"
-              element={<Navigate to={`/${ModuleKey.DASHBOARD}`} replace />}
-            />
-          </Routes>
+            </Routes>
+          </Suspense>
         </main>
+        <BottomNavigation />
       </div>
     </div>
   );
