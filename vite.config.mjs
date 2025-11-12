@@ -13,6 +13,15 @@ export default defineConfig(({ mode }) => {
       plugins: [react()],
       build: {
         sourcemap: true,
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+              'charts': ['recharts'],
+            },
+          },
+        },
+        chunkSizeWarningLimit: 1000,
       },
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
