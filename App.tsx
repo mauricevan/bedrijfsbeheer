@@ -12,6 +12,7 @@ import { Login } from "./components/Login";
 import { AdminSettings } from "./components/AdminSettings";
 import { AnalyticsTracker } from "./components/AnalyticsTracker";
 import { LoadingSpinner } from "./components/LoadingSpinner";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ALL_MODULES } from "./constants";
 import {
   ModuleKey,
@@ -344,8 +345,9 @@ function App() {
           onNavigate={handleNavigate}
         />
         <main className="flex-1 overflow-x-hidden overflow-y-auto">
-          <Suspense fallback={<LoadingSpinner />}>
-            <Routes>
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              <Routes>
               <Route
                 path="/"
                 element={<Navigate to={`/${ModuleKey.DASHBOARD}`} replace />}
@@ -376,8 +378,9 @@ function App() {
                 path="*"
                 element={<Navigate to={`/${ModuleKey.DASHBOARD}`} replace />}
               />
-            </Routes>
-          </Suspense>
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
         </main>
       </div>
     </div>
