@@ -26,7 +26,7 @@ interface POSProps {
 
 type POSMode = "b2c" | "b2b"; // B2C = Kassa (Particulier), B2B = Pakbon (Bedrijf)
 
-export const POS: React.FC<POSProps> = ({
+const POSComponent: React.FC<POSProps> = ({
   inventory,
   setInventory,
   sales,
@@ -1806,3 +1806,5 @@ export const POS: React.FC<POSProps> = ({
     </div>
   );
 };
+
+export const POS = React.memo(POSComponent);

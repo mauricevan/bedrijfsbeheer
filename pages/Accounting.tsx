@@ -65,7 +65,7 @@ interface AccountingProps {
   categories?: InventoryCategory[]; // 🆕 V5.7: Categories prop
 }
 
-export const Accounting: React.FC<AccountingProps> = ({
+const AccountingComponent: React.FC<AccountingProps> = ({
   transactions,
   quotes,
   setQuotes,
@@ -7600,3 +7600,5 @@ export const Accounting: React.FC<AccountingProps> = ({
     </div>
   );
 };
+
+export const Accounting = React.memo(AccountingComponent);

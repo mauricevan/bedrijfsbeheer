@@ -21,7 +21,7 @@ interface WebshopProps {
 
 type TabType = 'products' | 'categories' | 'orders';
 
-export const Webshop: React.FC<WebshopProps> = ({
+const WebshopComponent: React.FC<WebshopProps> = ({
   inventory,
   customers,
   isAdmin,
@@ -2077,3 +2077,5 @@ export const Webshop: React.FC<WebshopProps> = ({
     </div>
   );
 };
+
+export const Webshop = React.memo(WebshopComponent);
