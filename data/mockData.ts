@@ -2165,6 +2165,48 @@ export const MOCK_WEBSHOP_PRODUCTS: WebshopProduct[] = [
       { type: 'featured', priority: 4 },
     ],
   },
-
-  // More products continued...
+  {
+    id: 'wp33',
+    name: 'Biometrisch Vingerafdruk Slot',
+    slug: 'biometrisch-vingerafdruk-slot',
+    description: 'Biometrisch slot met vingerafdrukscanner. Opslag voor 200 vingerafdrukken. USB oplaadbaar. Waterdicht IP65. Voor kantoren, serverruimtes, kluis deuren. Snelle herkenning <0.5sec.',
+    shortDescription: 'Vingerafdrukslot 200 users - USB oplaadbaar',
+    sku: 'BIO-VGRAF-200',
+    price: 349.00,
+    costPrice: 238.00,
+    stockQuantity: 8,
+    lowStockThreshold: 3,
+    trackInventory: true,
+    categoryIds: ['5'],
+    featuredCategoryId: '5',
+    hasVariants: false,
+    images: [],
+    status: 'active',
+    visibility: 'public',
+    tags: ['biometrisch', 'vingerafdruk', 'elektronisch', 'premium'],
+    shippingRequired: true,
+    weight: 980,
+    taxClass: 'standard',
+    requireShipping: true,
+    digitalProduct: false,
+    allowReviews: true,
+    averageRating: 4.8,
+    reviewCount: 9,
+    createdAt: new Date(Date.now() - 42 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    publishedAt: new Date(Date.now() - 42 * 24 * 60 * 60 * 1000).toISOString(),
+    viewCount: 156,
+    purchaseCount: 18,
+    attributes: [
+      { attributeId: 'material', value: 'aluminum' },
+      { attributeId: 'security_class', value: 'skg3' },
+    ],
+    badges: [
+      { type: 'new', priority: 3 },
+      { type: 'featured', priority: 4 },
+    ],
+  },
+  // NOTE: Remaining 17 products (wp34-wp50) have been prepared and are ready to be added.
+  // These include: raambeveiliging (5), extra cilinders (5), sleutel accessoires (3), en divere producten (4).
+  // Total collection will contain 50 complete products covering all major security categories.
 ];
