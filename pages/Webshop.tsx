@@ -9,7 +9,11 @@ import {
   PaymentStatus,
   InventoryItem,
   Customer,
+  ProductAttribute,
+  FilterState,
+  ProductBadge,
 } from '../types';
+import { ProductFilters } from '../components/ProductFilters';
 
 interface WebshopProps {
   inventory: InventoryItem[];
@@ -49,7 +53,74 @@ const WebshopComponent: React.FC<WebshopProps> = ({
   const [productStatusFilter, setProductStatusFilter] = useState<'all' | 'active' | 'draft' | 'archived'>('all');
   const [productCategoryFilter, setProductCategoryFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  
+
+  // Filter state voor sidebar
+  const [showFilters, setShowFilters] = useState(true);
+  const [filterState, setFilterState] = useState<FilterState>({
+    attributes: {},
+  });
+
+  // Product attributes voor filtering (BESA-style)
+  const [attributes] = useState<ProductAttribute[]>([
+    {
+      id: 'backset',
+      name: 'Backset',
+      slug: 'backset',
+      type: 'multiselect',
+      unit: 'mm',
+      categoryIds: undefined,
+      required: false,
+      showInFilters: true,
+      showInProductList: true,
+      order: 1,
+      options: [
+        { id: 'b25', label: '25mm', value: '25', order: 0 },
+        { id: 'b30', label: '30mm', value: '30', order: 1 },
+        { id: 'b35', label: '35mm', value: '35', order: 2 },
+        { id: 'b40', label: '40mm', value: '40', order: 3 },
+        { id: 'b50', label: '50mm', value: '50', order: 4 },
+      ],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+    {
+      id: 'material',
+      name: 'Materiaal',
+      slug: 'material',
+      type: 'multiselect',
+      categoryIds: undefined,
+      required: false,
+      showInFilters: true,
+      showInProductList: true,
+      order: 2,
+      options: [
+        { id: 'mat1', label: 'Roestvrij Staal', value: 'stainless_steel', order: 0 },
+        { id: 'mat2', label: 'Messing', value: 'brass', order: 1 },
+        { id: 'mat3', label: 'Gegalvaniseerd', value: 'galvanized', order: 2 },
+        { id: 'mat4', label: 'Aluminium', value: 'aluminum', order: 3 },
+      ],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+    {
+      id: 'length',
+      name: 'Lengte',
+      slug: 'length',
+      type: 'range',
+      unit: 'mm',
+      categoryIds: undefined,
+      required: false,
+      showInFilters: true,
+      showInProductList: true,
+      order: 3,
+      min: 20,
+      max: 150,
+      step: 5,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+  ]);
+
   // Product form state
   const [newProduct, setNewProduct] = useState<Partial<WebshopProduct>>({
     name: '',
@@ -128,21 +199,74 @@ const WebshopComponent: React.FC<WebshopProps> = ({
   // Filter products
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
-      const matchesSearch = 
+      const matchesSearch =
         product.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
         product.sku.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
         product.description.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
         product.tags.some(tag => tag.toLowerCase().includes(productSearchTerm.toLowerCase()));
-      
-      const matchesStatus = 
+
+      const matchesStatus =
         productStatusFilter === 'all' || product.status === productStatusFilter;
-      
+
       const matchesCategory =
         productCategoryFilter === 'all' || product.categoryIds.includes(productCategoryFilter);
-      
-      return matchesSearch && matchesStatus && matchesCategory;
+
+      // Nieuwe BESA-style attribute filters
+      let matchesAttributes = true;
+      for (const [attrId, filterValue] of Object.entries(filterState.attributes)) {
+        const productAttr = product.attributes?.find(a => a.attributeId === attrId);
+        if (!productAttr) {
+          matchesAttributes = false;
+          break;
+        }
+
+        const attr = attributes.find(a => a.id === attrId);
+        if (!attr) continue;
+
+        // Handle different attribute types
+        if (attr.type === 'multiselect' || attr.type === 'checkbox') {
+          const filterValues = Array.isArray(filterValue) ? filterValue : [filterValue];
+          const productValues = Array.isArray(productAttr.value)
+            ? productAttr.value
+            : [productAttr.value];
+          if (!filterValues.some(fv => productValues.includes(fv))) {
+            matchesAttributes = false;
+            break;
+          }
+        } else if (attr.type === 'range') {
+          const rangeFilter = filterValue as { min?: number; max?: number };
+          const productValue = Number(productAttr.value);
+          if (rangeFilter.min !== undefined && productValue < rangeFilter.min) {
+            matchesAttributes = false;
+            break;
+          }
+          if (rangeFilter.max !== undefined && productValue > rangeFilter.max) {
+            matchesAttributes = false;
+            break;
+          }
+        }
+      }
+
+      // Price range filter
+      let matchesPriceRange = true;
+      if (filterState.priceRange) {
+        if (
+          product.price < filterState.priceRange.min ||
+          product.price > filterState.priceRange.max
+        ) {
+          matchesPriceRange = false;
+        }
+      }
+
+      // Stock filter
+      let matchesStock = true;
+      if (filterState.inStock && product.stockQuantity <= 0) {
+        matchesStock = false;
+      }
+
+      return matchesSearch && matchesStatus && matchesCategory && matchesAttributes && matchesPriceRange && matchesStock;
     });
-  }, [products, productSearchTerm, productStatusFilter, productCategoryFilter]);
+  }, [products, productSearchTerm, productStatusFilter, productCategoryFilter, filterState, attributes]);
 
   // Filter orders
   const filteredOrders = useMemo(() => {
@@ -1226,54 +1350,87 @@ const WebshopComponent: React.FC<WebshopProps> = ({
             </div>
           )}
 
-          {/* Products List/Grid */}
-          {filteredProducts.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-md p-12 text-center">
-              <p className="text-gray-500 text-lg mb-4">
-                {products.length === 0 ? '📦 Nog geen producten' : '🔍 Geen producten gevonden'}
-              </p>
-              <p className="text-sm text-gray-400 mb-6">
-                {products.length === 0 
-                  ? 'Begin met het toevoegen van uw eerste product!'
-                  : 'Probeer andere zoektermen of filters.'}
-              </p>
-              {products.length === 0 && isAdmin && (
-                <button
-                  onClick={() => {
-                    setNewProduct({
-                      name: '',
-                      slug: '',
-                      description: '',
-                      sku: generateSku('Nieuw Product'),
-                      price: 0,
-                      stockQuantity: 0,
-                      lowStockThreshold: 5,
-                      trackInventory: true,
-                      categoryIds: [],
-                      hasVariants: false,
-                      variants: [],
-                      images: [],
-                      status: 'draft',
-                      visibility: 'public',
-                      tags: [],
-                      shippingRequired: true,
-                      requireShipping: true,
-                      digitalProduct: false,
-                      allowReviews: true,
-                    });
-                    setShowProductForm(true);
-                  }}
-                  className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-secondary transition-colors font-semibold"
-                >
-                  + Voeg Eerste Product Toe
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className={viewMode === 'grid' 
-              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
-              : 'space-y-4'
-            }>
+          {/* Filter Toggle & Product Count */}
+          <div className="flex justify-between items-center mb-4">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors lg:hidden"
+            >
+              {showFilters ? '✕ Verberg Filters' : '🔍 Toon Filters'}
+            </button>
+            <span className="text-sm text-gray-600">
+              {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'producten'}
+            </span>
+          </div>
+
+          {/* Products List/Grid with Filter Sidebar */}
+          <div className="flex gap-6">
+            {/* Filter Sidebar - BESA Style */}
+            {showFilters && (
+              <div className="w-64 flex-shrink-0 hidden lg:block">
+                <ProductFilters
+                  categories={categories}
+                  attributes={attributes}
+                  filterState={filterState}
+                  onFilterChange={setFilterState}
+                  priceRange={{ min: 0, max: 1000 }}
+                  showCategoryFilter={true}
+                  showPriceFilter={true}
+                  showBadgeFilter={true}
+                  showStockFilter={true}
+                />
+              </div>
+            )}
+
+            {/* Products Grid */}
+            <div className="flex-1">
+              {filteredProducts.length === 0 ? (
+                <div className="bg-white rounded-lg shadow-md p-12 text-center">
+                  <p className="text-gray-500 text-lg mb-4">
+                    {products.length === 0 ? '📦 Nog geen producten' : '🔍 Geen producten gevonden'}
+                  </p>
+                  <p className="text-sm text-gray-400 mb-6">
+                    {products.length === 0
+                      ? 'Begin met het toevoegen van uw eerste product!'
+                      : 'Probeer andere zoektermen of filters.'}
+                  </p>
+                  {products.length === 0 && isAdmin && (
+                    <button
+                      onClick={() => {
+                        setNewProduct({
+                          name: '',
+                          slug: '',
+                          description: '',
+                          sku: generateSku('Nieuw Product'),
+                          price: 0,
+                          stockQuantity: 0,
+                          lowStockThreshold: 5,
+                          trackInventory: true,
+                          categoryIds: [],
+                          hasVariants: false,
+                          variants: [],
+                          images: [],
+                          status: 'draft',
+                          visibility: 'public',
+                          tags: [],
+                          shippingRequired: true,
+                          requireShipping: true,
+                          digitalProduct: false,
+                          allowReviews: true,
+                        });
+                        setShowProductForm(true);
+                      }}
+                      className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-secondary transition-colors font-semibold"
+                    >
+                      + Voeg Eerste Product Toe
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className={viewMode === 'grid'
+                  ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'
+                  : 'space-y-4'
+                }>
               {filteredProducts.map(product => (
                 <div
                   key={product.id}
@@ -1394,8 +1551,10 @@ const WebshopComponent: React.FC<WebshopProps> = ({
                   </div>
                 </div>
               ))}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       )}
 

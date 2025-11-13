@@ -69,7 +69,7 @@ const CRM = lazy(() => import("./pages/CRM").then(m => ({ default: m.CRM })));
 const HRM = lazy(() => import("./pages/HRM").then(m => ({ default: m.HRM })));
 const Reports = lazy(() => import("./pages/Reports").then(m => ({ default: m.Reports })));
 const Planning = lazy(() => import("./pages/Planning").then(m => ({ default: m.Planning })));
-const WebshopEnhanced = lazy(() => import("./pages/WebshopEnhanced").then(m => ({ default: m.WebshopEnhanced })));
+const Webshop = lazy(() => import("./pages/Webshop").then(m => ({ default: m.Webshop })));
 import { trackNavigation, trackAction } from "./utils/analytics";
 
 // Loading component for Suspense fallback
@@ -317,7 +317,7 @@ function App() {
       />
     ),
     [ModuleKey.WEBSHOP]: (
-      <WebshopEnhanced
+      <Webshop
         inventory={inventory}
         customers={customers}
         isAdmin={currentUser.isAdmin}
