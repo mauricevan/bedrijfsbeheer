@@ -155,6 +155,26 @@ export const Webshop: React.FC<WebshopProps> = ({
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },
+    {
+      id: 'security_class',
+      name: 'Beveiligingsklasse',
+      slug: 'security_class',
+      type: 'multiselect',
+      categoryIds: undefined, // Applies to all security products
+      required: false,
+      showInFilters: true,
+      showInProductList: true,
+      order: 4,
+      options: [
+        { id: 'sec1', label: 'Basis', value: 'basic', order: 0 },
+        { id: 'sec2', label: 'Standaard', value: 'standard', order: 1 },
+        { id: 'sec3', label: 'SKG*', value: 'skg1', order: 2 },
+        { id: 'sec4', label: 'SKG**', value: 'skg2', order: 3 },
+        { id: 'sec5', label: 'SKG***', value: 'skg3', order: 4 },
+      ],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
   ]);
 
   // Filter state
