@@ -15,8 +15,8 @@ export default defineConfig(({ mode }) => {
         react(),
         VitePWA({
           registerType: 'autoUpdate',
-          includeAssets: ['favicon.ico', 'icon-192.png', 'icon-512.png'],
-          manifest: false, // Use public/manifest.json
+          includeAssets: ['favicon.ico'],
+          manifest: false, // Disable manifest to avoid icon errors
           workbox: {
             globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
             runtimeCaching: [
@@ -37,7 +37,7 @@ export default defineConfig(({ mode }) => {
             ]
           },
           devOptions: {
-            enabled: true
+            enabled: false // Disable PWA in development
           }
         })
       ],
@@ -52,10 +52,6 @@ export default defineConfig(({ mode }) => {
           },
         },
         chunkSizeWarningLimit: 1000,
-              'recharts': ['recharts'],
-            }
-          }
-        }
       },
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),

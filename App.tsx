@@ -54,6 +54,7 @@ import {
   MOCK_INTERACTIONS,
   MOCK_EMAILS,
   MOCK_EMAIL_TEMPLATES,
+  MOCK_WEBSHOP_PRODUCTS,
 } from "./data/mockData";
 
 // Import functional pages with lazy loading
@@ -122,7 +123,7 @@ function App() {
     useState<Interaction[]>(MOCK_INTERACTIONS);
   const [emails, setEmails] = useState<Email[]>(MOCK_EMAILS);
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>(MOCK_EMAIL_TEMPLATES);
-  const [webshopProducts, setWebshopProducts] = useState<WebshopProduct[]>([]);
+  const [webshopProducts, setWebshopProducts] = useState<WebshopProduct[]>(MOCK_WEBSHOP_PRODUCTS);
 
   // IMPORTANT: useMemo must be called unconditionally (before any early returns)
   const visibleModules = useMemo(() => {
