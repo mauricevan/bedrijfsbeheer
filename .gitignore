@@ -33,6 +33,7 @@ lerna-debug.log*
 
 # OS
 Thumbs.db
+nul
 
 # Electron
 /electron/dist

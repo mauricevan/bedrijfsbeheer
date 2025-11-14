@@ -84,3 +84,4 @@ De tests gebruiken mock data uit `../../services/__tests__/testHelpers.ts`:
 - Window methods (alert, confirm) zijn gemockt voor betere test controle
 
 
+

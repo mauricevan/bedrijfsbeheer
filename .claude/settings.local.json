@@ -12,7 +12,19 @@
       "Bash(git checkout:*)",
       "Bash(git branch:*)",
       "Bash(git fetch:*)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "Bash(git mv:*)",
+      "Bash(git clone:*)",
+      "Bash([ -d \"node_modules/react\" ])",
+      "Bash(npm run dev:*)",
+      "Bash(git pull:*)",
+      "Bash(cat:*)",
+      "Bash(git stash:*)",
+      "Bash(taskkill:*)",
+      "Bash(nul)",
+      "Bash(gh pr list:*)",
+      "Bash(npm run build:*)",
+      "Bash(git remote add:*)"
     ],
     "deny": [],
     "ask": []
