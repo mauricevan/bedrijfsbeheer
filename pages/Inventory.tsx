@@ -9,6 +9,20 @@ import { CSVUpload } from "../components/common";
 import { parseCSV, CSVColumnMapping, CSVParseResult, csvValidators, csvTransformers } from "../utils/csvParser";
 import { downloadInventoryExampleCSV } from "../utils/csvExamples";
 
+// 🆕 V6.0: Feature-based architecture imports
+import {
+  calculateMargin,
+  calculateVatInclusive,
+  getVatRateValue,
+  calculateVatReport,
+  generateAutoSku,
+  getSupplierName as getSupplierNameUtil,
+  getCategoryName,
+  filterBySearchTerm,
+  filterByCategory,
+  filterCategoriesBySearch,
+} from "../features/inventory";
+
 interface InventoryProps {
   inventory: InventoryItem[];
   setInventory: React.Dispatch<React.SetStateAction<InventoryItem[]>>;
@@ -104,44 +118,7 @@ export const Inventory: React.FC<InventoryProps> = ({
     categoryId: undefined,
   });
 
-  // Helper functies
-  const calculateMargin = (
-    purchasePrice: number,
-    salePrice: number
-  ): number => {
-    if (!purchasePrice || purchasePrice === 0) return 0;
-    return (
-      Math.round(((salePrice - purchasePrice) / purchasePrice) * 100 * 10) / 10
-    );
-  };
-
-  const calculateVatInclusive = (
-    priceExcl: number,
-    vatRate: "21" | "9" | "0" | "custom",
-    customRate?: number
-  ): number => {
-    const rate = vatRate === "custom" ? customRate || 0 : parseFloat(vatRate);
-    return priceExcl * (1 + rate / 100);
-  };
-
-  const getVatRateValue = (item: InventoryItem): number => {
-    if (item.vatRate === "custom") return item.customVatRate || 0;
-    return parseFloat(item.vatRate);
-  };
-
-  // 🆕 V5.6: Automatische SKU generatie (INV-0001, INV-0002, etc.)
-  const generateAutoSku = (): string => {
-    const maxSku = inventory.reduce((max, item) => {
-      const sku = item.autoSku || item.sku;
-      if (sku && sku.startsWith("INV-")) {
-        const num = parseInt(sku.replace("INV-", "")) || 0;
-        return Math.max(max, num);
-      }
-      return max;
-    }, 0);
-    const nextNum = maxSku + 1;
-    return `INV-${nextNum.toString().padStart(4, "0")}`;
-  };
+  // 🆕 V6.0: Helper functions now imported from features/inventory/utils
 
   // 🆕 CSV Import Column Mappings
   const inventoryCSVMappings: CSVColumnMapping[] = [
@@ -182,8 +159,8 @@ export const Inventory: React.FC<InventoryProps> = ({
         name: csvItem.name,
         supplierSku: csvItem.supplierSku || '',
         customSku: csvItem.customSku || '',
-        autoSku: generateAutoSku(), // Genereer automatische SKU
-        sku: generateAutoSku(), // Legacy support
+        autoSku: generateAutoSku(inventory), // Genereer automatische SKU
+        sku: generateAutoSku(inventory), // Legacy support
         location: csvItem.location,
         quantity: csvItem.quantity || 0,
         unit: csvItem.unit || 'stuk',
@@ -212,112 +189,31 @@ export const Inventory: React.FC<InventoryProps> = ({
     setShowCSVImport(false);
   };
 
-  // 🆕 V5.6: Uitgebreide filtering - zoek in alle velden + categorie filter
+  // 🆕 V6.0: Use imported filter functions from features/inventory
   const filteredInventory = useMemo(() => {
     let filtered = inventory;
 
-    // 🆕 V5.7: Filter op categorie eerst
+    // Filter by category first
     if (categoryFilter) {
-      filtered = filtered.filter((item) => item.categoryId === categoryFilter);
+      filtered = filterByCategory(filtered, categoryFilter);
     }
 
-    // Filter op zoekterm
+    // Filter by search term
     if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter((item) => {
-        // Zoek in naam
-        if (item.name.toLowerCase().includes(searchLower)) return true;
-
-        // Zoek in alle SKU types
-        if (item.sku?.toLowerCase().includes(searchLower)) return true;
-        if (item.supplierSku?.toLowerCase().includes(searchLower)) return true;
-        if (item.autoSku?.toLowerCase().includes(searchLower)) return true;
-        if (item.customSku?.toLowerCase().includes(searchLower)) return true;
-
-        // Zoek in locatie
-        if (item.location?.toLowerCase().includes(searchLower)) return true;
-
-        // Zoek in unit
-        if (item.unit?.toLowerCase().includes(searchLower)) return true;
-
-        // Zoek in supplier naam
-        if (item.supplier?.toLowerCase().includes(searchLower)) return true;
-        if (
-          item.supplierId &&
-          suppliers
-            .find((s) => s.id === item.supplierId)
-            ?.name.toLowerCase()
-            .includes(searchLower)
-        )
-          return true;
-
-        // Zoek in categorie naam
-        if (
-          item.categoryId &&
-          categories
-            .find((c) => c.id === item.categoryId)
-            ?.name.toLowerCase()
-            .includes(searchLower)
-        )
-          return true;
-
-        // Zoek in prijzen (als getal)
-        if (item.purchasePrice?.toString().includes(searchLower)) return true;
-        if (item.salePrice?.toString().includes(searchLower)) return true;
-
-        // Zoek in POS alert note
-        if (item.posAlertNote?.toLowerCase().includes(searchLower)) return true;
-
-        return false;
-      });
+      filtered = filterBySearchTerm(filtered, searchTerm, suppliers, categories);
     }
 
     return filtered;
   }, [inventory, searchTerm, categoryFilter, suppliers, categories]);
 
-  // 🆕 V5.7: Filtered categories for dropdown search
+  // 🆕 V6.0: Use imported filter function
   const filteredCategories = useMemo(() => {
-    if (!categorySearchTerm) return categories;
-    const searchLower = categorySearchTerm.toLowerCase();
-    return categories.filter(
-      (cat) =>
-        cat.name.toLowerCase().includes(searchLower) ||
-        cat.description?.toLowerCase().includes(searchLower)
-    );
+    return filterCategoriesBySearch(categories, categorySearchTerm);
   }, [categories, categorySearchTerm]);
 
-  // BTW berekeningen voor rapportages
+  // 🆕 V6.0: Use imported calculation function
   const vatReport = useMemo(() => {
-    const now = new Date();
-    const thisMonth = now.getMonth();
-    const thisYear = now.getFullYear();
-
-    // In een echte implementatie zou je deze data uit transacties halen
-    // Voor nu gebruiken we de inventory items als basis
-    const vat21Total = inventory
-      .filter((item) => item.vatRate === "21" && item.salePrice)
-      .reduce((sum, item) => {
-        const vatAmount = item.salePrice! * 0.21;
-        return sum + vatAmount;
-      }, 0);
-
-    const vat9Total = inventory
-      .filter((item) => item.vatRate === "9" && item.salePrice)
-      .reduce((sum, item) => {
-        const vatAmount = item.salePrice! * 0.09;
-        return sum + vatAmount;
-      }, 0);
-
-    const vat0Total = inventory
-      .filter((item) => item.vatRate === "0" && item.salePrice)
-      .reduce((sum, item) => item.salePrice! || 0, 0);
-
-    return {
-      vat21: Math.round(vat21Total * 100) / 100,
-      vat9: Math.round(vat9Total * 100) / 100,
-      vat0: Math.round(vat0Total * 100) / 100,
-      total: Math.round((vat21Total + vat9Total) * 100) / 100,
-    };
+    return calculateVatReport(inventory);
   }, [inventory]);
 
   // Webshop sync handler
@@ -553,7 +449,7 @@ export const Inventory: React.FC<InventoryProps> = ({
     }
 
     // 🆕 V5.6: Genereer automatische SKU als deze nog niet bestaat
-    const autoSku = newItem.autoSku || generateAutoSku();
+    const autoSku = newItem.autoSku || generateAutoSku(inventory);
 
     // Bereken marge
     const margin =
@@ -611,7 +507,7 @@ export const Inventory: React.FC<InventoryProps> = ({
       salePrice: item.salePrice || item.price || 0,
       // 🆕 V5.6: Zorg dat nieuwe velden ook worden ingevuld
       supplierSku: item.supplierSku || "",
-      autoSku: item.autoSku || item.sku || generateAutoSku(),
+      autoSku: item.autoSku || item.sku || generateAutoSku(inventory),
       customSku: item.customSku || "",
       categoryId: item.categoryId || undefined,
     });
@@ -1230,7 +1126,7 @@ export const Inventory: React.FC<InventoryProps> = ({
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          value={newItem.autoSku || generateAutoSku()}
+                          value={newItem.autoSku || generateAutoSku(inventory)}
                           onChange={(e) =>
                             setNewItem({ ...newItem, autoSku: e.target.value })
                           }
@@ -1244,7 +1140,7 @@ export const Inventory: React.FC<InventoryProps> = ({
                             onClick={() =>
                               setNewItem({
                                 ...newItem,
-                                autoSku: generateAutoSku(),
+                                autoSku: generateAutoSku(inventory),
                               })
                             }
                             className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 text-sm"
@@ -2897,3 +2793,4 @@ export const Inventory: React.FC<InventoryProps> = ({
     </div>
   );
 };
+
