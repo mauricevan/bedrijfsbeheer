@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from "react";
-import {
+import React, { useEffect } from "react";
+import type {
   Customer,
   Sale,
   Task,
@@ -8,16 +8,13 @@ import {
   Employee,
   User,
   LeadStatus,
-  InteractionType,
   Invoice,
   Quote,
   WorkOrder,
   QuoteItem,
   QuoteLabor,
-  InvoiceHistoryEntry,
   Email,
   EmailTemplate,
-  EmailStatus,
 } from "../types";
 import { LEAD_SOURCES, INTERACTION_TYPES } from "../data/mockData";
 import { EmailDropZone } from "../components/EmailDropZone";
@@ -28,7 +25,26 @@ import {
   saveEmailMapping,
   findCustomerByEmail,
 } from "../utils/emailCustomerMapping";
-import { ParsedEmail } from "../utils/emlParser";
+import type { ParsedEmail } from "../utils/emlParser";
+
+// Import CRM feature modules
+import {
+  getLeadStatusColor,
+  getLeadStatusLabel,
+  getTaskPriorityColor,
+  getTaskStatusColor,
+} from "../features/crm/utils/statusColors";
+
+// Import CRM hooks
+import {
+  useCRMState,
+  useCustomers,
+  useLeads,
+  useInvoices,
+  useTasks,
+  useInteractions,
+  useDashboard,
+} from "../features/crm/hooks";
 
 interface CRMProps {
   customers: Customer[];
@@ -89,241 +105,198 @@ export const CRM: React.FC<CRMProps> = ({
   emailTemplates,
   setEmailTemplates,
 }) => {
-  const [activeTab, setActiveTab] = useState<TabType>("dashboard");
-  const [showQuotePreview, setShowQuotePreview] = useState(false);
-  const [showEmailPreview, setShowEmailPreview] = useState(false);
-  const [pendingEmail, setPendingEmail] = useState<ParsedEmail | null>(null);
-  const [pendingOrderData, setPendingOrderData] = useState<{
-    emailFrom: string;
-    emailSubject: string;
-    emailBody: string;
-  } | null>(null);
+  // ============ STATE MANAGEMENT HOOK ============
+  const {
+    // Tab state
+    activeTab,
+    setActiveTab,
+    // Email preview state
+    showQuotePreview,
+    setShowQuotePreview,
+    showEmailPreview,
+    setShowEmailPreview,
+    pendingEmail,
+    setPendingEmail,
+    pendingOrderData,
+    setPendingOrderData,
+    // Search state
+    customerSearchTerm,
+    setCustomerSearchTerm,
+    // Modal visibility state
+    showAddCustomerForm,
+    setShowAddCustomerForm,
+    showEditCustomerForm,
+    setShowEditCustomerForm,
+    showAddLeadForm,
+    setShowAddLeadForm,
+    showAddInteractionForm,
+    setShowAddInteractionForm,
+    showAddTaskForm,
+    setShowAddTaskForm,
+    showFinancesModal,
+    setShowFinancesModal,
+    showJourneyModal,
+    setShowJourneyModal,
+    showCloneInvoiceModal,
+    setShowCloneInvoiceModal,
+    showEditInvoiceModal,
+    setShowEditInvoiceModal,
+    showUserSelectionModal,
+    setShowUserSelectionModal,
+    showCloneQuoteModal,
+    setShowCloneQuoteModal,
+    showEditQuoteModal,
+    setShowEditQuoteModal,
+    showDetailModal,
+    setShowDetailModal,
+    // Detail modal state
+    detailType,
+    setDetailType,
+    detailItem,
+    setDetailItem,
+    // Selected entity state
+    selectedCustomerId,
+    setSelectedCustomerId,
+    editingCustomer,
+    setEditingCustomer,
+    editingInvoiceId,
+    setEditingInvoiceId,
+    editingQuoteId,
+    setEditingQuoteId,
+    selectedInvoiceForWorkOrder,
+    setSelectedInvoiceForWorkOrder,
+    selectedQuoteForWorkOrder,
+    setSelectedQuoteForWorkOrder,
+    selectedUserId,
+    setSelectedUserId,
+    // Form data state
+    newCustomer,
+    setNewCustomer,
+    editCustomer,
+    setEditCustomer,
+    newLead,
+    setNewLead,
+    newInteraction,
+    setNewInteraction,
+    newTask,
+    setNewTask,
+    newInvoice,
+    setNewInvoice,
+    newQuote,
+    setNewQuote,
+    // Reset functions
+    resetCustomerForm,
+    resetEditCustomerForm,
+    resetLeadForm,
+    resetInteractionForm,
+    resetTaskForm,
+    resetInvoiceForm,
+    resetQuoteForm,
+  } = useCRMState();
 
-  // Search state
-  const [customerSearchTerm, setCustomerSearchTerm] = useState("");
-
-  // Forms state
-  const [showAddCustomerForm, setShowAddCustomerForm] = useState(false);
-  const [showEditCustomerForm, setShowEditCustomerForm] = useState(false);
-  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-  const [showAddLeadForm, setShowAddLeadForm] = useState(false);
-  const [showAddInteractionForm, setShowAddInteractionForm] = useState(false);
-  const [showAddTaskForm, setShowAddTaskForm] = useState(false);
-  const [showFinancesModal, setShowFinancesModal] = useState(false);
-  const [showJourneyModal, setShowJourneyModal] = useState(false);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
-    null
-  );
-
-  // Invoice clone/edit states
-  const [showCloneInvoiceModal, setShowCloneInvoiceModal] = useState(false);
-  const [showEditInvoiceModal, setShowEditInvoiceModal] = useState(false);
-  const [showUserSelectionModal, setShowUserSelectionModal] = useState(false);
-  const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null);
-  const [selectedInvoiceForWorkOrder, setSelectedInvoiceForWorkOrder] =
-    useState<string | null>(null);
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [newInvoice, setNewInvoice] = useState({
-    customerId: "",
-    items: [] as QuoteItem[],
-    labor: [] as QuoteLabor[],
-    vatRate: 21,
-    notes: "",
-    paymentTerms: "14 dagen",
-    issueDate: "",
-    dueDate: "",
+  // ============ BUSINESS LOGIC HOOKS ============
+  const {
+    handleAddCustomer: addCustomer,
+    handleEditCustomer: editCustomerOp,
+    handleDeleteCustomer: deleteCustomerOp,
+    getCustomerSales,
+    getCustomerTotal,
+    getCustomerName,
+    getCustomerJourney,
+    getCustomerFinances,
+  } = useCustomers({
+    customers,
+    setCustomers,
+    sales,
+    interactions,
+    setInteractions,
   });
 
-  // Detail modal states voor factuur/offerte
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [detailType, setDetailType] = useState<"quote" | "invoice" | null>(
-    null
-  );
-  const [detailItem, setDetailItem] = useState<Quote | Invoice | null>(null);
-
-  // Quote clone/edit states
-  const [showCloneQuoteModal, setShowCloneQuoteModal] = useState(false);
-  const [showEditQuoteModal, setShowEditQuoteModal] = useState(false);
-  const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
-  const [selectedQuoteForWorkOrder, setSelectedQuoteForWorkOrder] = useState<
-    string | null
-  >(null);
-  const [newQuote, setNewQuote] = useState({
-    customerId: "",
-    items: [] as QuoteItem[],
-    labor: [] as QuoteLabor[],
-    vatRate: 21,
-    notes: "",
-    validUntil: "",
+  const {
+    handleAddLead: addLead,
+    updateLeadStatus: updateLeadStatusOp,
+    convertLeadToCustomer: convertLeadToCustomerOp,
+    handleDeleteLead: deleteLeadOp,
+    getLeadName,
+    getLeadsByStatus,
+    leadStats,
+  } = useLeads({
+    leads,
+    setLeads,
+    customers,
+    setCustomers,
+    interactions,
+    setInteractions,
   });
 
-  // New forms data
-  const [newCustomer, setNewCustomer] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    type: "business" as "business" | "private",
-    address: "",
-    source: "website",
-    company: "",
-    notes: "",
+  const {
+    handleCloneInvoice: cloneInvoiceOp,
+    handleEditInvoice: editInvoiceOp,
+    handleSaveClonedInvoice: saveClonedInvoiceOp,
+    handleSaveEditedInvoice: saveEditedInvoiceOp,
+    convertInvoiceToWorkOrder: convertInvoiceToWorkOrderOp,
+    handleCloneQuote: cloneQuoteOp,
+    handleEditQuote: editQuoteOp,
+    convertQuoteToWorkOrder: convertQuoteToWorkOrderOp,
+    generateInvoiceNumber,
+    calculateInvoiceTotals,
+    getEmployeeName,
+  } = useInvoices({
+    invoices,
+    setInvoices,
+    quotes,
+    setQuotes,
+    workOrders,
+    setWorkOrders,
+    customers,
+    employees,
+    currentUser,
   });
 
-  const [editCustomer, setEditCustomer] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    type: "business" as "business" | "private",
-    address: "",
-    source: "website",
-    company: "",
-    notes: "",
+  const {
+    handleAddTask: addTask,
+    updateTaskStatus: updateTaskStatusOp,
+    handleDeleteTask: deleteTaskOp,
+    taskStats,
+  } = useTasks({
+    tasks,
+    setTasks,
   });
 
-  const [newLead, setNewLead] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    company: "",
-    source: "website",
-    estimatedValue: 0,
-    notes: "",
+  const {
+    handleAddInteraction: addInteraction,
+    interactionStats,
+  } = useInteractions({
+    interactions,
+    setInteractions,
+    employees,
+    currentUser,
   });
 
-  const [newInteraction, setNewInteraction] = useState({
-    type: "call" as InteractionType,
-    subject: "",
-    description: "",
-    relatedTo: "",
-    relatedType: "lead" as "lead" | "customer",
-    followUpRequired: false,
-    followUpDate: "",
+  const dashboardStats = useDashboard({
+    leads,
+    customers,
+    interactions,
+    tasks,
   });
 
-  const [newTask, setNewTask] = useState({
-    title: "",
-    description: "",
-    customerId: "",
-    priority: "medium" as "low" | "medium" | "high",
-    dueDate: "",
-  });
-
-  // Calculate dashboard statistics
-  const dashboardStats = useMemo(() => {
-    const totalLeads = leads.length;
-    const activeLeads = leads.filter(
-      (l) => !["won", "lost"].includes(l.status)
-    ).length;
-    const wonLeads = leads.filter((l) => l.status === "won").length;
-    const lostLeads = leads.filter((l) => l.status === "lost").length;
-    const conversionRate =
-      totalLeads > 0 ? ((wonLeads / totalLeads) * 100).toFixed(1) : "0.0";
-
-    const totalCustomers = customers.length;
-    const businessCustomers = customers.filter(
-      (c) => c.type === "business"
-    ).length;
-    const privateCustomers = customers.filter(
-      (c) => c.type === "private"
-    ).length;
-
-    const totalValue = leads.reduce(
-      (sum, lead) => sum + (lead.estimatedValue || 0),
-      0
-    );
-    const wonValue = leads
-      .filter((l) => l.status === "won")
-      .reduce((sum, lead) => sum + (lead.estimatedValue || 0), 0);
-
-    const totalInteractions = interactions.length;
-    const thisMonthInteractions = interactions.filter((i) => {
-      const interactionDate = new Date(i.date);
-      const now = new Date();
-      return (
-        interactionDate.getMonth() === now.getMonth() &&
-        interactionDate.getFullYear() === now.getFullYear()
-      );
-    }).length;
-
-    const pendingFollowUps = interactions.filter(
-      (i) => i.followUpRequired && i.followUpDate
-    ).length;
-
-    const activeTasks = tasks.filter((t) => t.status !== "done").length;
-    const overdueTasks = tasks.filter((t) => {
-      if (t.status === "done") return false;
-      return new Date(t.dueDate) < new Date();
-    }).length;
-
-    return {
-      totalLeads,
-      activeLeads,
-      wonLeads,
-      lostLeads,
-      conversionRate,
-      totalCustomers,
-      businessCustomers,
-      privateCustomers,
-      totalValue,
-      wonValue,
-      totalInteractions,
-      thisMonthInteractions,
-      pendingFollowUps,
-      activeTasks,
-      overdueTasks,
-    };
-  }, [leads, customers, interactions, tasks]);
-
-  // CRUD Operations
+  // ============ CUSTOMER CRUD OPERATIONS ============
   const handleAddCustomer = () => {
-    if (!newCustomer.name || !newCustomer.email) {
-      alert("Vul naam en email in!");
-      return;
+    const customer = addCustomer(newCustomer);
+    if (customer) {
+      resetCustomerForm();
+      setShowAddCustomerForm(false);
     }
-
-    const customer: Customer = {
-      id: `c${Date.now()}`,
-      ...newCustomer,
-      since: new Date().toISOString().split("T")[0],
-    };
-
-    setCustomers([...customers, customer]);
-    setNewCustomer({
-      name: "",
-      email: "",
-      phone: "",
-      type: "business",
-      address: "",
-      source: "website",
-      company: "",
-      notes: "",
-    });
-    setShowAddCustomerForm(false);
   };
 
   const handleEditCustomer = () => {
-    if (!editCustomer.name || !editCustomer.email || !editingCustomer) {
-      alert("Vul naam en email in!");
-      return;
+    if (!editingCustomer) return;
+    const customer = editCustomerOp(editingCustomer.id, editCustomer);
+    if (customer) {
+      resetEditCustomerForm();
+      setEditingCustomer(null);
+      setShowEditCustomerForm(false);
     }
-
-    setCustomers(
-      customers.map((c) =>
-        c.id === editingCustomer.id ? { ...c, ...editCustomer } : c
-      )
-    );
-    setEditCustomer({
-      name: "",
-      email: "",
-      phone: "",
-      type: "business",
-      address: "",
-      source: "website",
-      company: "",
-      notes: "",
-    });
-    setEditingCustomer(null);
-    setShowEditCustomerForm(false);
   };
 
   const startEditCustomer = (customer: Customer) => {
@@ -341,417 +314,191 @@ export const CRM: React.FC<CRMProps> = ({
     setShowEditCustomerForm(true);
   };
 
+  const deleteCustomer = (id: string) => {
+    deleteCustomerOp(id);
+  };
+
+  // ============ LEAD OPERATIONS ============
   const handleAddLead = () => {
-    if (!newLead.name || !newLead.email) {
-      alert("Vul naam en email in!");
-      return;
+    const lead = addLead(newLead);
+    if (lead) {
+      resetLeadForm();
+      setShowAddLeadForm(false);
     }
-
-    const lead: Lead = {
-      id: `l${Date.now()}`,
-      ...newLead,
-      status: "new",
-      createdDate: new Date().toISOString().split("T")[0],
-    };
-
-    setLeads([...leads, lead]);
-    setNewLead({
-      name: "",
-      email: "",
-      phone: "",
-      company: "",
-      source: "website",
-      estimatedValue: 0,
-      notes: "",
-    });
-    setShowAddLeadForm(false);
-  };
-
-  const handleAddInteraction = () => {
-    if (!newInteraction.subject || !newInteraction.relatedTo) {
-      alert("Vul onderwerp en gekoppelde entiteit in!");
-      return;
-    }
-
-    const interaction: Interaction = {
-      id: `int${Date.now()}`,
-      type: newInteraction.type,
-      subject: newInteraction.subject,
-      description: newInteraction.description,
-      date: new Date().toISOString(),
-      employeeId: currentUser.employeeId,
-      followUpRequired: newInteraction.followUpRequired,
-      followUpDate: newInteraction.followUpDate || undefined,
-      [newInteraction.relatedType === "lead" ? "leadId" : "customerId"]:
-        newInteraction.relatedTo,
-    };
-
-    setInteractions([...interactions, interaction]);
-    setNewInteraction({
-      type: "call",
-      subject: "",
-      description: "",
-      relatedTo: "",
-      relatedType: "lead",
-      followUpRequired: false,
-      followUpDate: "",
-    });
-    setShowAddInteractionForm(false);
-  };
-
-  const handleAddTask = () => {
-    if (!newTask.title || !newTask.dueDate) {
-      alert("Vul titel en deadline in!");
-      return;
-    }
-
-    const task: Task = {
-      id: `task${Date.now()}`,
-      title: newTask.title,
-      description: newTask.description,
-      customerId: newTask.customerId || undefined,
-      priority: newTask.priority,
-      status: "todo",
-      dueDate: newTask.dueDate,
-      createdDate: new Date().toISOString().split("T")[0],
-    };
-
-    setTasks([...tasks, task]);
-    setNewTask({
-      title: "",
-      description: "",
-      customerId: "",
-      priority: "medium",
-      dueDate: "",
-    });
-    setShowAddTaskForm(false);
   };
 
   const updateLeadStatus = (leadId: string, newStatus: LeadStatus) => {
-    setLeads(
-      leads.map((lead) => {
-        if (lead.id === leadId) {
-          const updates: Partial<Lead> = { status: newStatus };
-          if (newStatus === "won" || newStatus === "lost") {
-            updates.lastContactDate = new Date().toISOString().split("T")[0];
-          }
-          return { ...lead, ...updates };
-        }
-        return lead;
-      })
-    );
-  };
-
-  const updateTaskStatus = (taskId: string, newStatus: Task["status"]) => {
-    setTasks(
-      tasks.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
-    );
+    updateLeadStatusOp(leadId, newStatus);
   };
 
   const convertLeadToCustomer = (leadId: string) => {
-    const lead = leads.find((l) => l.id === leadId);
-    if (!lead) return;
-
-    const customer: Customer = {
-      id: `c${Date.now()}`,
-      name: lead.name,
-      email: lead.email,
-      phone: lead.phone,
-      type: lead.company ? "business" : "private",
-      company: lead.company,
-      address: "",
-      source: lead.source,
-      since: new Date().toISOString().split("T")[0],
-      notes: lead.notes,
-    };
-
-    setCustomers([...customers, customer]);
-    updateLeadStatus(leadId, "won");
-
-    // Transfer lead interactions to customer
-    setInteractions(
-      interactions.map((int) => {
-        if (int.leadId === leadId) {
-          return { ...int, customerId: customer.id, leadId: undefined };
-        }
-        return int;
-      })
-    );
-
-    alert(`Lead "${lead.name}" succesvol geconverteerd naar klant!`);
-  };
-
-  const deleteCustomer = (id: string) => {
-    if (confirm("Weet je zeker dat je deze klant wilt verwijderen?")) {
-      setCustomers(customers.filter((c) => c.id !== id));
-    }
+    convertLeadToCustomerOp(leadId);
   };
 
   const deleteLead = (id: string) => {
-    if (confirm("Weet je zeker dat je deze lead wilt verwijderen?")) {
-      setLeads(leads.filter((l) => l.id !== id));
+    deleteLeadOp(id);
+  };
+
+  // ============ TASK OPERATIONS ============
+  const handleAddTask = () => {
+    const task = addTask(newTask);
+    if (task) {
+      resetTaskForm();
+      setShowAddTaskForm(false);
     }
+  };
+
+  const updateTaskStatus = (taskId: string, newStatus: Task["status"]) => {
+    updateTaskStatusOp(taskId, newStatus);
   };
 
   const deleteTask = (taskId: string) => {
-    if (confirm("Weet je zeker dat je deze taak wilt verwijderen?")) {
-      setTasks(tasks.filter((t) => t.id !== taskId));
+    deleteTaskOp(taskId);
+  };
+
+  // ============ INTERACTION OPERATIONS ============
+  const handleAddInteraction = () => {
+    const interaction = addInteraction(newInteraction);
+    if (interaction) {
+      resetInteractionForm();
+      setShowAddInteractionForm(false);
     }
   };
 
-  const getCustomerSales = (customerId: string) => {
-    return sales.filter((s) => s.customerId === customerId);
-  };
-
-  const getCustomerTotal = (customerId: string) => {
-    return getCustomerSales(customerId).reduce(
-      (sum, sale) => sum + sale.total,
-      0
-    );
-  };
-
-  const getCustomerName = (customerId?: string) => {
-    if (!customerId) return "Algemeen";
-    return customers.find((c) => c.id === customerId)?.name || "Onbekend";
-  };
-
-  const getLeadName = (leadId?: string) => {
-    if (!leadId) return "Onbekend";
-    return leads.find((l) => l.id === leadId)?.name || "Onbekend";
-  };
-
-  const getEmployeeName = (employeeId?: string) => {
-    if (!employeeId) return "Onbekend";
-    return employees.find((e) => e.id === employeeId)?.name || "Onbekend";
-  };
-
-  const getLeadsByStatus = (status: LeadStatus) => {
-    return leads.filter((lead) => lead.status === status);
-  };
-
-  const getStatusColor = (status: LeadStatus) => {
-    switch (status) {
-      case "new":
-        return "bg-gray-100 text-gray-800 border-gray-400";
-      case "contacted":
-        return "bg-blue-100 text-blue-800 border-blue-400";
-      case "qualified":
-        return "bg-indigo-100 text-indigo-800 border-indigo-400";
-      case "proposal":
-        return "bg-purple-100 text-purple-800 border-purple-400";
-      case "negotiation":
-        return "bg-yellow-100 text-yellow-800 border-yellow-400";
-      case "won":
-        return "bg-green-100 text-green-800 border-green-400";
-      case "lost":
-        return "bg-red-100 text-red-800 border-red-400";
+  // ============ INVOICE OPERATIONS ============
+  const handleCloneInvoice = (invoiceId: string) => {
+    const invoiceData = cloneInvoiceOp(invoiceId);
+    if (invoiceData) {
+      setNewInvoice(invoiceData);
+      setShowCloneInvoiceModal(true);
     }
   };
 
-  const getStatusLabel = (status: LeadStatus) => {
-    switch (status) {
-      case "new":
-        return "Nieuw";
-      case "contacted":
-        return "Contact gemaakt";
-      case "qualified":
-        return "Gekwalificeerd";
-      case "proposal":
-        return "Voorstel gedaan";
-      case "negotiation":
-        return "Onderhandeling";
-      case "won":
-        return "Gewonnen";
-      case "lost":
-        return "Verloren";
+  const handleEditInvoice = (invoiceId: string) => {
+    const invoiceData = editInvoiceOp(invoiceId);
+    if (invoiceData) {
+      setNewInvoice(invoiceData);
+      setEditingInvoiceId(invoiceId);
+      setShowEditInvoiceModal(true);
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "bg-red-100 text-red-800";
-      case "medium":
-        return "bg-yellow-100 text-yellow-800";
-      case "low":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+  const handleSaveClonedInvoice = (sendToWorkOrder: boolean = false) => {
+    const invoice = saveClonedInvoiceOp(newInvoice);
+    if (invoice) {
+      resetInvoiceForm();
+      setShowCloneInvoiceModal(false);
+
+      if (sendToWorkOrder) {
+        const totalHours =
+          invoice.labor?.reduce((sum, labor) => sum + labor.hours, 0) || 0;
+        setSelectedInvoiceForWorkOrder(invoice.id);
+        setSelectedUserId("");
+        setShowUserSelectionModal(true);
+      } else {
+        alert(`✅ Factuur ${invoice.invoiceNumber} succesvol gecloneerd!`);
+      }
     }
   };
 
-  const getTaskStatusColor = (status: string) => {
-    switch (status) {
-      case "done":
-        return "bg-green-100 text-green-800";
-      case "in_progress":
-        return "bg-blue-100 text-blue-800";
-      case "todo":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+  const handleSaveEditedInvoice = () => {
+    if (!editingInvoiceId) return;
+    const invoice = saveEditedInvoiceOp(editingInvoiceId, newInvoice);
+    if (invoice) {
+      setEditingInvoiceId(null);
+      setShowEditInvoiceModal(false);
+      resetInvoiceForm();
+      alert(`✅ Factuur ${invoice.invoiceNumber} succesvol bijgewerkt!`);
     }
   };
 
-  // Financiële functies
-  const openFinances = (customerId: string) => {
-    setSelectedCustomerId(customerId);
-    setShowFinancesModal(true);
+  const convertInvoiceToWorkOrder = (invoiceId: string) => {
+    const invoice = invoices.find((inv) => inv.id === invoiceId);
+    if (!invoice) return;
+
+    if (invoice.status !== "sent" && invoice.status !== "draft") {
+      alert(
+        "Alleen verzonden of concept facturen kunnen worden omgezet naar werkorders!"
+      );
+      return;
+    }
+
+    if (invoice.workOrderId) {
+      alert("Deze factuur heeft al een gekoppelde werkorder!");
+      return;
+    }
+
+    setSelectedInvoiceForWorkOrder(invoiceId);
+    setSelectedUserId("");
+    setShowUserSelectionModal(true);
   };
 
-  // Get Customer Journey Data - Helper function
-  const getCustomerJourney = (customerId: string) => {
-    const customerQuotes = quotes.filter((q) => q.customerId === customerId);
-    const customerInvoices = invoices.filter(
-      (inv) => inv.customerId === customerId
+  const completeWorkOrderConversion = () => {
+    if (!selectedInvoiceForWorkOrder || !selectedUserId) {
+      alert("Selecteer een medewerker!");
+      return;
+    }
+
+    const workOrder = convertInvoiceToWorkOrderOp(
+      selectedInvoiceForWorkOrder,
+      selectedUserId
     );
-    const customerWorkOrders = workOrders.filter(
-      (wo) => wo.customerId === customerId
-    );
 
-    // Organize by status
-    const quotesByStatus = {
-      draft: customerQuotes.filter((q) => q.status === "draft"),
-      sent: customerQuotes.filter((q) => q.status === "sent"),
-      approved: customerQuotes.filter((q) => q.status === "approved"),
-      rejected: customerQuotes.filter((q) => q.status === "rejected"),
-      expired: customerQuotes.filter((q) => q.status === "expired"),
-    };
-
-    const invoicesByStatus = {
-      draft: customerInvoices.filter((inv) => inv.status === "draft"),
-      sent: customerInvoices.filter((inv) => inv.status === "sent"),
-      paid: customerInvoices.filter((inv) => inv.status === "paid"),
-      overdue: customerInvoices.filter((inv) => inv.status === "overdue"),
-    };
-
-    const workOrdersByStatus = {
-      todo: customerWorkOrders.filter((wo) => wo.status === "To Do"),
-      inProgress: customerWorkOrders.filter(
-        (wo) => wo.status === "In Uitvoering"
-      ),
-      pending: customerWorkOrders.filter((wo) => wo.status === "Pending"),
-      completed: customerWorkOrders.filter((wo) => wo.status === "Voltooid"),
-    };
-
-    // Calculate progress percentage
-    const totalSteps =
-      customerQuotes.length +
-      customerWorkOrders.length +
-      customerInvoices.length;
-    const completedSteps = invoicesByStatus.paid.length;
-    const progressPercentage =
-      totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
-
-    return {
-      quotes: customerQuotes,
-      invoices: customerInvoices,
-      workOrders: customerWorkOrders,
-      quotesByStatus,
-      invoicesByStatus,
-      workOrdersByStatus,
-      progressPercentage,
-      totalSteps,
-      completedSteps,
-    };
+    if (workOrder) {
+      setShowUserSelectionModal(false);
+      setSelectedInvoiceForWorkOrder(null);
+      setSelectedUserId("");
+      alert(
+        `✅ Werkorder ${workOrder.id} succesvol aangemaakt en toegewezen aan ${getEmployeeName(
+          selectedUserId
+        )}!`
+      );
+    }
   };
 
-  const getCustomerFinances = (customerId: string) => {
-    const customerInvoices = invoices.filter(
-      (inv) => inv.customerId === customerId
-    );
-    const customerQuotes = quotes.filter((q) => q.customerId === customerId);
-
-    // Filter: alleen betaalde en openstaande facturen
-    const paidAndOutstandingInvoices = customerInvoices.filter(
-      (inv) =>
-        inv.status === "paid" ||
-        ["sent", "draft", "overdue"].includes(inv.status)
-    );
-
-    const totalInvoiced = customerInvoices.reduce(
-      (sum, inv) => sum + inv.total,
-      0
-    );
-    const paidInvoices = customerInvoices.filter(
-      (inv) => inv.status === "paid"
-    );
-    const totalPaid = paidInvoices.reduce((sum, inv) => sum + inv.total, 0);
-    const outstandingInvoices = customerInvoices.filter((inv) =>
-      ["sent", "draft"].includes(inv.status)
-    );
-    const totalOutstanding = outstandingInvoices.reduce(
-      (sum, inv) => sum + inv.total,
-      0
-    );
-    const overdueInvoices = customerInvoices.filter(
-      (inv) => inv.status === "overdue"
-    );
-    const totalOverdue = overdueInvoices.reduce(
-      (sum, inv) => sum + inv.total,
-      0
-    );
-    const totalQuotes = customerQuotes.reduce((sum, q) => sum + q.total, 0);
-
-    return {
-      invoices: paidAndOutstandingInvoices, // Alleen betaalde en openstaande
-      quotes: customerQuotes,
-      totalInvoiced,
-      totalPaid,
-      totalOutstanding,
-      totalOverdue,
-      totalQuotes,
-      paidInvoices,
-      outstandingInvoices,
-      overdueInvoices,
-    };
+  // ============ QUOTE OPERATIONS ============
+  const handleCloneQuote = (quoteId: string) => {
+    const quoteData = cloneQuoteOp(quoteId);
+    if (quoteData) {
+      setNewQuote(quoteData);
+      setShowCloneQuoteModal(true);
+    }
   };
 
-  // Helper functions voor facturen
-  const generateInvoiceNumber = () => {
-    const year = new Date().getFullYear();
-    const existingNumbers = invoices
-      .filter((inv) => inv.invoiceNumber.startsWith(`${year}-`))
-      .map((inv) => parseInt(inv.invoiceNumber.split("-")[1]))
-      .filter((num) => !isNaN(num));
-
-    const nextNumber =
-      existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
-    return `${year}-${String(nextNumber).padStart(3, "0")}`;
+  const handleEditQuote = (quoteId: string) => {
+    const quoteData = editQuoteOp(quoteId);
+    if (quoteData) {
+      setNewQuote(quoteData);
+      setEditingQuoteId(quoteId);
+      setShowEditQuoteModal(true);
+    }
   };
 
-  const calculateInvoiceTotals = () => {
-    const itemsSubtotal = newInvoice.items.reduce(
-      (sum, item) => sum + item.total,
-      0
-    );
-    const laborSubtotal = newInvoice.labor.reduce(
-      (sum, labor) => sum + labor.total,
-      0
-    );
-    const subtotal = itemsSubtotal + laborSubtotal;
-    const vatAmount = subtotal * (newInvoice.vatRate / 100);
-    const total = subtotal + vatAmount;
-
-    return { subtotal, vatAmount, total };
+  const convertQuoteToWorkOrder = (quoteId: string) => {
+    setSelectedQuoteForWorkOrder(quoteId);
+    setShowUserSelectionModal(true);
   };
 
-  const createHistoryEntry = (
-    type: "quote" | "invoice",
-    action: string,
-    details: string,
-    extra?: any
-  ): InvoiceHistoryEntry => {
-    return {
-      timestamp: new Date().toISOString(),
-      action: action as any,
-      performedBy: currentUser.employeeId,
-      details,
-      ...extra,
-    };
+  // ============ DETAIL MODAL ============
+  const openDetailModal = (type: "invoice" | "quote", id: string) => {
+    if (type === "invoice") {
+      const invoice = invoices.find((inv) => inv.id === id);
+      if (invoice) {
+        setDetailType("invoice");
+        setDetailItem(invoice);
+        setShowDetailModal(true);
+      }
+    } else {
+      const quote = quotes.find((q) => q.id === id);
+      if (quote) {
+        setDetailType("quote");
+        setDetailItem(quote);
+        setShowDetailModal(true);
+      }
+    }
   };
 
-  // Invoice item/labor handlers
+  // ============ INVOICE/QUOTE ITEM HANDLERS ============
   const handleInvoiceItemChange = (
     index: number,
     field: keyof QuoteItem,
@@ -842,373 +589,7 @@ export const CRM: React.FC<CRMProps> = ({
     }
   };
 
-  // Clone invoice function
-  const handleCloneInvoice = (invoiceId: string) => {
-    const invoice = invoices.find((inv) => inv.id === invoiceId);
-    if (!invoice) return;
-
-    const today = new Date().toISOString().split("T")[0];
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 14);
-
-    setNewInvoice({
-      customerId: invoice.customerId,
-      items: invoice.items,
-      labor: invoice.labor || [],
-      vatRate: invoice.vatRate,
-      notes: invoice.notes || "",
-      paymentTerms: invoice.paymentTerms,
-      issueDate: today,
-      dueDate: dueDate.toISOString().split("T")[0],
-    });
-    setShowCloneInvoiceModal(true);
-  };
-
-  // Edit invoice function
-  const handleEditInvoice = (invoiceId: string) => {
-    const invoice = invoices.find((inv) => inv.id === invoiceId);
-    if (!invoice) return;
-
-    setNewInvoice({
-      customerId: invoice.customerId,
-      items: invoice.items,
-      labor: invoice.labor || [],
-      vatRate: invoice.vatRate,
-      notes: invoice.notes || "",
-      paymentTerms: invoice.paymentTerms,
-      issueDate: invoice.issueDate,
-      dueDate: invoice.dueDate,
-    });
-    setEditingInvoiceId(invoiceId);
-    setShowEditInvoiceModal(true);
-  };
-
-  // Save cloned invoice
-  const handleSaveClonedInvoice = (sendToWorkOrder: boolean = false) => {
-    if (
-      !newInvoice.customerId ||
-      newInvoice.items.length === 0 ||
-      !newInvoice.issueDate ||
-      !newInvoice.dueDate
-    ) {
-      alert("Vul alle verplichte velden in!");
-      return;
-    }
-
-    const { subtotal, vatAmount, total } = calculateInvoiceTotals();
-    const now = new Date().toISOString();
-    const customerName = getCustomerName(newInvoice.customerId);
-
-    const invoice: Invoice = {
-      id: `inv${Date.now()}`,
-      invoiceNumber: generateInvoiceNumber(),
-      customerId: newInvoice.customerId,
-      items: newInvoice.items,
-      labor: newInvoice.labor.length > 0 ? newInvoice.labor : undefined,
-      subtotal: subtotal,
-      vatRate: newInvoice.vatRate,
-      vatAmount: vatAmount,
-      total: total,
-      status: "draft",
-      issueDate: newInvoice.issueDate,
-      dueDate: newInvoice.dueDate,
-      notes: newInvoice.notes,
-      paymentTerms: newInvoice.paymentTerms,
-      createdBy: currentUser.employeeId,
-      timestamps: {
-        created: now,
-      },
-      history: [
-        createHistoryEntry(
-          "invoice",
-          "created",
-          `Factuur gecloneerd door ${getEmployeeName(
-            currentUser.employeeId
-          )} voor klant ${customerName}`
-        ),
-      ],
-    };
-
-    setInvoices([...invoices, invoice]);
-    setNewInvoice({
-      customerId: "",
-      items: [],
-      labor: [],
-      vatRate: 21,
-      notes: "",
-      paymentTerms: "14 dagen",
-      issueDate: "",
-      dueDate: "",
-    });
-    setShowCloneInvoiceModal(false);
-
-    if (sendToWorkOrder) {
-      const totalHours =
-        invoice.labor?.reduce((sum, labor) => sum + labor.hours, 0) || 0;
-
-      setSelectedInvoiceForWorkOrder(invoice.id);
-      setSelectedUserId("");
-      setShowUserSelectionModal(true);
-    } else {
-      alert(`✅ Factuur ${invoice.invoiceNumber} succesvol gecloneerd!`);
-    }
-  };
-
-  // Save edited invoice
-  const handleSaveEditedInvoice = () => {
-    if (!editingInvoiceId) return;
-    if (
-      !newInvoice.customerId ||
-      newInvoice.items.length === 0 ||
-      !newInvoice.issueDate ||
-      !newInvoice.dueDate
-    ) {
-      alert("Vul alle verplichte velden in!");
-      return;
-    }
-
-    const { subtotal, vatAmount, total } = calculateInvoiceTotals();
-    const existingInvoice = invoices.find((inv) => inv.id === editingInvoiceId);
-    if (!existingInvoice) return;
-
-    const updatedInvoice: Invoice = {
-      ...existingInvoice,
-      customerId: newInvoice.customerId,
-      items: newInvoice.items,
-      labor: newInvoice.labor.length > 0 ? newInvoice.labor : undefined,
-      subtotal: subtotal,
-      vatRate: newInvoice.vatRate,
-      vatAmount: vatAmount,
-      total: total,
-      issueDate: newInvoice.issueDate,
-      dueDate: newInvoice.dueDate,
-      notes: newInvoice.notes,
-      paymentTerms: newInvoice.paymentTerms,
-      history: [
-        ...(existingInvoice.history || []),
-        createHistoryEntry(
-          "invoice",
-          "updated",
-          `Factuur bijgewerkt door ${getEmployeeName(currentUser.employeeId)}`
-        ),
-      ],
-    };
-
-    setInvoices(
-      invoices.map((inv) =>
-        inv.id === editingInvoiceId ? updatedInvoice : inv
-      )
-    );
-    setEditingInvoiceId(null);
-    setShowEditInvoiceModal(false);
-    setNewInvoice({
-      customerId: "",
-      items: [],
-      labor: [],
-      vatRate: 21,
-      notes: "",
-      paymentTerms: "14 dagen",
-      issueDate: "",
-      dueDate: "",
-    });
-    alert(`✅ Factuur ${updatedInvoice.invoiceNumber} succesvol bijgewerkt!`);
-  };
-
-  // Convert invoice to work order
-  const convertInvoiceToWorkOrder = (invoiceId: string) => {
-    const invoice = invoices.find((inv) => inv.id === invoiceId);
-    if (!invoice) return;
-
-    if (invoice.status !== "sent" && invoice.status !== "draft") {
-      alert(
-        "Alleen verzonden of concept facturen kunnen worden omgezet naar werkorders!"
-      );
-      return;
-    }
-
-    if (invoice.workOrderId) {
-      alert("Deze factuur heeft al een gekoppelde werkorder!");
-      return;
-    }
-
-    setSelectedInvoiceForWorkOrder(invoiceId);
-    setSelectedUserId("");
-    setShowUserSelectionModal(true);
-  };
-
-  // Complete work order conversion
-  const completeWorkOrderConversion = () => {
-    if (!selectedInvoiceForWorkOrder || !selectedUserId) {
-      alert("Selecteer een medewerker!");
-      return;
-    }
-
-    const invoice = invoices.find(
-      (inv) => inv.id === selectedInvoiceForWorkOrder
-    );
-    if (!invoice) return;
-
-    const now = new Date().toISOString();
-    const workOrderId = `wo${Date.now()}`;
-    const customerName = getCustomerName(invoice.customerId);
-    const totalHours =
-      invoice.labor?.reduce((sum, labor) => sum + labor.hours, 0) || 0;
-
-    const workOrder: WorkOrder = {
-      id: workOrderId,
-      title: `${customerName} - Factuur ${invoice.invoiceNumber}`,
-      description:
-        invoice.notes ||
-        `Werkorder aangemaakt vanuit factuur ${invoice.invoiceNumber}`,
-      status: "To Do",
-      assignedTo: selectedUserId,
-      assignedBy: currentUser.employeeId,
-      convertedBy: currentUser.employeeId,
-      requiredInventory: invoice.items
-        .filter((item) => item.inventoryItemId)
-        .map((item) => ({
-          itemId: item.inventoryItemId!,
-          quantity: item.quantity,
-        })),
-      createdDate: new Date().toISOString().split("T")[0],
-      customerId: invoice.customerId,
-      location: invoice.location,
-      scheduledDate: invoice.scheduledDate,
-      invoiceId: invoice.id,
-      estimatedHours: totalHours,
-      estimatedCost: invoice.total,
-      notes: `Geschatte uren: ${totalHours}u\nGeschatte kosten: €${invoice.total.toFixed(
-        2
-      )}`,
-      timestamps: {
-        created: now,
-        converted: now,
-        assigned: now,
-      },
-      history: [
-        {
-          timestamp: now,
-          action: "created",
-          performedBy: currentUser.employeeId,
-          details: `Werkorder aangemaakt door ${getEmployeeName(
-            currentUser.employeeId
-          )}`,
-        },
-        {
-          timestamp: now,
-          action: "converted",
-          performedBy: currentUser.employeeId,
-          details: `Geconverteerd van factuur ${
-            invoice.invoiceNumber
-          } door ${getEmployeeName(currentUser.employeeId)}`,
-        },
-        {
-          timestamp: now,
-          action: "assigned",
-          performedBy: currentUser.employeeId,
-          details: `Toegewezen aan ${getEmployeeName(
-            selectedUserId
-          )} door ${getEmployeeName(currentUser.employeeId)}`,
-          toAssignee: selectedUserId,
-        },
-      ],
-    };
-
-    setWorkOrders([...workOrders, workOrder]);
-
-    setInvoices(
-      invoices.map((inv) =>
-        inv.id === selectedInvoiceForWorkOrder
-          ? {
-              ...inv,
-              workOrderId: workOrder.id,
-              timestamps: {
-                ...inv.timestamps,
-                convertedToWorkOrder: now,
-              },
-              history: [
-                ...(inv.history || []),
-                createHistoryEntry(
-                  "invoice",
-                  "converted_to_workorder",
-                  `Geconverteerd naar werkorder ${
-                    workOrder.id
-                  } door ${getEmployeeName(currentUser.employeeId)}`
-                ),
-              ],
-            }
-          : inv
-      )
-    );
-
-    setShowUserSelectionModal(false);
-    setSelectedInvoiceForWorkOrder(null);
-    setSelectedUserId("");
-    alert(
-      `✅ Werkorder ${
-        workOrder.id
-      } succesvol aangemaakt en toegewezen aan ${getEmployeeName(
-        selectedUserId
-      )}!`
-    );
-  };
-
-  // Open detail modal voor factuur/offerte
-  const openDetailModal = (type: "invoice" | "quote", id: string) => {
-    if (type === "invoice") {
-      const invoice = invoices.find((inv) => inv.id === id);
-      if (invoice) {
-        setDetailType("invoice");
-        setDetailItem(invoice);
-        setShowDetailModal(true);
-      }
-    } else {
-      const quote = quotes.find((q) => q.id === id);
-      if (quote) {
-        setDetailType("quote");
-        setDetailItem(quote);
-        setShowDetailModal(true);
-      }
-    }
-  };
-
-  // Quote handlers
-  const handleEditQuote = (quoteId: string) => {
-    const quote = quotes.find((q) => q.id === quoteId);
-    if (!quote) return;
-
-    setNewQuote({
-      customerId: quote.customerId,
-      items: quote.items,
-      labor: quote.labor || [],
-      vatRate: quote.vatRate,
-      notes: quote.notes || "",
-      validUntil: quote.validUntil,
-    });
-    setEditingQuoteId(quoteId);
-    setShowEditQuoteModal(true);
-  };
-
-  const handleCloneQuote = (quoteId: string) => {
-    const quote = quotes.find((q) => q.id === quoteId);
-    if (!quote) return;
-
-    setNewQuote({
-      customerId: quote.customerId,
-      items: quote.items,
-      labor: quote.labor || [],
-      vatRate: quote.vatRate,
-      notes: quote.notes || "",
-      validUntil: "", // User should set new date
-    });
-    setShowCloneQuoteModal(true);
-  };
-
-  const convertQuoteToWorkOrder = (quoteId: string) => {
-    setSelectedQuoteForWorkOrder(quoteId);
-    setShowUserSelectionModal(true);
-  };
-
+  // ============ STATUS COLOR HELPERS ============
   const getInvoiceStatusColor = (status: string) => {
     switch (status) {
       case "paid":
@@ -1663,14 +1044,14 @@ export const CRM: React.FC<CRMProps> = ({
               return (
                 <div
                   key={status}
-                  className={`rounded-lg p-4 min-h-[400px] ${getStatusColor(
+                  className={`rounded-lg p-4 min-h-[400px] ${getLeadStatusColor(
                     status
                   )}`}
                 >
                   <div className="mb-4">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-semibold text-sm">
-                        {getStatusLabel(status)}
+                        {getLeadStatusLabel(status)}
                       </h3>
                       <span className="px-2 py-1 bg-white bg-opacity-70 rounded-full text-xs font-bold">
                         {leadsInStatus.length}
@@ -4613,7 +3994,7 @@ export const CRM: React.FC<CRMProps> = ({
                       {task.title}
                     </h3>
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${getPriorityColor(
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${getTaskPriorityColor(
                         task.priority
                       )}`}
                     >
