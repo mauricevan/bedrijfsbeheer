@@ -56,6 +56,8 @@ Technische architectuur en ontwerpbeslissingen.
 - [File Structure](./02-architecture/file-structure.md) - Project organisatie
 - [State Management](./02-architecture/state-management.md) - React Hooks patterns
 - [Security](./02-architecture/security.md) - Beveiliging & privacy
+- [ADRs](./02-architecture/adr/README.md) - Architecture Decision Records 🆕
+- [Refactoring Plan](./02-architecture/refactoring-plan.md) - Implementation roadmap
 
 ### 03. Modules
 Gedetailleerde documentatie van alle 12 modules.
@@ -98,6 +100,12 @@ Complete versiegeschiedenis en release notes.
 - [Version 3.x](./06-changelog/v3.x.md) - CRM, Facturen, Offertes
 - [Version 2.x](./06-changelog/v2.x.md) - Login, Materialen
 - [Version 1.x](./06-changelog/v1.x.md) - Basis modules
+
+### 07. Workflow 🆕
+Git workflow, code review en development process.
+
+- [Git Workflow](./07-workflow/README.md) - Branch strategy, commits, PRs
+- [Code Review Checklist](./07-workflow/code-review-checklist.md) - Complete review guide
 
 ---
 
@@ -342,6 +350,91 @@ Complete versiegeschiedenis en release notes.
 1. [Login](./01-getting-started/login-users.md) (5 min)
 2. [Werkorders Module](./03-modules/workorders.md) (15 min)
 3. [Mobile Guide](./04-features/mobile-optimization.md) (10 min)
+
+---
+
+## 🎯 Wanneer Welke Doc? (Quick Reference)
+
+### Voor Specifieke Taken
+
+| Taak / Vraag | Document | Sectie |
+|--------------|----------|--------|
+| **Development & Code** |||
+| Nieuwe React component maken | [Technical Stack](./02-architecture/technical-stack.md) | React Patterns |
+| State management implementeren | [State Management](./02-architecture/state-management.md) | Hook Patterns |
+| TypeScript types definiëren | [Technical Stack](./02-architecture/technical-stack.md) | TypeScript Guide |
+| Project structuur begrijpen | [File Structure](./02-architecture/file-structure.md) | Complete |
+| Feature-based module maken | [ADR-001](./02-architecture/adr/001-feature-based-architecture.md) | Implementation |
+| Services extracteren | [ADR-002](./02-architecture/adr/002-accounting-module-refactoring.md) | Refactoring |
+| **Git & Workflow** |||
+| Branch naming | [Git Workflow](./07-workflow/README.md) | Branch Strategy |
+| Commit message schrijven | [Git Workflow](./07-workflow/README.md) | Commit Conventions |
+| Pull Request maken | [Git Workflow](./07-workflow/README.md) | PR Workflow |
+| Code review doen | [Code Review Checklist](./07-workflow/code-review-checklist.md) | Complete |
+| Release maken | [Git Workflow](./07-workflow/README.md) | Release Process |
+| **Architecture & Decisions** |||
+| Waarom feature-based structure? | [ADR-001](./02-architecture/adr/001-feature-based-architecture.md) | Context & Decision |
+| Waarom geen Redux/MobX? | [ADR-003](./02-architecture/adr/003-no-state-management-library.md) | Context & Decision |
+| Migreren naar src/ directory? | [ADR-004](./02-architecture/adr/004-src-directory-migration.md) | Proposed |
+| Architecture decision maken | [ADR Template](./02-architecture/adr/template.md) | Complete |
+| Refactoring plan | [Refactoring Plan](./02-architecture/refactoring-plan.md) | Complete |
+| **User Features & Modules** |||
+| Email naar offerte converteren | [Email Integration](./04-features/email-integration.md) | Email to Quote |
+| Werkorder workflow begrijpen | [Workorder Workflow](./04-features/workorder-workflow.md) | Complete Flow |
+| Gebruikersrechten begrijpen | [User Roles](./04-features/user-roles.md) | Permissions Matrix |
+| Mobile app gebruiken | [Mobile Optimization](./04-features/mobile-optimization.md) | Mobile Guide |
+| Module-specifieke features | [Modules Overview](./03-modules/overview.md) | Per Module |
+| **Setup & Installation** |||
+| Project installeren | [Installation](./01-getting-started/installation.md) | Complete |
+| Snel starten | [Quick Start](./01-getting-started/quick-start.md) | Complete |
+| Demo accounts gebruiken | [Demo Accounts](./01-getting-started/demo-accounts.md) | Login Credentials |
+| Development environment | [Installation](./01-getting-started/installation.md) | Dev Setup |
+| **Security & Best Practices** |||
+| Security implementatie | [Security](./02-architecture/security.md) | Complete |
+| Permission checks | [Security](./02-architecture/security.md) | Role-Based Access |
+| Code review standards | [Code Review Checklist](./07-workflow/code-review-checklist.md) | Complete |
+| **Documentation** |||
+| ADR schrijven | [ADR Template](./02-architecture/adr/template.md) | Template |
+| MD file optimaliseren | [MD Optimization Plan](./MD_OPTIMIZATION_PLAN.md) | Quality Checklist |
+| AI assistant gebruiken | [AI Guide](./AI_GUIDE.md) | Complete |
+| Documentatie updaten | [SCALING_GUIDE](./SCALING_GUIDE.md) | Doc Patterns |
+
+### Voor Specifieke Situaties
+
+```markdown
+🆕 "Ik ben een nieuwe developer"
+   → Start met: Installation → Quick Start → Technical Stack → File Structure
+
+🔧 "Ik ga een nieuwe feature bouwen"
+   → Lees: ADR-001 → Refactoring Plan → Code Review Checklist
+
+📝 "Ik moet een architecture decision maken"
+   → Gebruik: ADR Template → Review ADR-001/002/003 voor voorbeelden
+
+🐛 "Ik ga een bug fixen"
+   → Lees: Git Workflow (branch naming) → Code Review Checklist
+
+🧪 "Ik ga tests schrijven"
+   → Lees: Testing Strategy (PLANNED - zie MD_OPTIMIZATION_PLAN.md)
+
+👀 "Ik moet code reviewen"
+   → Gebruik: Code Review Checklist → Git Workflow (PR guidelines)
+
+📱 "Ik werk aan mobile features"
+   → Lees: Mobile Optimization → Responsive Design patterns
+
+🔐 "Ik implementeer authentication/security"
+   → Lees: Security → User Roles → Permission checks
+
+📧 "Ik werk aan email features"
+   → Lees: Email Integration → Workorder Workflow
+
+📊 "Ik werk aan accounting/boekhouding"
+   → Lees: ADR-002 (Accounting Refactoring) → Accounting Module docs
+
+🎓 "Ik wil het project begrijpen"
+   → Follow: Developer Onboarding learning path (2 uur)
+```
 
 ---
 
